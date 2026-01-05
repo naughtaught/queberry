@@ -1,0 +1,49 @@
+# Output
+.output
+.svelte-kit
+.netlify
+.wrangler
+build
+
+# Environment
+.env
+.env*.local
+
+# dependencies
+node_modules
+
+# Vite
+/src/vite.config.js.timestamp-*
+/src/vite.config.ts.timestamp-*
+
+# Typescript
+/src/lib/types/
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+*.launch
+.settings/
+
+# Temp
+gitignore
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# Tauri
+src-tauri/target/
+src-tauri/gen/schemas
+
+# Personal
+todo.md
+*.txt
+.vscode
+.prettierrc
+.prettierignore
+eslint.config.js
+
+*.dll
+plugins
