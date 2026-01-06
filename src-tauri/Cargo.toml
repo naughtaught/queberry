@@ -24,3 +24,5 @@ log = "0.4"
 tauri = { version = "2.9.5", features = [] }
 tauri-plugin-log = "2"
 dotenv = "0.15"
+strum = { version = "0.27.2", features = ["derive"] }
+reqwest = "0.13.1"

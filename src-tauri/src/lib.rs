@@ -1,7 +1,7 @@
+mod commands;
+pub mod constants;
 mod plugin_system;
 mod utils;
-
-use plugin_system::{load_all_plugins, types::Plugin};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -17,12 +17,10 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![get_plugins])
+        .invoke_handler(tauri::generate_handler![
+            commands::get_plugins,
+            commands::http_get,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-}
-
-#[tauri::command]
-fn get_plugins() -> Result<Vec<Plugin>, String> {
-    load_all_plugins()
 }

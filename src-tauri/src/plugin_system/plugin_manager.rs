@@ -1,51 +1,87 @@
-use serde_json::Value;
 use std::fs;
 use std::path::PathBuf;
 
+use crate::constants::API_VERSION;
 use crate::plugin_system::types::Plugin;
-use crate::utils::get_plugins_dir;  
+use crate::utils::get_plugins_dir;
 
 impl Plugin {
+    fn validate_plugin(&self) -> Result<(), String> {
+        if !self.id.contains('.') {
+            return Err(
+                "Plugin ID must be in reverse-domain format (e.g., 'org.example.plugin')".into(),
+            );
+        }
+
+        if self.name.trim().is_empty() {
+            return Err("Plugin name cannot be empty".into());
+        }
+
+        if !self.filename.ends_with(".js") {
+            return Err("Plugin filename must end with .js".into());
+        }
+
+        if self.version.trim().is_empty() {
+            return Err("Version cannot be empty".into());
+        }
+
+        if self.sources.is_empty() {
+            return Err("Plugin must specify at least one source type".into());
+        }
+
+        if self.types.is_empty() {
+            return Err("Plugin must specify at least one type".into());
+        }
+
+        // TODO TYPES and ensure matching to ENUM
+        // for type_str in &self.types {
+        //     type_str.parse::<PluginType>().map_err(|_| {
+        //         format!(
+        //             "Invalid plugin type '{}'. Valid types: {:?}",
+        //             type_str,
+        //             PluginType::VARIANTS
+        //         )
+        //     })?;
+        // }
+
+        if !self.api_version.starts_with('v') {
+            return Err("API version must start with 'v'".into());
+        }
+
+        let plugin_major = self.api_version.split('.').next().unwrap_or("");
+        let expected_major = API_VERSION.split('.').next().unwrap_or("");
+
+        if plugin_major != expected_major {
+            return Err(format!(
+                "Plugin API version '{}' is incompatible. Expected major version '{}'",
+                self.api_version, API_VERSION
+            ));
+        }
+
+        Ok(())
+    }
+
     pub fn new(plugin_dir: PathBuf) -> Result<Self, String> {
         let manifest_path = plugin_dir.join("manifest.json");
-
-        if !manifest_path.exists() || !manifest_path.is_file() {
-            return Err(format!("Missing or invalid manifest in {:?}", plugin_dir));
-        }
 
         let manifest_content = fs::read_to_string(&manifest_path)
             .map_err(|e| format!("Failed to read manifest: {}", e))?;
 
-        let manifest: Value = serde_json::from_str(&manifest_content)
-            .map_err(|e| format!("Failed to parse manifest JSON: {}", e))?;
+        let plugin: Plugin = serde_json::from_str(&manifest_content)
+            .map_err(|e| format!("Failed to parse manifest: {}", e))?;
 
-        let name = manifest["name"]
-            .as_str()
-            .ok_or_else(|| "Missing 'name' field in manifest".to_string())?
-            .to_string();
-
-        let js_filename = match manifest["pathname"].as_str() {
-            Some(pathname) => pathname.to_string(),
-            None => format!("{}.js", name),
-        };
-
-        let filename_for_error = &js_filename;
-
-        let js_path = plugin_dir.join(&js_filename);
-
-        if !js_path.exists() || !js_path.is_file() {
+        let js_path = plugin_dir.join(&plugin.filename);
+        if !js_path.exists() {
             return Err(format!(
-                "Missing or invalid js file '{}' in {:?}",
-                filename_for_error, plugin_dir
+                "Plugin JS file '{}' not found in {}",
+                plugin.filename,
+                plugin_dir.display()
             ));
         }
 
-        Ok(Plugin {
-            name,
-            js_path,
-            manifest_path,
-            plugin_dir,
-        })
+        plugin.validate_plugin()?;
+
+        Ok(plugin)
     }
 }
 
