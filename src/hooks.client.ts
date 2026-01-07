@@ -10,19 +10,13 @@ const initializeTauri = async () => {
     }
 }
 
-
-
 const call_plugin = async () => {
     const data = await invoke('call_plugin_method', {
         pluginName: 'com.zilean.indexer',
 
         // pluginName: 'fun.strem.torrentio',
         methodName: 'GetIndexerSources',
-        args: [
-            'tt0111161', // imdbId as first argument
-            null, // season as second argument
-            null, // episode as third argument
-        ],
+        args: ['tt12637874', 2, 2],
     })
 
     console.log(data)
@@ -31,3 +25,6 @@ const call_plugin = async () => {
 initializeTauri()
 
 call_plugin()
+
+// tt12637874 2, 2
+// tt0111161
