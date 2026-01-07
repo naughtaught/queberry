@@ -1,11 +1,13 @@
 mod commands;
 pub mod constants;
+pub mod errors;
 mod plugin_system;
 mod utils;
 
 use crate::plugin_system::loader::load_all_plugins;
 use crate::plugin_system::PluginManager;
 use commands::AppState;
+pub use errors::{AppError, ErrorDetail, ErrorResponse};
 use std::sync::Mutex;
 use tauri::Manager;
 

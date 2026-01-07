@@ -1,5 +1,5 @@
+use crate::errors::{AppError, ErrorResponse};
 use crate::plugin_system::loader::load_all_plugins;
-use crate::plugin_system::types::Plugin;
 use crate::plugin_system::PluginManager;
 use serde_json::Value;
 use std::sync::Mutex;
@@ -10,8 +10,8 @@ pub struct AppState {
 }
 
 #[tauri::command]
-pub fn get_plugins() -> Result<Vec<Plugin>, String> {
-    load_all_plugins()
+pub fn get_plugins() -> Result<ErrorResponse, AppError> {
+    load_all_plugins().map(ErrorResponse::success)
 }
 
 #[tauri::command]
@@ -20,7 +20,13 @@ pub fn call_plugin_method(
     plugin_name: String,
     method_name: String,
     args: Vec<Value>,
-) -> Result<Value, String> {
-    let mut manager = state.plugin_manager.lock().unwrap();
-    manager.call_plugin_method(&plugin_name, &method_name, args)
+) -> Result<ErrorResponse, AppError> {
+    let mut manager = state
+        .plugin_manager
+        .lock()
+        .map_err(|e| AppError::Runtime(format!("Failed to lock plugin manager: {}", e)))?;
+
+    manager
+        .call_plugin_method(&plugin_name, &method_name, args)
+        .map(ErrorResponse::success)
 }

@@ -1,5 +1,6 @@
 pub mod loader;
 pub mod manager;
+pub mod rate_limiter;
 pub mod runtime;
 pub mod types;
 
