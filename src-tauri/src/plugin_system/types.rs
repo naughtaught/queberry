@@ -17,6 +17,13 @@ pub struct Plugin {
     pub permissions: PluginPermissions,
     #[serde(alias = "api_version", alias = "apiVersion")]
     pub api_version: String,
+    pub methods: Vec<MethodMapping>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct MethodMapping {
+    pub interface_method: String,
+    pub plugin_method: String,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -29,7 +36,7 @@ pub enum SourceType {
     Direct,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, EnumString, VariantNames)]
+#[derive(Debug, Clone, Deserialize, Serialize, EnumString, VariantNames, PartialEq, Eq, Hash)]
 #[strum(serialize_all = "lowercase")]
 pub enum PluginType {
     #[serde(alias = "indexer", alias = "Indexer")]

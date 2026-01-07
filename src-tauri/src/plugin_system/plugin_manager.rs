@@ -17,8 +17,9 @@ impl Plugin {
             return Err("Plugin name cannot be empty".into());
         }
 
-        if !self.filename.ends_with(".js") {
-            return Err("Plugin filename must end with .js".into());
+        // Check for WASM file extension instead of JS
+        if !self.filename.ends_with(".wasm") {
+            return Err("Plugin filename must end with .wasm".into());
         }
 
         if self.version.trim().is_empty() {
@@ -32,17 +33,6 @@ impl Plugin {
         if self.types.is_empty() {
             return Err("Plugin must specify at least one type".into());
         }
-
-        // TODO TYPES and ensure matching to ENUM
-        // for type_str in &self.types {
-        //     type_str.parse::<PluginType>().map_err(|_| {
-        //         format!(
-        //             "Invalid plugin type '{}'. Valid types: {:?}",
-        //             type_str,
-        //             PluginType::VARIANTS
-        //         )
-        //     })?;
-        // }
 
         if !self.api_version.starts_with('v') {
             return Err("API version must start with 'v'".into());
@@ -70,10 +60,11 @@ impl Plugin {
         let plugin: Plugin = serde_json::from_str(&manifest_content)
             .map_err(|e| format!("Failed to parse manifest: {}", e))?;
 
-        let js_path = plugin_dir.join(&plugin.filename);
-        if !js_path.exists() {
+        // Check for WASM file instead of JS
+        let wasm_path = plugin_dir.join(&plugin.filename);
+        if !wasm_path.exists() {
             return Err(format!(
-                "Plugin JS file '{}' not found in {}",
+                "Plugin WASM file '{}' not found in {}",
                 plugin.filename,
                 plugin_dir.display()
             ));
@@ -88,12 +79,10 @@ impl Plugin {
 pub fn load_all_plugins() -> Result<Vec<Plugin>, String> {
     let plugins_dir = get_plugins_dir()?;
 
-    let dir = plugins_dir;
-
     let mut plugins = vec![];
 
-    let entries =
-        fs::read_dir(&dir).map_err(|e| format!("Failed to read plugins directory: {}", e))?;
+    let entries = fs::read_dir(&plugins_dir)
+        .map_err(|e| format!("Failed to read plugins directory: {}", e))?;
 
     for entry in entries.flatten() {
         let plugin_dir = entry.path();
