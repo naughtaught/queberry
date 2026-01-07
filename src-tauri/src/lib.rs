@@ -12,6 +12,9 @@ use tauri::Manager;
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
+            let start = std::time::Instant::now();
+            println!("Setup starting...");
+
             if cfg!(debug_assertions) {
                 app.handle().plugin(
                     tauri_plugin_log::Builder::default()
@@ -20,20 +23,36 @@ pub fn run() {
                 )?;
             }
 
-            let plugins_dir = utils::get_plugins_dir()?;
-            let mut manager = PluginManager::new(plugins_dir);
+            println!("Logger initialized (took {:?})", start.elapsed());
 
-            // Load all plugins
+            println!("Getting plugins dir...");
+            let plugins_dir = utils::get_plugins_dir()?;
+            println!(
+                "Plugins dir: {:?} (took {:?})",
+                plugins_dir,
+                start.elapsed()
+            );
+
+            println!("Creating manager...");
+            let mut manager = PluginManager::new(plugins_dir);
+            println!("Manager created (took {:?})", start.elapsed());
+
+            // Only register plugins (fast - just reads manifests)
+            println!("Loading plugins...");
             if let Ok(plugins) = plugin_system::load_all_plugins() {
+                println!("Found {} plugins", plugins.len());
                 for plugin in plugins {
-                    manager.load_plugin(plugin);
+                    println!("Registering plugin: {}", plugin.id);
+                    manager.register_plugin(plugin);
                 }
             }
+            println!("All plugins registered (took {:?})", start.elapsed());
 
             app.manage(AppState {
                 plugin_manager: Mutex::new(manager),
             });
 
+            println!("Setup complete (took {:?})", start.elapsed());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

@@ -10,7 +10,6 @@ pub struct PluginManager {
     resolver_plugins: HashMap<String, Plugin>,
     plugins_dir: PathBuf,
     runtime: PluginRuntime,
-    wasm_cache: HashMap<String, Vec<u8>>,
 }
 
 // Helper function to get plugin ID as string
@@ -27,36 +26,63 @@ impl PluginManager {
             resolver_plugins: HashMap::new(),
             plugins_dir,
             runtime,
-            wasm_cache: HashMap::new(),
         }
     }
 
-    pub fn load_plugin(&mut self, plugin: Plugin) {
+    /// Register plugin metadata without loading WASM (fast)
+    pub fn register_plugin(&mut self, plugin: Plugin) {
         let plugin_id_str = plugin_id_string(&plugin);
-        let wasm_path = self.plugins_dir.join(&plugin_id_str).join(&plugin.filename);
 
-        if let Ok(wasm_bytes) = fs::read(&wasm_path) {
-            self.wasm_cache.insert(plugin_id_str.clone(), wasm_bytes);
-
-            if plugin.types.contains(&PluginType::Indexer) {
-                self.indexer_plugins
-                    .insert(plugin_id_str.clone(), plugin.clone());
-            }
-
-            if plugin.types.contains(&PluginType::Resolver) {
-                self.resolver_plugins.insert(plugin_id_str, plugin);
-            }
-        } else {
-            eprintln!("Failed to read WASM file: {}", wasm_path.display());
+        if plugin.types.contains(&PluginType::Indexer) {
+            self.indexer_plugins
+                .insert(plugin_id_str.clone(), plugin.clone());
         }
+
+        if plugin.types.contains(&PluginType::Resolver) {
+            self.resolver_plugins.insert(plugin_id_str, plugin);
+        }
+    }
+
+    /// Load plugin WASM on-demand (lazy loading)
+    fn ensure_plugin_loaded(&mut self, plugin_id: &str) -> Result<(), String> {
+        // Check if already loaded in runtime
+        if self.runtime.plugins.contains_key(plugin_id) {
+            return Ok(());
+        }
+
+        // Find plugin metadata
+        let plugin = self
+            .indexer_plugins
+            .get(plugin_id)
+            .or_else(|| self.resolver_plugins.get(plugin_id))
+            .ok_or_else(|| format!("Plugin not found: {}", plugin_id))?;
+
+        // Load WASM file
+        let wasm_path = self.plugins_dir.join(plugin_id).join(&plugin.filename);
+        let wasm_bytes =
+            fs::read(&wasm_path).map_err(|e| format!("Failed to read WASM file: {}", e))?;
+
+        // Compile and cache plugin
+        self.runtime
+            .load_plugin(
+                plugin_id.to_string(),
+                &wasm_bytes,
+                &plugin.permissions.network,
+            )
+            .map_err(|e| format!("Failed to load plugin into runtime: {}", e))?;
+
+        Ok(())
     }
 
     pub fn call_plugin_method(
-        &self,
+        &mut self,
         plugin_name: &str,
         interface_method: &str,
         args: Vec<Value>,
     ) -> Result<Value, String> {
+        // Lazy load the plugin if not already loaded
+        self.ensure_plugin_loaded(plugin_name)?;
+
         let plugin = self
             .indexer_plugins
             .get(plugin_name)
@@ -70,14 +96,10 @@ impl PluginManager {
             .map(|m| m.plugin_method.as_str())
             .ok_or_else(|| format!("Method not found: {}", interface_method))?;
 
-        let wasm_bytes = self
-            .wasm_cache
-            .get(&plugin_id_string(plugin))
-            .ok_or_else(|| format!("WASM not cached: {}", plugin_id_string(plugin)))?;
+        let plugin_id = plugin_id_string(plugin);
 
-        // Pass allowed network hosts from plugin permissions
         self.runtime
-            .execute_plugin_method(wasm_bytes, plugin_method, args, &plugin.permissions.network)
+            .execute_plugin_method(&plugin_id, plugin_method, args)
             .map_err(|e| format!("Runtime error: {}", e))
     }
 }

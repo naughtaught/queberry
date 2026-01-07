@@ -20,6 +20,6 @@ pub fn call_plugin_method(
     method_name: String,
     args: Vec<Value>,
 ) -> Result<Value, String> {
-    let manager = state.plugin_manager.lock().unwrap();
+    let mut manager = state.plugin_manager.lock().unwrap();
     manager.call_plugin_method(&plugin_name, &method_name, args)
 }
