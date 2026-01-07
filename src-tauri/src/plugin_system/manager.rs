@@ -12,7 +12,6 @@ pub struct PluginManager {
     runtime: PluginRuntime,
 }
 
-// Helper function to get plugin ID as string
 fn plugin_id_string(plugin: &Plugin) -> String {
     plugin.id.to_string()
 }
@@ -29,7 +28,6 @@ impl PluginManager {
         }
     }
 
-    /// Register plugin metadata without loading WASM (fast)
     pub fn register_plugin(&mut self, plugin: Plugin) {
         let plugin_id_str = plugin_id_string(&plugin);
 
@@ -43,26 +41,21 @@ impl PluginManager {
         }
     }
 
-    /// Load plugin WASM on-demand (lazy loading)
     fn ensure_plugin_loaded(&mut self, plugin_id: &str) -> Result<(), String> {
-        // Check if already loaded in runtime
         if self.runtime.plugins.contains_key(plugin_id) {
             return Ok(());
         }
 
-        // Find plugin metadata
         let plugin = self
             .indexer_plugins
             .get(plugin_id)
             .or_else(|| self.resolver_plugins.get(plugin_id))
             .ok_or_else(|| format!("Plugin not found: {}", plugin_id))?;
 
-        // Load WASM file
         let wasm_path = self.plugins_dir.join(plugin_id).join(&plugin.filename);
         let wasm_bytes =
             fs::read(&wasm_path).map_err(|e| format!("Failed to read WASM file: {}", e))?;
 
-        // Compile and cache plugin
         self.runtime
             .load_plugin(
                 plugin_id.to_string(),
@@ -80,7 +73,6 @@ impl PluginManager {
         interface_method: &str,
         args: Vec<Value>,
     ) -> Result<Value, String> {
-        // Lazy load the plugin if not already loaded
         self.ensure_plugin_loaded(plugin_name)?;
 
         let plugin = self

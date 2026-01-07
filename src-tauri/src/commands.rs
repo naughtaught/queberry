@@ -1,5 +1,6 @@
+use crate::plugin_system::loader::load_all_plugins;
+use crate::plugin_system::types::Plugin;
 use crate::plugin_system::PluginManager;
-use crate::plugin_system::{load_all_plugins, types::Plugin};
 use serde_json::Value;
 use std::sync::Mutex;
 use tauri::State;
