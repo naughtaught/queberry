@@ -24,6 +24,7 @@ pub struct Plugin {
     pub version: String,
     pub sources: Vec<SourceType>,
     pub types: Vec<PluginType>,
+    pub cacheless: bool,
     pub permissions: PluginPermissions,
     #[serde(alias = "api_version", alias = "apiVersion", alias = "api-version")]
     pub api_version: String,

@@ -37,6 +37,7 @@ pub fn load_plugin_from_dir(plugin_dir: PathBuf) -> Result<Plugin, AppError> {
         version: String,
         sources: Vec<SourceType>,
         types: Vec<PluginType>,
+        cacheless: bool,
         permissions: RawPermissions,
         #[serde(alias = "api_version", alias = "apiVersion", alias = "api-version")]
         api_version: String,
@@ -69,6 +70,7 @@ pub fn load_plugin_from_dir(plugin_dir: PathBuf) -> Result<Plugin, AppError> {
         version: raw_plugin.version,
         sources: raw_plugin.sources,
         types: raw_plugin.types,
+        cacheless: raw_plugin.cacheless,
         permissions: PluginPermissions {
             validated_hosts,
             network_patterns: raw_plugin.permissions.network,
