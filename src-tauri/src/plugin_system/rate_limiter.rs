@@ -35,10 +35,12 @@ impl RateLimiter {
             return Ok(());
         }
 
-        let mut calls_map = self
-            .calls
-            .lock()
-            .map_err(|_| AppError::Runtime("Failed to acquire rate limiter lock".into()))?;
+        // Handle poison error by recovering the data
+        let mut calls_map = self.calls.lock().unwrap_or_else(|poisoned| {
+            eprintln!("Rate limiter mutex was poisoned, recovering...");
+            poisoned.into_inner()
+        });
+
         let now = Instant::now();
         let window = Duration::from_secs(self.window_seconds);
 
