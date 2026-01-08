@@ -9,6 +9,7 @@
     "types": ["indexer"],
     "permissions": {
         "network": ["https://api.your-indexer.com/*"] // Only network permissions permitted
+        "allow_private_networks": false // Only needed if using a private network and then set to true
     },
     "apiVersion": "v1",
     "methods": [

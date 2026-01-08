@@ -48,4 +48,6 @@ pub enum PluginType {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct PluginPermissions {
     pub network: Vec<String>,
+    #[serde(default)]
+    pub allow_private_networks: bool,
 }
