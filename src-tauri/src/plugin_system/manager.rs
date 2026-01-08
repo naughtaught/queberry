@@ -7,12 +7,13 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
+use std::sync::{Arc, RwLock};
 
 pub struct PluginManager {
     indexer_plugins: HashMap<String, Plugin>,
     resolver_plugins: HashMap<String, Plugin>,
     plugins_dir: PathBuf,
-    runtime: PluginRuntime,
+    runtime: Arc<RwLock<PluginRuntime>>,
     rate_limiter: RateLimiter,
 }
 
@@ -30,7 +31,7 @@ impl PluginManager {
             indexer_plugins: HashMap::new(),
             resolver_plugins: HashMap::new(),
             plugins_dir,
-            runtime,
+            runtime: Arc::new(RwLock::new(runtime)),
             rate_limiter,
         }
     }
@@ -57,8 +58,15 @@ impl PluginManager {
     }
 
     fn ensure_plugin_loaded(&mut self, plugin_id: &str) -> Result<(), AppError> {
-        if self.runtime.plugins.contains_key(plugin_id) {
-            return Ok(());
+        {
+            let runtime_guard = self
+                .runtime
+                .read()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+
+            if runtime_guard.plugins.contains_key(plugin_id) {
+                return Ok(());
+            }
         }
 
         let plugin = self
@@ -70,13 +78,20 @@ impl PluginManager {
         let wasm_path = self.plugins_dir.join(plugin_id).join(&plugin.filename);
         let wasm_bytes = fs::read(&wasm_path).map_err(AppError::Io)?;
 
-        self.runtime
-            .load_plugin(
-                plugin_id.to_string(),
-                &wasm_bytes,
-                &plugin.permissions.network,
-            )
-            .map_err(|e| AppError::Runtime(e.to_string()))?;
+        let mut runtime_guard = self
+            .runtime
+            .write()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+
+        if !runtime_guard.plugins.contains_key(plugin_id) {
+            runtime_guard
+                .load_plugin(
+                    plugin_id.to_string(),
+                    &wasm_bytes,
+                    &plugin.permissions.network,
+                )
+                .map_err(|e| AppError::Runtime(e.to_string()))?;
+        }
 
         Ok(())
     }
@@ -87,7 +102,6 @@ impl PluginManager {
         interface_method: &str,
         args: Vec<Value>,
     ) -> Result<Value, AppError> {
-        // Check rate limit before proceeding
         self.rate_limiter
             .check_limit(plugin_name)
             .map_err(|e| AppError::RateLimit(e.to_string()))?;
@@ -109,7 +123,12 @@ impl PluginManager {
 
         let plugin_id = plugin_id_string(plugin);
 
-        self.runtime
+        let mut runtime_guard = self
+            .runtime
+            .write()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+
+        runtime_guard
             .execute_plugin_method(&plugin_id, plugin_method, args)
             .map_err(|e| AppError::Runtime(e.to_string()))
     }
