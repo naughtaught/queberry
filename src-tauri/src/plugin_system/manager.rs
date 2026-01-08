@@ -24,7 +24,6 @@ fn plugin_id_string(plugin: &Plugin) -> String {
 impl PluginManager {
     pub fn new(plugins_dir: PathBuf) -> Self {
         let runtime = PluginRuntime::new().expect("Failed to create WASM runtime");
-
         let rate_limiter = RateLimiter::new().with_window_seconds(RATE_LIMIT_WINDOW_SECONDS);
 
         Self {
@@ -47,13 +46,24 @@ impl PluginManager {
 
         self.rate_limiter.set_limit(&plugin_id_str, rate_limit);
 
-        if plugin.types.contains(&PluginType::Indexer) {
-            self.indexer_plugins
-                .insert(plugin_id_str.clone(), plugin.clone());
-        }
+        let is_indexer = plugin.types.contains(&PluginType::Indexer);
+        let is_resolver = plugin.types.contains(&PluginType::Resolver);
 
-        if plugin.types.contains(&PluginType::Resolver) {
-            self.resolver_plugins.insert(plugin_id_str, plugin);
+        match (is_indexer, is_resolver) {
+            (true, true) => {
+                self.indexer_plugins
+                    .insert(plugin_id_str.clone(), plugin.clone());
+                self.resolver_plugins.insert(plugin_id_str, plugin);
+            }
+            (true, false) => {
+                self.indexer_plugins.insert(plugin_id_str, plugin);
+            }
+            (false, true) => {
+                self.resolver_plugins.insert(plugin_id_str, plugin);
+            }
+            (false, false) => {
+                eprintln!("Warning: Plugin '{}' has no valid types", plugin_id_str);
+            }
         }
     }
 
@@ -106,22 +116,27 @@ impl PluginManager {
             .check_limit(plugin_name)
             .map_err(|e| AppError::RateLimit(e.to_string()))?;
 
-        self.ensure_plugin_loaded(plugin_name)?;
+        // Get the plugin ID and method name first before mutable operations
+        let (plugin_id, plugin_method_name) = {
+            let plugin = self
+                .indexer_plugins
+                .get(plugin_name)
+                .or_else(|| self.resolver_plugins.get(plugin_name))
+                .ok_or_else(|| AppError::NotFound(format!("Plugin not found: {}", plugin_name)))?;
 
-        let plugin = self
-            .indexer_plugins
-            .get(plugin_name)
-            .or_else(|| self.resolver_plugins.get(plugin_name))
-            .ok_or_else(|| AppError::NotFound(format!("Plugin not found: {}", plugin_name)))?;
+            let plugin_method = plugin
+                .methods
+                .iter()
+                .find(|m| m.interface_method == interface_method)
+                .map(|m| m.plugin_method.as_str())
+                .ok_or_else(|| {
+                    AppError::NotFound(format!("Method not found: {}", interface_method))
+                })?;
 
-        let plugin_method = plugin
-            .methods
-            .iter()
-            .find(|m| m.interface_method == interface_method)
-            .map(|m| m.plugin_method.as_str())
-            .ok_or_else(|| AppError::NotFound(format!("Method not found: {}", interface_method)))?;
+            (plugin_id_string(plugin), plugin_method.to_string())
+        };
 
-        let plugin_id = plugin_id_string(plugin);
+        self.ensure_plugin_loaded(&plugin_id)?;
 
         let mut runtime_guard = self
             .runtime
@@ -129,7 +144,7 @@ impl PluginManager {
             .unwrap_or_else(|poisoned| poisoned.into_inner());
 
         runtime_guard
-            .execute_plugin_method(&plugin_id, plugin_method, args)
+            .execute_plugin_method(&plugin_id, &plugin_method_name, args)
             .map_err(|e| AppError::Runtime(e.to_string()))
     }
 }

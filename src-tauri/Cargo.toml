@@ -22,9 +22,10 @@ serde_json = "1.0.149"
 serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
 tauri = { version = "2.9.5", features = [] }
-tauri-plugin-log = "2"
+tauri-plugin-log = "2.8.0"
 strum = { version = "0.27.2", features = ["derive"] }
-wasmtime = "40.0.0"
+wasmtime = "40.0.1"
 extism = "1.1"
 url = "2.5.8"
 thiserror = "2.0.17"
+dashmap = "6.1"
