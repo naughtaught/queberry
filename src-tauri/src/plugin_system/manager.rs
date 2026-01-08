@@ -33,7 +33,7 @@ impl PluginManager {
         }
     }
 
-    pub fn register_plugin(&mut self, plugin: Plugin) {
+    pub fn register_plugin(&mut self, plugin: Plugin) -> Result<(), AppError> {
         let plugin_id_str = plugin.id.clone();
 
         let rate_limit = if plugin.types.contains(&PluginType::Indexer) {
@@ -44,7 +44,6 @@ impl PluginManager {
 
         self.rate_limiter.set_limit(&plugin_id_str, rate_limit);
 
-        // Build method lookup
         for method in &plugin.methods {
             self.method_lookup.insert(
                 (plugin_id_str.clone(), method.interface_method.clone()),
@@ -59,18 +58,41 @@ impl PluginManager {
             (true, true) => {
                 self.indexer_plugins
                     .insert(plugin_id_str.clone(), plugin.clone());
-                self.resolver_plugins.insert(plugin_id_str.clone(), plugin);
+                self.resolver_plugins
+                    .insert(plugin_id_str.clone(), plugin.clone());
             }
             (true, false) => {
-                self.indexer_plugins.insert(plugin_id_str.clone(), plugin);
+                self.indexer_plugins
+                    .insert(plugin_id_str.clone(), plugin.clone());
             }
             (false, true) => {
-                self.resolver_plugins.insert(plugin_id_str.clone(), plugin);
+                self.resolver_plugins
+                    .insert(plugin_id_str.clone(), plugin.clone());
             }
             (false, false) => {
                 eprintln!("Warning: Plugin '{}' has no valid types", plugin_id_str);
             }
         }
+
+        let wasm_path = self.plugins_dir.join(&plugin_id_str).join(&plugin.filename);
+        let wasm_bytes = fs::read(&wasm_path).map_err(AppError::Io)?;
+
+        let mut runtime_guard = self
+            .runtime
+            .write()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+
+        if !runtime_guard.plugins.contains_key(&plugin_id_str) {
+            runtime_guard
+                .load_plugin(
+                    plugin_id_str.clone(),
+                    &wasm_bytes,
+                    &plugin.permissions.validated_hosts,
+                )
+                .map_err(|e| AppError::Runtime(e.to_string()))?;
+        }
+
+        Ok(())
     }
 
     fn ensure_plugin_loaded(&mut self, plugin_id: &str) -> Result<(), AppError> {
@@ -104,7 +126,7 @@ impl PluginManager {
                 .load_plugin(
                     plugin_id.to_string(),
                     &wasm_bytes,
-                    &plugin.permissions.network,
+                    &plugin.permissions.validated_hosts,
                 )
                 .map_err(|e| AppError::Runtime(e.to_string()))?;
         }
@@ -150,6 +172,8 @@ impl PluginManager {
         self.resolver_plugins.remove(plugin_id);
 
         self.method_lookup.retain(|(pid, _), _| pid != plugin_id);
+
+        let _ = self.unload_plugin(plugin_id);
     }
 
     pub fn unload_plugin(&mut self, plugin_id: &str) -> Result<(), AppError> {

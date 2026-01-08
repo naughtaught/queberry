@@ -25,20 +25,19 @@ pub fn run() {
 
             let plugins_dir = utils::get_plugins_dir()?;
 
-            let mut manager = PluginManager::new(plugins_dir);
+            let mut plugin_manager = PluginManager::new(plugins_dir);
 
-            println!("Loading plugins...");
-            if let Ok(plugins) = load_all_plugins() {
-                println!("Found {} plugins", plugins.len());
-                for plugin in plugins {
-                    println!("Registering plugin: {}", plugin.id);
-                    manager.register_plugin(plugin);
+            for plugin in load_all_plugins()? {
+                if let Err(e) = plugin_manager.register_plugin(plugin) {
+                    eprintln!("Failed to register plugin: {}", e);
                 }
             }
 
-            app.manage(AppState {
-                plugin_manager: Mutex::new(manager),
-            });
+            let app_state = AppState {
+                plugin_manager: Mutex::new(plugin_manager),
+            };
+
+            app.manage(app_state);
 
             Ok(())
         })

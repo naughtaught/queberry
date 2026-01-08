@@ -11,15 +11,20 @@ const initializeTauri = async () => {
 }
 
 const call_plugin = async () => {
-    const data = await invoke('call_plugin_method', {
-        pluginName: 'com.zilean.indexer',
+    const [zilean, torrentio] = await Promise.all([
+        invoke('call_plugin_method', {
+            pluginName: 'com.zilean.indexer',
+            methodName: 'GetIndexerSources',
+            args: ['tt0111161', null, null],
+        }),
+        invoke('call_plugin_method', {
+            pluginName: 'fun.strem.torrentio',
+            methodName: 'GetIndexerSources',
+            args: ['tt0111161', null, null],
+        }),
+    ])
 
-        // pluginName: 'fun.strem.torrentio',
-        methodName: 'GetIndexerSources',
-        args: ['tt0111161', null, null],
-    })
-
-    console.log(data)
+    console.log(zilean, torrentio)
 }
 
 initializeTauri()

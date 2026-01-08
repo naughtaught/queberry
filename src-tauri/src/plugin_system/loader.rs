@@ -1,7 +1,10 @@
 use crate::constants::API_VERSION;
 use crate::errors::AppError;
-use crate::plugin_system::types::Plugin;
+use crate::plugin_system::types::{
+    MethodMapping, Plugin, PluginPermissions, PluginType, SourceType,
+};
 use crate::utils::get_plugins_dir;
+use serde::Deserialize; // Add this
 use std::fs;
 use std::net::IpAddr;
 use std::path::PathBuf;
@@ -10,14 +13,72 @@ use url::Url;
 pub fn load_plugin_from_dir(plugin_dir: PathBuf) -> Result<Plugin, AppError> {
     let manifest_path = plugin_dir.join("manifest.json");
     let manifest_content = fs::read_to_string(&manifest_path).map_err(AppError::Io)?;
-    let plugin: Plugin = serde_json::from_str(&manifest_content).map_err(AppError::Json)?;
+
+    #[derive(Deserialize)]
+    struct RawPlugin {
+        id: String,
+        name: String,
+        #[serde(
+            alias = "filename",
+            alias = "fileName",
+            alias = "file_name",
+            alias = "file-name"
+        )]
+        filename: String,
+        author: String,
+        #[serde(
+            alias = "homepage",
+            alias = "homePage",
+            alias = "home_page",
+            alias = "home-page"
+        )]
+        homepage: Option<String>,
+        description: String,
+        version: String,
+        sources: Vec<SourceType>,
+        types: Vec<PluginType>,
+        permissions: RawPermissions,
+        #[serde(alias = "api_version", alias = "apiVersion", alias = "api-version")]
+        api_version: String,
+        methods: Vec<MethodMapping>,
+    }
+
+    #[derive(Deserialize)]
+    struct RawPermissions {
+        network: Vec<String>,
+        #[serde(default)]
+        allow_private_networks: bool,
+    }
+
+    let raw_plugin: RawPlugin = serde_json::from_str(&manifest_content).map_err(AppError::Json)?;
+
+    let mut validated_hosts = Vec::new();
+    for pattern in &raw_plugin.permissions.network {
+        let host =
+            validate_and_extract_host(pattern, raw_plugin.permissions.allow_private_networks)?;
+        validated_hosts.push(host);
+    }
+
+    let plugin = Plugin {
+        id: raw_plugin.id,
+        name: raw_plugin.name,
+        filename: raw_plugin.filename,
+        author: raw_plugin.author,
+        homepage: raw_plugin.homepage,
+        description: raw_plugin.description,
+        version: raw_plugin.version,
+        sources: raw_plugin.sources,
+        types: raw_plugin.types,
+        permissions: PluginPermissions {
+            validated_hosts,
+            network_patterns: raw_plugin.permissions.network,
+            allow_private_networks: raw_plugin.permissions.allow_private_networks,
+        },
+        api_version: raw_plugin.api_version,
+        methods: raw_plugin.methods,
+    };
 
     validate_plugin(&plugin)?;
-
-    let allow_private = plugin.permissions.allow_private_networks;
-    for url in &plugin.permissions.network {
-        validate_url(url, allow_private)?;
-    }
 
     let wasm_path = plugin_dir.join(&plugin.filename);
     if !wasm_path.exists() {
@@ -31,28 +92,60 @@ pub fn load_plugin_from_dir(plugin_dir: PathBuf) -> Result<Plugin, AppError> {
     Ok(plugin)
 }
 
-fn validate_url(url_str: &str, allow_private: bool) -> Result<(), AppError> {
-    let url = Url::parse(url_str).map_err(AppError::Url)?;
+fn validate_and_extract_host(pattern: &str, allow_private: bool) -> Result<String, AppError> {
+    let cleaned_pattern = clean_url_pattern(pattern);
+
+    let url = Url::parse(&cleaned_pattern).map_err(AppError::Url)?;
 
     if url.scheme() != "http" && url.scheme() != "https" {
         return Err(AppError::Validation(format!(
             "URL must use http:// or https:// scheme: {}",
-            url_str
+            pattern
         )));
     }
 
     let host = url
         .host_str()
-        .ok_or_else(|| AppError::Validation(format!("URL must have a host: {}", url_str)))?;
+        .ok_or_else(|| AppError::Validation(format!("URL must have a host: {}", pattern)))?;
 
     if !allow_private && is_private_or_local_host(host)? {
         return Err(AppError::Validation(format!(
-                "Access to private/local networks not allowed: {}. Set 'allow_private_networks: true' if needed.",
-                url_str
-            )));
+            "Access to private/local networks not allowed: {}. Set 'allow_private_networks: true' if needed.",
+            pattern
+        )));
     }
 
-    Ok(())
+    let extracted_host = extract_host_from_pattern(host, pattern)?;
+
+    Ok(extracted_host)
+}
+
+fn clean_url_pattern(pattern: &str) -> String {
+    let trimmed = pattern.trim();
+
+    let without_wildcard = if let Some(stripped) = trimmed.strip_prefix("*.") {
+        stripped
+    } else {
+        trimmed
+    };
+
+    if without_wildcard.starts_with("http://") || without_wildcard.starts_with("https://") {
+        without_wildcard.to_string()
+    } else {
+        format!("https://{}", without_wildcard)
+    }
+}
+
+fn extract_host_from_pattern(host: &str, original_pattern: &str) -> Result<String, AppError> {
+    if original_pattern.contains("*.") {
+        let parts: Vec<&str> = host.split('.').collect();
+        if parts.len() >= 2 {
+            let base_domain = format!("{}.{}", parts[parts.len() - 2], parts[parts.len() - 1]);
+            return Ok(base_domain);
+        }
+    }
+
+    Ok(host.to_string())
 }
 
 fn is_private_or_local_host(host: &str) -> Result<bool, AppError> {

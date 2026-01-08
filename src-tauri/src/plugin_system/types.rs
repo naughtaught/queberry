@@ -5,17 +5,27 @@ use strum::{EnumString, VariantNames};
 pub struct Plugin {
     pub id: String,
     pub name: String,
-    #[serde(alias = "filename", alias = "fileName", alias = "file_name")]
+    #[serde(
+        alias = "filename",
+        alias = "fileName",
+        alias = "file_name",
+        alias = "file-name"
+    )]
     pub filename: String,
     pub author: String,
-    #[serde(alias = "homepage", alias = "homepPage", alias = "home_page")]
+    #[serde(
+        alias = "homepage",
+        alias = "homePage",
+        alias = "home_page",
+        alias = "home-page"
+    )]
     pub homepage: Option<String>,
     pub description: String,
     pub version: String,
     pub sources: Vec<SourceType>,
     pub types: Vec<PluginType>,
     pub permissions: PluginPermissions,
-    #[serde(alias = "api_version", alias = "apiVersion")]
+    #[serde(alias = "api_version", alias = "apiVersion", alias = "api-version")]
     pub api_version: String,
     pub methods: Vec<MethodMapping>,
 }
@@ -45,9 +55,14 @@ pub enum PluginType {
     Resolver,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct PluginPermissions {
-    pub network: Vec<String>,
+    #[serde(skip_deserializing)]
+    pub validated_hosts: Vec<String>,
+
+    #[serde(alias = "network")]
+    pub network_patterns: Vec<String>,
+
     #[serde(default)]
     pub allow_private_networks: bool,
 }
