@@ -44,7 +44,9 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::get_plugins,
-            commands::call_plugin_method
+            commands::call_plugin_method,
+            commands::unregister_plugin,
+            commands::unload_plugin,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

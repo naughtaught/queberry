@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ErrorResponse {
@@ -50,19 +49,16 @@ impl ErrorResponse {
     }
 }
 
-#[derive(Error, Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum AppError {
-    #[error("IO error: {0}")]
+    #[error("I/O error: {0}")]
     Io(#[from] std::io::Error),
 
-    #[error("JSON error: {0}")]
+    #[error("JSON parsing error: {0}")]
     Json(#[from] serde_json::Error),
 
-    #[error("URL parse error: {0}")]
+    #[error("URL parsing error: {0}")]
     Url(#[from] url::ParseError),
-
-    #[error("Plugin error: {0}")]
-    Plugin(String),
 
     #[error("Validation error: {0}")]
     Validation(String),
@@ -73,20 +69,14 @@ pub enum AppError {
     #[error("Rate limit exceeded: {0}")]
     RateLimit(String),
 
+    #[error("Runtime error: {0}")]
+    Runtime(String),
+
     #[error("Permission denied: {0}")]
     Permission(String),
 
     #[error("Configuration error: {0}")]
     Config(String),
-
-    #[error("Network error: {0}")]
-    Network(String),
-
-    #[error("Runtime error: {0}")]
-    Runtime(String),
-
-    #[error("Database error: {0}")]
-    Database(String),
 }
 
 impl From<Box<dyn std::error::Error>> for AppError {
@@ -120,7 +110,6 @@ impl AppError {
     }
 }
 
-// For Tauri commands to return proper error responses
 impl serde::Serialize for AppError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

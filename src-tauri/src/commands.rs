@@ -30,3 +30,41 @@ pub fn call_plugin_method(
         .call_plugin_method(&plugin_name, &method_name, args)
         .map(ErrorResponse::success)
 }
+
+#[tauri::command]
+pub fn unregister_plugin(
+    state: State<'_, AppState>,
+    plugin_id: String,
+) -> Result<ErrorResponse, AppError> {
+    let mut manager = state
+        .plugin_manager
+        .lock()
+        .map_err(|e| AppError::Runtime(format!("Failed to lock plugin manager: {}", e)))?;
+
+    manager.unregister_plugin(&plugin_id);
+
+    manager.unload_plugin(&plugin_id)?;
+
+    Ok(ErrorResponse::success(format!(
+        "Plugin '{}' unregistered",
+        plugin_id
+    )))
+}
+
+#[tauri::command]
+pub fn unload_plugin(
+    state: State<'_, AppState>,
+    plugin_id: String,
+) -> Result<ErrorResponse, AppError> {
+    let mut manager = state
+        .plugin_manager
+        .lock()
+        .map_err(|e| AppError::Runtime(format!("Failed to lock plugin manager: {}", e)))?;
+
+    manager.unload_plugin(&plugin_id)?;
+
+    Ok(ErrorResponse::success(format!(
+        "Plugin '{}' unloaded from runtime",
+        plugin_id
+    )))
+}

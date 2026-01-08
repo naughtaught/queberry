@@ -15,10 +15,7 @@ pub struct PluginManager {
     plugins_dir: PathBuf,
     runtime: Arc<RwLock<PluginRuntime>>,
     rate_limiter: RateLimiter,
-}
-
-fn plugin_id_string(plugin: &Plugin) -> String {
-    plugin.id.to_string()
+    method_lookup: HashMap<(String, String), String>,
 }
 
 impl PluginManager {
@@ -32,11 +29,12 @@ impl PluginManager {
             plugins_dir,
             runtime: Arc::new(RwLock::new(runtime)),
             rate_limiter,
+            method_lookup: HashMap::new(),
         }
     }
 
     pub fn register_plugin(&mut self, plugin: Plugin) {
-        let plugin_id_str = plugin_id_string(&plugin);
+        let plugin_id_str = plugin.id.clone();
 
         let rate_limit = if plugin.types.contains(&PluginType::Indexer) {
             INDEXER_RATE_LIMIT
@@ -46,6 +44,14 @@ impl PluginManager {
 
         self.rate_limiter.set_limit(&plugin_id_str, rate_limit);
 
+        // Build method lookup
+        for method in &plugin.methods {
+            self.method_lookup.insert(
+                (plugin_id_str.clone(), method.interface_method.clone()),
+                method.plugin_method.clone(),
+            );
+        }
+
         let is_indexer = plugin.types.contains(&PluginType::Indexer);
         let is_resolver = plugin.types.contains(&PluginType::Resolver);
 
@@ -53,13 +59,13 @@ impl PluginManager {
             (true, true) => {
                 self.indexer_plugins
                     .insert(plugin_id_str.clone(), plugin.clone());
-                self.resolver_plugins.insert(plugin_id_str, plugin);
+                self.resolver_plugins.insert(plugin_id_str.clone(), plugin);
             }
             (true, false) => {
-                self.indexer_plugins.insert(plugin_id_str, plugin);
+                self.indexer_plugins.insert(plugin_id_str.clone(), plugin);
             }
             (false, true) => {
-                self.resolver_plugins.insert(plugin_id_str, plugin);
+                self.resolver_plugins.insert(plugin_id_str.clone(), plugin);
             }
             (false, false) => {
                 eprintln!("Warning: Plugin '{}' has no valid types", plugin_id_str);
@@ -116,27 +122,18 @@ impl PluginManager {
             .check_limit(plugin_name)
             .map_err(|e| AppError::RateLimit(e.to_string()))?;
 
-        // Get the plugin ID and method name first before mutable operations
-        let (plugin_id, plugin_method_name) = {
-            let plugin = self
-                .indexer_plugins
-                .get(plugin_name)
-                .or_else(|| self.resolver_plugins.get(plugin_name))
-                .ok_or_else(|| AppError::NotFound(format!("Plugin not found: {}", plugin_name)))?;
+        let plugin_method = self
+            .method_lookup
+            .get(&(plugin_name.to_string(), interface_method.to_string()))
+            .ok_or_else(|| {
+                AppError::NotFound(format!(
+                    "Method '{}' not found in plugin '{}'",
+                    interface_method, plugin_name
+                ))
+            })?
+            .clone();
 
-            let plugin_method = plugin
-                .methods
-                .iter()
-                .find(|m| m.interface_method == interface_method)
-                .map(|m| m.plugin_method.as_str())
-                .ok_or_else(|| {
-                    AppError::NotFound(format!("Method not found: {}", interface_method))
-                })?;
-
-            (plugin_id_string(plugin), plugin_method.to_string())
-        };
-
-        self.ensure_plugin_loaded(&plugin_id)?;
+        self.ensure_plugin_loaded(plugin_name)?;
 
         let mut runtime_guard = self
             .runtime
@@ -144,7 +141,24 @@ impl PluginManager {
             .unwrap_or_else(|poisoned| poisoned.into_inner());
 
         runtime_guard
-            .execute_plugin_method(&plugin_id, &plugin_method_name, args)
+            .execute_plugin_method(plugin_name, &plugin_method, args)
             .map_err(|e| AppError::Runtime(e.to_string()))
+    }
+
+    pub fn unregister_plugin(&mut self, plugin_id: &str) {
+        self.indexer_plugins.remove(plugin_id);
+        self.resolver_plugins.remove(plugin_id);
+
+        self.method_lookup.retain(|(pid, _), _| pid != plugin_id);
+    }
+
+    pub fn unload_plugin(&mut self, plugin_id: &str) -> Result<(), AppError> {
+        let mut runtime_guard = self
+            .runtime
+            .write()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+
+        runtime_guard.plugins.remove(plugin_id);
+        Ok(())
     }
 }

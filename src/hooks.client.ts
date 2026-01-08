@@ -12,9 +12,9 @@ const initializeTauri = async () => {
 
 const call_plugin = async () => {
     const data = await invoke('call_plugin_method', {
-        // pluginName: 'com.zilean.indexer',
+        pluginName: 'com.zilean.indexer',
 
-        pluginName: 'fun.strem.torrentio',
+        // pluginName: 'fun.strem.torrentio',
         methodName: 'GetIndexerSources',
         args: ['tt0111161', null, null],
     })
