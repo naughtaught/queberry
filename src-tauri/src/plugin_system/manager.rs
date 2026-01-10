@@ -3,20 +3,24 @@ use crate::errors::AppError;
 use crate::plugin_system::rate_limiter::RateLimiter;
 use crate::plugin_system::runtime::PluginRuntime;
 use crate::plugin_system::types::{Plugin, PluginType};
+use dashmap::DashMap;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 
 pub struct PluginManager {
-    // Changed to Arc<Plugin>
     indexer_plugins: HashMap<String, Arc<Plugin>>,
     resolver_plugins: HashMap<String, Arc<Plugin>>,
     plugins_dir: PathBuf,
     runtime: Arc<RwLock<PluginRuntime>>,
     rate_limiter: RateLimiter,
     method_lookup: HashMap<(String, String), String>,
+    /// Per-plugin loading locks to prevent race conditions during plugin loading.
+    /// Each plugin gets its own Mutex, allowing different plugins to load concurrently
+    /// while ensuring the same plugin isn't loaded multiple times simultaneously.
+    loading_locks: Arc<DashMap<String, Arc<Mutex<()>>>>,
 }
 
 impl PluginManager {
@@ -31,6 +35,7 @@ impl PluginManager {
             runtime: Arc::new(RwLock::new(runtime)),
             rate_limiter,
             method_lookup: HashMap::new(),
+            loading_locks: Arc::new(DashMap::new()),
         }
     }
 
@@ -56,10 +61,10 @@ impl PluginManager {
         let is_indexer = plugin.types.contains(&PluginType::Indexer);
         let is_resolver = plugin.types.contains(&PluginType::Resolver);
 
-        // Wrap plugin in Arc once
+        // Wrap plugin in Arc once to avoid cloning the entire Plugin struct
         let plugin_arc = Arc::new(plugin);
 
-        // Now just clone the Arc (cheap), not the entire Plugin
+        // Clone the Arc (cheap) instead of cloning the entire Plugin
         match (is_indexer, is_resolver) {
             (true, true) => {
                 self.indexer_plugins
@@ -80,7 +85,6 @@ impl PluginManager {
             }
         }
 
-        // Access plugin through Arc
         let wasm_path = self
             .plugins_dir
             .join(&plugin_id_str)
@@ -90,7 +94,7 @@ impl PluginManager {
         let mut runtime_guard = self
             .runtime
             .write()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
+            .map_err(|_| AppError::Runtime("Runtime lock poisoned".into()))?;
 
         if !runtime_guard.plugins.contains_key(&plugin_id_str) {
             runtime_guard
@@ -105,34 +109,75 @@ impl PluginManager {
         Ok(())
     }
 
+    /// Ensures a plugin is loaded into the runtime.
+    /// Uses per-plugin locking to prevent race conditions where multiple threads
+    /// might try to load the same plugin simultaneously.
+    ///
+    /// # Locking Strategy
+    /// 1. Fast path: Check if plugin is loaded (read lock only)
+    /// 2. If not loaded, acquire a per-plugin loading lock
+    /// 3. Double-check after acquiring the lock (another thread might have loaded it)
+    /// 4. Load the plugin if still not present
     fn ensure_plugin_loaded(&mut self, plugin_id: &str) -> Result<(), AppError> {
+        // Fast path: check if already loaded with just a read lock
         {
             let runtime_guard = self
                 .runtime
                 .read()
-                .unwrap_or_else(|poisoned| poisoned.into_inner());
+                .map_err(|_| AppError::Runtime("Runtime lock poisoned".into()))?;
 
             if runtime_guard.plugins.contains_key(plugin_id) {
                 return Ok(());
             }
         }
 
-        // Get Arc<Plugin> instead of &Plugin
+        // Get or create a loading lock for this specific plugin
+        // This ensures only one thread can load this particular plugin at a time,
+        // while different plugins can still be loaded concurrently
+        let load_lock = self
+            .loading_locks
+            .entry(plugin_id.to_string())
+            .or_insert_with(|| Arc::new(Mutex::new(())))
+            .clone();
+
+        // Acquire the plugin-specific loading lock
+        // Only one thread can proceed past this point for this plugin
+        let _guard = load_lock
+            .lock()
+            .map_err(|_| AppError::Runtime("Plugin loading lock poisoned".into()))?;
+
+        // Double-check: another thread might have loaded it while we waited for the lock
+        {
+            let runtime_guard = self
+                .runtime
+                .read()
+                .map_err(|_| AppError::Runtime("Runtime lock poisoned".into()))?;
+
+            if runtime_guard.plugins.contains_key(plugin_id) {
+                return Ok(());
+            }
+        }
+
+        // At this point, we're the only thread loading this plugin
+        // Retrieve the plugin metadata
         let plugin_arc = self
             .indexer_plugins
             .get(plugin_id)
             .or_else(|| self.resolver_plugins.get(plugin_id))
             .ok_or_else(|| AppError::NotFound(format!("Plugin not found: {}", plugin_id)))?
-            .clone(); // Clone the Arc (cheap)
+            .clone();
 
+        // Load WASM file from disk
         let wasm_path = self.plugins_dir.join(plugin_id).join(&plugin_arc.filename);
         let wasm_bytes = fs::read(&wasm_path).map_err(AppError::Io)?;
 
+        // Acquire write lock to modify the runtime
         let mut runtime_guard = self
             .runtime
             .write()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
+            .map_err(|_| AppError::Runtime("Runtime lock poisoned".into()))?;
 
+        // Final check before loading (defense in depth)
         if !runtime_guard.plugins.contains_key(plugin_id) {
             runtime_guard
                 .load_plugin(
@@ -172,7 +217,7 @@ impl PluginManager {
         let mut runtime_guard = self
             .runtime
             .write()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
+            .map_err(|_| AppError::Runtime("Runtime lock poisoned".into()))?;
 
         runtime_guard
             .execute_plugin_method(plugin_name, &plugin_method, args)
@@ -185,6 +230,9 @@ impl PluginManager {
 
         self.method_lookup.retain(|(pid, _), _| pid != plugin_id);
 
+        // Clean up the loading lock for this plugin
+        self.loading_locks.remove(plugin_id);
+
         let _ = self.unload_plugin(plugin_id);
     }
 
@@ -192,7 +240,7 @@ impl PluginManager {
         let mut runtime_guard = self
             .runtime
             .write()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
+            .map_err(|_| AppError::Runtime("Runtime lock poisoned".into()))?;
 
         runtime_guard.plugins.remove(plugin_id);
         Ok(())
