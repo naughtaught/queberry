@@ -16,10 +16,7 @@ pub struct PluginManager {
     plugins_dir: PathBuf,
     runtime: Arc<RwLock<PluginRuntime>>,
     rate_limiter: RateLimiter,
-    method_lookup: HashMap<(String, String), String>,
-    /// Per-plugin loading locks to prevent race conditions during plugin loading.
-    /// Each plugin gets its own Mutex, allowing different plugins to load concurrently
-    /// while ensuring the same plugin isn't loaded multiple times simultaneously.
+    method_lookup: HashMap<String, HashMap<String, String>>,
     loading_locks: Arc<DashMap<String, Arc<Mutex<()>>>>,
 }
 
@@ -50,21 +47,21 @@ impl PluginManager {
 
         self.rate_limiter.set_limit(&plugin_id_str, rate_limit);
 
-        // Build method lookup before wrapping in Arc
+        let mut plugin_methods = HashMap::new();
         for method in &plugin.methods {
-            self.method_lookup.insert(
-                (plugin_id_str.clone(), method.interface_method.clone()),
+            plugin_methods.insert(
+                method.interface_method.clone(),
                 method.plugin_method.clone(),
             );
         }
+        self.method_lookup
+            .insert(plugin_id_str.clone(), plugin_methods);
 
         let is_indexer = plugin.types.contains(&PluginType::Indexer);
         let is_resolver = plugin.types.contains(&PluginType::Resolver);
 
-        // Wrap plugin in Arc once to avoid cloning the entire Plugin struct
         let plugin_arc = Arc::new(plugin);
 
-        // Clone the Arc (cheap) instead of cloning the entire Plugin
         match (is_indexer, is_resolver) {
             (true, true) => {
                 self.indexer_plugins
@@ -109,17 +106,7 @@ impl PluginManager {
         Ok(())
     }
 
-    /// Ensures a plugin is loaded into the runtime.
-    /// Uses per-plugin locking to prevent race conditions where multiple threads
-    /// might try to load the same plugin simultaneously.
-    ///
-    /// # Locking Strategy
-    /// 1. Fast path: Check if plugin is loaded (read lock only)
-    /// 2. If not loaded, acquire a per-plugin loading lock
-    /// 3. Double-check after acquiring the lock (another thread might have loaded it)
-    /// 4. Load the plugin if still not present
     fn ensure_plugin_loaded(&mut self, plugin_id: &str) -> Result<(), AppError> {
-        // Fast path: check if already loaded with just a read lock
         {
             let runtime_guard = self
                 .runtime
@@ -131,9 +118,6 @@ impl PluginManager {
             }
         }
 
-        // Get or create a loading lock for this specific plugin
-        // This ensures only one thread can load this particular plugin at a time,
-        // while different plugins can still be loaded concurrently
         let load_lock = self
             .loading_locks
             .entry(plugin_id.to_string())
@@ -203,7 +187,8 @@ impl PluginManager {
 
         let plugin_method = self
             .method_lookup
-            .get(&(plugin_name.to_string(), interface_method.to_string()))
+            .get(plugin_name)
+            .and_then(|methods| methods.get(interface_method))
             .ok_or_else(|| {
                 AppError::NotFound(format!(
                     "Method '{}' not found in plugin '{}'",
@@ -228,9 +213,8 @@ impl PluginManager {
         self.indexer_plugins.remove(plugin_id);
         self.resolver_plugins.remove(plugin_id);
 
-        self.method_lookup.retain(|(pid, _), _| pid != plugin_id);
+        self.method_lookup.remove(plugin_id);
 
-        // Clean up the loading lock for this plugin
         self.loading_locks.remove(plugin_id);
 
         let _ = self.unload_plugin(plugin_id);
