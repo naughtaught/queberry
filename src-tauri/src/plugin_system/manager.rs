@@ -23,7 +23,9 @@ pub struct PluginManager {
 
 impl PluginManager {
     pub fn new(plugins_dir: PathBuf) -> Self {
-        let runtime = PluginRuntime::new().expect("Failed to create WASM runtime");
+        let runtime = PluginRuntime::new()
+            .expect("Failed to create WASM runtime")
+            .with_timeout(crate::constants::DEFAULT_PLUGIN_TIMEOUT_MS);
         let rate_limiter = RateLimiter::new().with_window_seconds(RATE_LIMIT_WINDOW_SECONDS);
 
         Self {
@@ -69,6 +71,14 @@ impl PluginManager {
 
         self.rate_limiter.set_limit(&plugin_id_str, rate_limit);
 
+        let timeout_ms = if plugin.types.contains(&PluginType::Indexer) {
+            crate::constants::INDEXER_PLUGIN_TIMEOUT_MS
+        } else if plugin.types.contains(&PluginType::Resolver) {
+            crate::constants::RESOLVER_PLUGIN_TIMEOUT_MS
+        } else {
+            crate::constants::DEFAULT_PLUGIN_TIMEOUT_MS
+        };
+
         let mut plugin_methods = HashMap::new();
         for method in &plugin.methods {
             plugin_methods.insert(
@@ -110,6 +120,8 @@ impl PluginManager {
             .runtime
             .write()
             .map_err(|_| AppError::Runtime("Runtime lock poisoned".into()))?;
+
+        runtime_guard.set_plugin_timeout(&plugin_id_str, timeout_ms);
 
         if !runtime_guard.plugins.contains_key(&plugin_id_str) {
             runtime_guard

@@ -27,9 +27,30 @@ const call_plugin = async () => {
     console.log(zilean, torrentio)
 }
 
+// const call_plugin = async () => {
+//     try {
+//         const data = await invoke('call_plugin_method', {
+//             pluginName: 'app.torbox.resolver',
+//             methodName: 'CreateTorrent',
+//             args: [
+//                 'b11e149e-7570-4f56-ad1f-e4d05c863f27',
+//                 '16d20542c3d718c32667153c069f6511dcba3db2',
+//             ],
+//         })
+//         console.log(data)
+//     } catch (error) {
+//         console.log(error)
+//     }
+// }
+
 initializeTauri()
 
 call_plugin()
 
 // tt12637874 2, 2
 // tt0111161
+
+// args: [
+//     'b11e149e-7570-4f56-ad1f-e4d05c863f27',
+//     ['16d20542c3d718c32667153c069f6511dcba3db2'],
+// ],

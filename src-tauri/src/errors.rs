@@ -77,6 +77,9 @@ pub enum AppError {
 
     #[error("Configuration error: {0}")]
     Config(String),
+
+    #[error("Timeout error: {0}")]
+    Timeout(String),
 }
 
 impl From<Box<dyn std::error::Error>> for AppError {
@@ -100,10 +103,11 @@ impl From<&str> for AppError {
 impl AppError {
     pub fn to_error_response(&self) -> ErrorResponse {
         match self {
-            AppError::NotFound(msg) => ErrorResponse::error(404, msg.clone()),
             AppError::Validation(msg) => ErrorResponse::error(400, msg.clone()),
-            AppError::RateLimit(msg) => ErrorResponse::error(429, msg.clone()),
             AppError::Permission(msg) => ErrorResponse::error(403, msg.clone()),
+            AppError::NotFound(msg) => ErrorResponse::error(404, msg.clone()),
+            AppError::Timeout(msg) => ErrorResponse::error(408, msg.clone()),
+            AppError::RateLimit(msg) => ErrorResponse::error(429, msg.clone()),
             AppError::Config(msg) => ErrorResponse::error(500, msg.clone()),
             _ => ErrorResponse::error(500, self.to_string()),
         }
