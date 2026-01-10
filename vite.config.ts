@@ -3,6 +3,7 @@ import { sveltekit } from '@sveltejs/kit/vite'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
+    clearScreen: false,
     plugins: [tailwindcss(), sveltekit()],
 
     // Exclude plugins directory from Vite's file watching
@@ -11,7 +12,7 @@ export default defineConfig({
             ignored: [
                 'plugins/', // Don't watch plugin directory
                 '**/*.wasm', // Don't watch WASM files
-                '**/src-tauri/target/**', // Don't watch Rust build output
+                '**/src-tauri/**',
             ],
         },
         fs: {
