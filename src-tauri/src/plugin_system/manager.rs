@@ -18,6 +18,7 @@ pub struct PluginManager {
     rate_limiter: RateLimiter,
     method_lookup: HashMap<String, HashMap<String, String>>,
     loading_locks: Arc<DashMap<String, Arc<Mutex<()>>>>,
+    wasm_cache: Arc<DashMap<String, Arc<Vec<u8>>>>,
 }
 
 impl PluginManager {
@@ -33,7 +34,28 @@ impl PluginManager {
             rate_limiter,
             method_lookup: HashMap::new(),
             loading_locks: Arc::new(DashMap::new()),
+            wasm_cache: Arc::new(DashMap::new()),
         }
+    }
+
+    fn cache_wasm_bytes(&self, plugin_id: &str, plugin: &Plugin) -> Result<Arc<Vec<u8>>, AppError> {
+        if let Some(cached) = self.wasm_cache.get(plugin_id) {
+            return Ok(cached.value().clone());
+        }
+
+        let wasm_path = self.plugins_dir.join(plugin_id).join(&plugin.filename);
+        let wasm_bytes = fs::read(&wasm_path).map_err(|e| {
+            AppError::Io(std::io::Error::new(
+                e.kind(),
+                format!("Failed to read WASM file at {}: {}", wasm_path.display(), e),
+            ))
+        })?;
+
+        let wasm_arc = Arc::new(wasm_bytes);
+        self.wasm_cache
+            .insert(plugin_id.to_string(), wasm_arc.clone());
+
+        Ok(wasm_arc)
     }
 
     pub fn register_plugin(&mut self, plugin: Plugin) -> Result<(), AppError> {
@@ -62,6 +84,8 @@ impl PluginManager {
 
         let plugin_arc = Arc::new(plugin);
 
+        let wasm_bytes = self.cache_wasm_bytes(&plugin_id_str, &plugin_arc)?;
+
         match (is_indexer, is_resolver) {
             (true, true) => {
                 self.indexer_plugins
@@ -81,12 +105,6 @@ impl PluginManager {
                 eprintln!("Warning: Plugin '{}' has no valid types", plugin_id_str);
             }
         }
-
-        let wasm_path = self
-            .plugins_dir
-            .join(&plugin_id_str)
-            .join(&plugin_arc.filename);
-        let wasm_bytes = fs::read(&wasm_path).map_err(AppError::Io)?;
 
         let mut runtime_guard = self
             .runtime
@@ -124,13 +142,10 @@ impl PluginManager {
             .or_insert_with(|| Arc::new(Mutex::new(())))
             .clone();
 
-        // Acquire the plugin-specific loading lock
-        // Only one thread can proceed past this point for this plugin
         let _guard = load_lock
             .lock()
             .map_err(|_| AppError::Runtime("Plugin loading lock poisoned".into()))?;
 
-        // Double-check: another thread might have loaded it while we waited for the lock
         {
             let runtime_guard = self
                 .runtime
@@ -142,8 +157,6 @@ impl PluginManager {
             }
         }
 
-        // At this point, we're the only thread loading this plugin
-        // Retrieve the plugin metadata
         let plugin_arc = self
             .indexer_plugins
             .get(plugin_id)
@@ -151,17 +164,23 @@ impl PluginManager {
             .ok_or_else(|| AppError::NotFound(format!("Plugin not found: {}", plugin_id)))?
             .clone();
 
-        // Load WASM file from disk
-        let wasm_path = self.plugins_dir.join(plugin_id).join(&plugin_arc.filename);
-        let wasm_bytes = fs::read(&wasm_path).map_err(AppError::Io)?;
+        let wasm_bytes = self
+            .wasm_cache
+            .get(plugin_id)
+            .ok_or_else(|| {
+                AppError::Runtime(format!(
+                    "WASM cache miss for plugin '{}'. This shouldn't happen.",
+                    plugin_id
+                ))
+            })?
+            .value()
+            .clone();
 
-        // Acquire write lock to modify the runtime
         let mut runtime_guard = self
             .runtime
             .write()
             .map_err(|_| AppError::Runtime("Runtime lock poisoned".into()))?;
 
-        // Final check before loading (defense in depth)
         if !runtime_guard.plugins.contains_key(plugin_id) {
             runtime_guard
                 .load_plugin(
@@ -215,6 +234,8 @@ impl PluginManager {
 
         self.method_lookup.remove(plugin_id);
 
+        self.rate_limiter.remove_plugin(plugin_id);
+
         self.loading_locks.remove(plugin_id);
 
         let _ = self.unload_plugin(plugin_id);
@@ -227,6 +248,11 @@ impl PluginManager {
             .map_err(|_| AppError::Runtime("Runtime lock poisoned".into()))?;
 
         runtime_guard.plugins.remove(plugin_id);
+
+        drop(runtime_guard);
+
+        self.wasm_cache.remove(plugin_id);
+
         Ok(())
     }
 }

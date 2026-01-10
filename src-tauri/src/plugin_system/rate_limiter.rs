@@ -57,6 +57,11 @@ impl RateLimiter {
         entry.value_mut().push(now);
         Ok(())
     }
+
+    pub fn remove_plugin(&self, plugin_id: &str) {
+        self.calls.remove(plugin_id);
+        self.limits.remove(plugin_id);
+    }
 }
 
 impl Default for RateLimiter {
