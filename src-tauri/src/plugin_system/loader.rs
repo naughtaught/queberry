@@ -4,7 +4,7 @@ use crate::plugin_system::types::{
     MethodMapping, Plugin, PluginPermissions, PluginType, SourceType,
 };
 use crate::utils::get_plugins_dir;
-use serde::Deserialize; // Add this
+use serde::Deserialize;
 use std::fs;
 use std::net::IpAddr;
 use std::path::PathBuf;
@@ -131,26 +131,35 @@ fn clean_url_pattern(pattern: &str) -> String {
         trimmed
     };
 
-    if without_wildcard.starts_with("http://") || without_wildcard.starts_with("https://") {
-        without_wildcard.to_string()
+    let without_trailing_dot = without_wildcard.trim_end_matches('.');
+
+    if without_trailing_dot.starts_with("http://") || without_trailing_dot.starts_with("https://") {
+        without_trailing_dot.to_string()
     } else {
-        format!("https://{}", without_wildcard)
+        format!("https://{}", without_trailing_dot)
     }
 }
 
 fn extract_host_from_pattern(host: &str, original_pattern: &str) -> Result<String, AppError> {
-    if original_pattern.contains("*.") {
-        let parts: Vec<&str> = host.split('.').collect();
-        if parts.len() >= 2 {
-            let base_domain = format!("{}.{}", parts[parts.len() - 2], parts[parts.len() - 1]);
-            return Ok(base_domain);
-        }
+    let host = host.trim_end_matches('.');
+
+    if !original_pattern.contains("*.") {
+        return Ok(host.to_string());
     }
 
-    Ok(host.to_string())
+    let registrable = psl::domain_str(host).ok_or_else(|| {
+        AppError::Validation(format!(
+            "Cannot extract registrable domain from '{}' (might be invalid or a public suffix)",
+            host
+        ))
+    })?;
+
+    Ok(registrable.to_string())
 }
 
 fn is_private_or_local_host(host: &str) -> Result<bool, AppError> {
+    let host = host.trim_end_matches('.');
+
     if host.eq_ignore_ascii_case("localhost") || host.eq_ignore_ascii_case("localhost.localdomain")
     {
         return Ok(true);
@@ -164,24 +173,47 @@ fn is_private_or_local_host(host: &str) -> Result<bool, AppError> {
         return Ok(true);
     }
 
+    if host.ends_with(".test")
+        || host.ends_with(".example")
+        || host.ends_with(".invalid")
+        || host.ends_with(".localhost")
+    {
+        return Ok(true);
+    }
+
     Ok(false)
 }
 
 fn is_private_ip(ip: &IpAddr) -> bool {
     match ip {
         IpAddr::V4(ipv4) => {
+            let octets = ipv4.octets();
             // 10.0.0.0/8
-            ipv4.octets()[0] == 10
+            octets[0] == 10
             // 172.16.0.0/12
-            || (ipv4.octets()[0] == 172 && (ipv4.octets()[1] >= 16 && ipv4.octets()[1] <= 31))
+            || (octets[0] == 172 && (16..=31).contains(&octets[1]))
             // 192.168.0.0/16
-            || (ipv4.octets()[0] == 192 && ipv4.octets()[1] == 168)
+            || (octets[0] == 192 && octets[1] == 168)
             // 127.0.0.0/8 (loopback)
-            || ipv4.octets()[0] == 127
+            || octets[0] == 127
             // 169.254.0.0/16 (link-local)
-            || (ipv4.octets()[0] == 169 && ipv4.octets()[1] == 254)
+            || (octets[0] == 169 && octets[1] == 254)
             // 0.0.0.0/8
-            || ipv4.octets()[0] == 0
+            || octets[0] == 0
+            // 100.64.0.0/10 (Carrier-grade NAT)
+            || (octets[0] == 100 && (64..=127).contains(&octets[1]))
+            // 192.0.0.0/24 (IETF Protocol Assignments)
+            || (octets[0] == 192 && octets[1] == 0 && octets[2] == 0)
+            // 192.0.2.0/24 (TEST-NET-1)
+            || (octets[0] == 192 && octets[1] == 0 && octets[2] == 2)
+            // 198.51.100.0/24 (TEST-NET-2)
+            || (octets[0] == 198 && octets[1] == 51 && octets[2] == 100)
+            // 203.0.113.0/24 (TEST-NET-3)
+            || (octets[0] == 203 && octets[1] == 0 && octets[2] == 113)
+            // 224.0.0.0/4 (Multicast)
+            || (224..=239).contains(&octets[0])
+            // 240.0.0.0/4 (Reserved)
+            || octets[0] >= 240
         }
         IpAddr::V6(ipv6) => {
             // ::1 (loopback)
@@ -191,7 +223,13 @@ fn is_private_ip(ip: &IpAddr) -> bool {
             // fc00::/7 (unique local)
             || ((ipv6.segments()[0] & 0xfe00) == 0xfc00)
             // ::ffff:0:0/96 (IPv4-mapped)
-            || ipv6.to_ipv4_mapped().is_some()
+            || ipv6
+                .to_ipv4_mapped()
+                .is_some_and(|ipv4| is_private_ip(&IpAddr::V4(ipv4)))
+            // ::/128 (unspecified)
+            || ipv6.is_unspecified()
+            // ff00::/8 (multicast)
+            || (ipv6.segments()[0] & 0xff00) == 0xff00
         }
     }
 }
