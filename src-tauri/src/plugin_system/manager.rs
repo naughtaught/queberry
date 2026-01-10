@@ -10,8 +10,9 @@ use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
 pub struct PluginManager {
-    indexer_plugins: HashMap<String, Plugin>,
-    resolver_plugins: HashMap<String, Plugin>,
+    // Changed to Arc<Plugin>
+    indexer_plugins: HashMap<String, Arc<Plugin>>,
+    resolver_plugins: HashMap<String, Arc<Plugin>>,
     plugins_dir: PathBuf,
     runtime: Arc<RwLock<PluginRuntime>>,
     rate_limiter: RateLimiter,
@@ -44,6 +45,7 @@ impl PluginManager {
 
         self.rate_limiter.set_limit(&plugin_id_str, rate_limit);
 
+        // Build method lookup before wrapping in Arc
         for method in &plugin.methods {
             self.method_lookup.insert(
                 (plugin_id_str.clone(), method.interface_method.clone()),
@@ -54,27 +56,35 @@ impl PluginManager {
         let is_indexer = plugin.types.contains(&PluginType::Indexer);
         let is_resolver = plugin.types.contains(&PluginType::Resolver);
 
+        // Wrap plugin in Arc once
+        let plugin_arc = Arc::new(plugin);
+
+        // Now just clone the Arc (cheap), not the entire Plugin
         match (is_indexer, is_resolver) {
             (true, true) => {
                 self.indexer_plugins
-                    .insert(plugin_id_str.clone(), plugin.clone());
+                    .insert(plugin_id_str.clone(), Arc::clone(&plugin_arc));
                 self.resolver_plugins
-                    .insert(plugin_id_str.clone(), plugin.clone());
+                    .insert(plugin_id_str.clone(), Arc::clone(&plugin_arc));
             }
             (true, false) => {
                 self.indexer_plugins
-                    .insert(plugin_id_str.clone(), plugin.clone());
+                    .insert(plugin_id_str.clone(), Arc::clone(&plugin_arc));
             }
             (false, true) => {
                 self.resolver_plugins
-                    .insert(plugin_id_str.clone(), plugin.clone());
+                    .insert(plugin_id_str.clone(), Arc::clone(&plugin_arc));
             }
             (false, false) => {
                 eprintln!("Warning: Plugin '{}' has no valid types", plugin_id_str);
             }
         }
 
-        let wasm_path = self.plugins_dir.join(&plugin_id_str).join(&plugin.filename);
+        // Access plugin through Arc
+        let wasm_path = self
+            .plugins_dir
+            .join(&plugin_id_str)
+            .join(&plugin_arc.filename);
         let wasm_bytes = fs::read(&wasm_path).map_err(AppError::Io)?;
 
         let mut runtime_guard = self
@@ -87,7 +97,7 @@ impl PluginManager {
                 .load_plugin(
                     plugin_id_str.clone(),
                     &wasm_bytes,
-                    &plugin.permissions.validated_hosts,
+                    &plugin_arc.permissions.validated_hosts,
                 )
                 .map_err(|e| AppError::Runtime(e.to_string()))?;
         }
@@ -107,13 +117,15 @@ impl PluginManager {
             }
         }
 
-        let plugin = self
+        // Get Arc<Plugin> instead of &Plugin
+        let plugin_arc = self
             .indexer_plugins
             .get(plugin_id)
             .or_else(|| self.resolver_plugins.get(plugin_id))
-            .ok_or_else(|| AppError::NotFound(format!("Plugin not found: {}", plugin_id)))?;
+            .ok_or_else(|| AppError::NotFound(format!("Plugin not found: {}", plugin_id)))?
+            .clone(); // Clone the Arc (cheap)
 
-        let wasm_path = self.plugins_dir.join(plugin_id).join(&plugin.filename);
+        let wasm_path = self.plugins_dir.join(plugin_id).join(&plugin_arc.filename);
         let wasm_bytes = fs::read(&wasm_path).map_err(AppError::Io)?;
 
         let mut runtime_guard = self
@@ -126,7 +138,7 @@ impl PluginManager {
                 .load_plugin(
                     plugin_id.to_string(),
                     &wasm_bytes,
-                    &plugin.permissions.validated_hosts,
+                    &plugin_arc.permissions.validated_hosts,
                 )
                 .map_err(|e| AppError::Runtime(e.to_string()))?;
         }
