@@ -104,6 +104,7 @@ dependencies = [
  "extism",
  "log",
  "psl",
+ "regex",
  "serde",
  "serde_json",
  "strum",

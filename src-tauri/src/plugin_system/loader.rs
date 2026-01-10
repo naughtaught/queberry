@@ -4,11 +4,21 @@ use crate::plugin_system::types::{
     MethodMapping, Plugin, PluginPermissions, PluginType, SourceType,
 };
 use crate::utils::get_plugins_dir;
+use regex::Regex;
 use serde::Deserialize;
 use std::fs;
 use std::net::IpAddr;
 use std::path::PathBuf;
+use std::sync::OnceLock;
 use url::Url;
+
+static PLUGIN_ID_REGEX: OnceLock<Regex> = OnceLock::new();
+
+fn get_plugin_id_regex() -> &'static Regex {
+    PLUGIN_ID_REGEX.get_or_init(|| {
+        Regex::new(r"^[a-z0-9]+(\.[a-z0-9]+)+$").expect("Failed to compile plugin ID regex")
+    })
+}
 
 pub fn load_plugin_from_dir(plugin_dir: PathBuf) -> Result<Plugin, AppError> {
     let manifest_path = plugin_dir.join("manifest.json");
@@ -235,10 +245,26 @@ fn is_private_ip(ip: &IpAddr) -> bool {
 }
 
 fn validate_plugin(plugin: &Plugin) -> Result<(), AppError> {
-    if !plugin.id.contains('.') {
-        return Err(AppError::Validation(
-            "Plugin ID must be in reverse-domain format (e.g., 'org.example.plugin')".into(),
-        ));
+    let id_regex = get_plugin_id_regex();
+    if !id_regex.is_match(&plugin.id) {
+        return Err(AppError::Validation(format!(
+            "Plugin ID '{}' is invalid. Must be in reverse-domain format with lowercase letters/numbers only (e.g., 'com.example.plugin')",
+            plugin.id
+        )));
+    }
+
+    for segment in plugin.id.split('.') {
+        if segment.is_empty() {
+            return Err(AppError::Validation(
+                "Plugin ID cannot have empty segments (e.g., 'com..plugin')".into(),
+            ));
+        }
+        if segment.len() > 63 {
+            return Err(AppError::Validation(format!(
+                "Plugin ID segment '{}' is too long (max 63 characters per segment)",
+                segment
+            )));
+        }
     }
 
     if plugin.name.trim().is_empty() {
