@@ -1,4 +1,6 @@
 use crate::constants::{pages_to_bytes, DEFAULT_MAX_MEMORY_PAGES};
+use crate::errors::classify_plugin_error;
+use crate::AppError;
 use extism::{Manifest, Plugin, Wasm};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -138,55 +140,21 @@ impl PluginRuntime {
         let result = plugin
             .call::<&str, &str>(function_name, &args_json)
             .map_err(|e| {
-                let err_msg = e.to_string();
-
-                // Categorize errors for better user feedback
-                if err_msg.contains("timeout") || err_msg.contains("Timeout") {
-                    format!(
-                        "Plugin '{}' method '{}' exceeded timeout limit ({}ms). \
-                        Consider optimizing the plugin or increasing the timeout.",
-                        plugin_id,
-                        function_name,
-                        timeout // Use captured timeout value
-                    )
-                } else if err_msg.contains("memory")
-                    || err_msg.contains("Memory")
-                    || err_msg.contains("out of memory")
-                    || err_msg.contains("OOM")
-                {
-                    let limit_str = memory_limit
-                        .map(|pages| {
-                            let mb = pages_to_bytes(pages) as f64 / (1024.0 * 1024.0);
-                            format!("{}MB", mb)
-                        })
-                        .unwrap_or_else(|| "unlimited".to_string());
-
-                    format!(
-                        "Plugin '{}' exceeded memory limit ({}). \
-                        This plugin may be malicious or poorly written. \
-                        Consider uninstalling it.",
-                        plugin_id, limit_str
-                    )
-                } else if err_msg.contains("unreachable") || err_msg.contains("trap") {
-                    format!(
-                        "Plugin '{}' encountered a fatal error (trap/unreachable). \
-                        This plugin is likely buggy or malicious.",
-                        plugin_id
-                    )
-                } else {
-                    format!(
-                        "Plugin '{}' method '{}' failed: {}",
-                        plugin_id, function_name, err_msg
-                    )
-                }
+                classify_plugin_error(
+                    plugin_id,
+                    function_name,
+                    &e.to_string(),
+                    timeout,
+                    memory_limit,
+                )
             })?;
 
-        let value: Value = serde_json::from_str(result).map_err(|e| {
-            format!(
-                "Plugin '{}' returned invalid JSON: {}. Raw output: {}",
-                plugin_id, e, result
-            )
-        })?;
+        // Parse the result
+        let value: Value =
+            serde_json::from_str(result).map_err(|e| AppError::PluginInvalidOutput {
+                plugin_id: plugin_id.to_string(),
+                details: format!("Invalid JSON: {}. Raw output: {}", e, result),
+            })?;
 
         Ok(value)
     }

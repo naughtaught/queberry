@@ -80,6 +80,26 @@ pub enum AppError {
 
     #[error("Timeout error: {0}")]
     Timeout(String),
+
+    #[error("Plugin '{plugin_id}' exceeded memory limit ({limit}). This plugin may be malicious or poorly written. Consider uninstalling it.")]
+    PluginOutOfMemory {
+        plugin_id: String,
+        limit: String,
+        attempted_bytes: Option<usize>,
+    },
+
+    #[error("Plugin '{plugin_id}' method '{method}' exceeded timeout limit ({timeout_ms}ms). Consider optimizing the plugin or increasing the timeout.")]
+    PluginTimeout {
+        plugin_id: String,
+        method: String,
+        timeout_ms: u64,
+    },
+
+    #[error("Plugin '{plugin_id}' encountered a fatal error. This plugin is likely buggy or malicious: {details}")]
+    PluginCrashed { plugin_id: String, details: String },
+
+    #[error("Plugin '{plugin_id}' returned invalid data: {details}")]
+    PluginInvalidOutput { plugin_id: String, details: String },
 }
 
 impl From<Box<dyn std::error::Error>> for AppError {
@@ -107,9 +127,53 @@ impl AppError {
             AppError::Permission(msg) => ErrorResponse::error(403, msg.clone()),
             AppError::NotFound(msg) => ErrorResponse::error(404, msg.clone()),
             AppError::Timeout(msg) => ErrorResponse::error(408, msg.clone()),
+            AppError::PluginTimeout { .. } => ErrorResponse::error(408, self.to_string()),
             AppError::RateLimit(msg) => ErrorResponse::error(429, msg.clone()),
             AppError::Config(msg) => ErrorResponse::error(500, msg.clone()),
+            AppError::PluginOutOfMemory { .. } => ErrorResponse::error(507, self.to_string()),
+            AppError::PluginCrashed { .. } => ErrorResponse::error(500, self.to_string()),
+            AppError::PluginInvalidOutput { .. } => ErrorResponse::error(502, self.to_string()),
             _ => ErrorResponse::error(500, self.to_string()),
+        }
+    }
+
+    pub fn plugin_out_of_memory(
+        plugin_id: String,
+        limit_pages: Option<u32>,
+        attempted_bytes: Option<usize>,
+    ) -> Self {
+        let limit = if let Some(pages) = limit_pages {
+            let bytes = pages as usize * 64 * 1024;
+            let mb = bytes as f64 / (1024.0 * 1024.0);
+            format!("{:.1}MB ({} pages)", mb, pages)
+        } else {
+            "unlimited".to_string()
+        };
+
+        AppError::PluginOutOfMemory {
+            plugin_id,
+            limit,
+            attempted_bytes,
+        }
+    }
+
+    pub fn is_plugin_error(&self) -> bool {
+        matches!(
+            self,
+            AppError::PluginOutOfMemory { .. }
+                | AppError::PluginTimeout { .. }
+                | AppError::PluginCrashed { .. }
+                | AppError::PluginInvalidOutput { .. }
+        )
+    }
+
+    pub fn plugin_id(&self) -> Option<&str> {
+        match self {
+            AppError::PluginOutOfMemory { plugin_id, .. }
+            | AppError::PluginTimeout { plugin_id, .. }
+            | AppError::PluginCrashed { plugin_id, .. }
+            | AppError::PluginInvalidOutput { plugin_id, .. } => Some(plugin_id),
+            _ => None,
         }
     }
 }
@@ -121,4 +185,48 @@ impl serde::Serialize for AppError {
     {
         serializer.serialize_str(&self.to_string())
     }
+}
+
+pub fn classify_plugin_error(
+    plugin_id: &str,
+    method: &str,
+    error: &str,
+    timeout_ms: u64,
+    memory_limit: Option<u32>,
+) -> AppError {
+    let err_msg = error.to_lowercase();
+
+    if err_msg.contains("timeout") || err_msg.contains("deadline") || err_msg.contains("exceeded") {
+        return AppError::PluginTimeout {
+            plugin_id: plugin_id.to_string(),
+            method: method.to_string(),
+            timeout_ms,
+        };
+    }
+
+    if err_msg.contains("memory")
+        || err_msg.contains("out of memory")
+        || err_msg.contains("oom")
+        || err_msg.contains("allocation failed")
+        || err_msg.contains("memory limit")
+    {
+        return AppError::plugin_out_of_memory(plugin_id.to_string(), memory_limit, None);
+    }
+
+    if err_msg.contains("unreachable")
+        || err_msg.contains("trap")
+        || err_msg.contains("panic")
+        || err_msg.contains("abort")
+        || err_msg.contains("wasm trap")
+    {
+        return AppError::PluginCrashed {
+            plugin_id: plugin_id.to_string(),
+            details: error.to_string(),
+        };
+    }
+
+    AppError::Runtime(format!(
+        "Plugin '{}' method '{}' failed: {}",
+        plugin_id, method, error
+    ))
 }
