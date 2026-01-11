@@ -258,7 +258,34 @@ impl PluginManager {
             runtime_guard.execute_plugin_method(plugin_name, &plugin_method, args)
         };
 
-        result.map_err(|e| AppError::Runtime(e.to_string()))
+        match result {
+            Err(e) => {
+                let err_str = e.to_string();
+
+                if err_str.contains("panicked") || err_str.contains("has been unloaded") {
+                    eprintln!(
+                        "Plugin '{}' crashed and was unloaded. Attempt to reload on next call.",
+                        plugin_name
+                    );
+
+                    self.execution_locks.remove(plugin_name);
+
+                    self.loading_locks.remove(plugin_name);
+
+                    if let Ok(app_err) = e.downcast::<AppError>() {
+                        Err(*app_err)
+                    } else {
+                        Err(AppError::PluginCrashed {
+                            plugin_id: plugin_name.to_string(),
+                            details: err_str,
+                        })
+                    }
+                } else {
+                    Err(AppError::Runtime(err_str))
+                }
+            }
+            Ok(value) => Ok(value),
+        }
     }
 
     pub fn unregister_plugin(&mut self, plugin_id: &str) {

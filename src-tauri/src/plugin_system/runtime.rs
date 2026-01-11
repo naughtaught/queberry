@@ -4,6 +4,7 @@ use crate::AppError;
 use extism::{Manifest, Plugin, Wasm};
 use serde_json::Value;
 use std::collections::HashMap;
+use std::panic::{self, AssertUnwindSafe};
 use std::time::Duration;
 
 pub struct PluginRuntime {
@@ -65,60 +66,84 @@ impl PluginRuntime {
         wasm_bytes: &[u8],
         allowed_hosts: &[String],
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let timeout_ms = self.get_plugin_timeout(&plugin_id);
-        let memory_limit = self.get_plugin_memory_limit(&plugin_id);
+        // Clone plugin_id for use in both closure and error handling
+        let plugin_id_clone = plugin_id.clone();
 
-        // Create manifest with WASM data
-        let mut manifest =
-            Manifest::new([Wasm::data(wasm_bytes)]).with_timeout(Duration::from_millis(timeout_ms));
+        let result = panic::catch_unwind(AssertUnwindSafe(|| {
+            let timeout_ms = self.get_plugin_timeout(&plugin_id);
+            let memory_limit = self.get_plugin_memory_limit(&plugin_id);
 
-        // Apply memory limits if configured
-        if let Some(max_pages) = memory_limit {
-            manifest = manifest.with_memory_max(max_pages);
+            let mut manifest = Manifest::new([Wasm::data(wasm_bytes)])
+                .with_timeout(Duration::from_millis(timeout_ms));
 
-            let max_bytes = pages_to_bytes(max_pages);
-            let max_mb = max_bytes as f64 / (1024.0 * 1024.0);
+            if let Some(max_pages) = memory_limit {
+                manifest = manifest.with_memory_max(max_pages);
+
+                let max_bytes = pages_to_bytes(max_pages);
+                let max_mb = max_bytes as f64 / (1024.0 * 1024.0);
+
+                println!(
+                    "Plugin '{}' loaded with {:.1}MB memory limit ({} pages)",
+                    plugin_id, max_mb, max_pages
+                );
+            } else {
+                println!(
+                    "Plugin '{}' loaded with NO memory limit (WARNING: may cause OOM)",
+                    plugin_id
+                );
+            }
+
+            for host in allowed_hosts {
+                manifest = manifest.with_allowed_host(host);
+                println!("Plugin '{}' allowed to access: {}", plugin_id, host);
+            }
+
+            if allowed_hosts.is_empty() {
+                println!(
+                    "Plugin '{}' has no network permissions - network access disabled",
+                    plugin_id
+                );
+            }
 
             println!(
-                "Plugin '{}' loaded with {}MB memory limit ({} pages)",
-                plugin_id, max_mb, max_pages
+                "Plugin '{}' loaded with {}ms timeout",
+                plugin_id, timeout_ms
             );
-        } else {
-            println!(
-                "Plugin '{}' loaded with NO memory limit (WARNING: may cause OOM)",
-                plugin_id
-            );
+
+            let plugin = Plugin::new(&manifest, [], true).map_err(|e| {
+                format!(
+                    "Failed to load plugin '{}': {}. This may indicate an invalid WASM module.",
+                    plugin_id, e
+                )
+            })?;
+
+            self.plugins.insert(plugin_id, plugin);
+
+            Ok(())
+        }));
+
+        match result {
+            Ok(inner_result) => inner_result,
+            Err(panic_err) => {
+                let panic_msg = if let Some(s) = panic_err.downcast_ref::<&str>() {
+                    s.to_string()
+                } else if let Some(s) = panic_err.downcast_ref::<String>() {
+                    s.clone()
+                } else {
+                    "Unknown panic".to_string()
+                };
+
+                eprintln!(
+                    "PANIC while loading plugin '{}': {}",
+                    plugin_id_clone, panic_msg
+                );
+
+                Err(format!(
+                    "Plugin '{}' crashed during loading. This plugin is incompatible or corrupt. Error: {}",
+                    plugin_id_clone, panic_msg
+                ).into())
+            }
         }
-
-        // Configure network permissions
-        for host in allowed_hosts {
-            manifest = manifest.with_allowed_host(host);
-            println!("Plugin '{}' allowed to access: {}", plugin_id, host);
-        }
-
-        if allowed_hosts.is_empty() {
-            println!(
-                "Plugin '{}' has no network permissions - network access disabled",
-                plugin_id
-            );
-        }
-
-        println!(
-            "Plugin '{}' loaded with {}ms timeout",
-            plugin_id, timeout_ms
-        );
-
-        // Create the plugin instance
-        let plugin = Plugin::new(&manifest, [], true).map_err(|e| {
-            format!(
-                "Failed to load plugin '{}': {}. This may indicate an invalid WASM module or incompatible memory configuration.",
-                plugin_id, e
-            )
-        })?;
-
-        self.plugins.insert(plugin_id, plugin);
-
-        Ok(())
     }
 
     pub fn execute_plugin_method(
@@ -127,35 +152,82 @@ impl PluginRuntime {
         function_name: &str,
         args: Vec<Value>,
     ) -> Result<Value, Box<dyn std::error::Error>> {
-        let memory_limit = self.get_plugin_memory_limit(plugin_id);
-        let timeout = self.get_plugin_timeout(plugin_id);
+        // Create owned copies for use in error handling
+        let plugin_id_owned = plugin_id.to_string();
+        let function_name_owned = function_name.to_string();
 
-        let plugin = self
-            .plugins
-            .get_mut(plugin_id)
-            .ok_or_else(|| format!("Plugin not loaded: {}", plugin_id))?;
+        let result = panic::catch_unwind(AssertUnwindSafe(|| {
+            let memory_limit = self.get_plugin_memory_limit(plugin_id);
+            let timeout = self.get_plugin_timeout(plugin_id);
 
-        let args_json = serde_json::to_string(&args)?;
+            let plugin = self
+                .plugins
+                .get_mut(plugin_id)
+                .ok_or_else(|| format!("Plugin not loaded: {}", plugin_id))?;
 
-        let result = plugin
-            .call::<&str, &str>(function_name, &args_json)
-            .map_err(|e| {
-                classify_plugin_error(
-                    plugin_id,
-                    function_name,
-                    &e.to_string(),
-                    timeout,
-                    memory_limit,
-                )
-            })?;
+            let args_json = serde_json::to_string(&args)?;
 
-        // Parse the result
-        let value: Value =
-            serde_json::from_str(result).map_err(|e| AppError::PluginInvalidOutput {
-                plugin_id: plugin_id.to_string(),
-                details: format!("Invalid JSON: {}. Raw output: {}", e, result),
-            })?;
+            let result = plugin
+                .call::<&str, &str>(function_name, &args_json)
+                .map_err(|e| {
+                    classify_plugin_error(
+                        plugin_id,
+                        function_name,
+                        &e.to_string(),
+                        timeout,
+                        memory_limit,
+                    )
+                })?;
 
-        Ok(value)
+            let value: Value =
+                serde_json::from_str(result).map_err(|e| AppError::PluginInvalidOutput {
+                    plugin_id: plugin_id.to_string(),
+                    details: format!("Invalid JSON: {}. Raw output: {}", e, result),
+                })?;
+
+            Ok(value)
+        }));
+
+        match result {
+            Ok(inner_result) => inner_result,
+            Err(panic_err) => {
+                let panic_msg = if let Some(s) = panic_err.downcast_ref::<&str>() {
+                    s.to_string()
+                } else if let Some(s) = panic_err.downcast_ref::<String>() {
+                    s.clone()
+                } else {
+                    "Unknown panic".to_string()
+                };
+
+                eprintln!(
+                    "PANIC in plugin '{}' method '{}': {}",
+                    plugin_id_owned, function_name_owned, panic_msg
+                );
+
+                self.unload_plugin(&plugin_id_owned);
+
+                eprintln!(
+                    "Plugin '{}' has been unloaded due to crash. Reload required.",
+                    plugin_id_owned
+                );
+
+                Err(Box::new(AppError::PluginCrashed {
+                    plugin_id: plugin_id_owned,
+                    details: format!(
+                        "Plugin panicked during execution of '{}': {}. The plugin has been unloaded for safety.",
+                        function_name_owned, panic_msg
+                    ),
+                }))
+            }
+        }
+    }
+
+    pub fn unload_plugin(&mut self, plugin_id: &str) {
+        self.plugins.remove(plugin_id);
+
+        self.plugin_timeouts.remove(plugin_id);
+        self.plugin_memory_limits.remove(plugin_id);
+
+        println!("Plugin '{}' unloaded", plugin_id);
     }
 }
