@@ -1,4 +1,4 @@
-use crate::constants::{INDEXER_RATE_LIMIT, RATE_LIMIT_WINDOW_SECONDS, RESOLVER_RATE_LIMIT};
+use crate::constants::*;
 use crate::errors::AppError;
 use crate::plugin_system::rate_limiter::RateLimiter;
 use crate::plugin_system::runtime::PluginRuntime;
@@ -25,7 +25,9 @@ impl PluginManager {
     pub fn new(plugins_dir: PathBuf) -> Self {
         let runtime = PluginRuntime::new()
             .expect("Failed to create WASM runtime")
-            .with_timeout(crate::constants::DEFAULT_PLUGIN_TIMEOUT_MS);
+            .with_timeout(DEFAULT_PLUGIN_TIMEOUT_MS)
+            .with_memory_limit(Some(DEFAULT_MAX_MEMORY_PAGES)); // 32MB default
+
         let rate_limiter = RateLimiter::new().with_window_seconds(RATE_LIMIT_WINDOW_SECONDS);
 
         Self {
@@ -72,11 +74,19 @@ impl PluginManager {
         self.rate_limiter.set_limit(&plugin_id_str, rate_limit);
 
         let timeout_ms = if plugin.types.contains(&PluginType::Indexer) {
-            crate::constants::INDEXER_PLUGIN_TIMEOUT_MS
+            INDEXER_PLUGIN_TIMEOUT_MS
         } else if plugin.types.contains(&PluginType::Resolver) {
-            crate::constants::RESOLVER_PLUGIN_TIMEOUT_MS
+            RESOLVER_PLUGIN_TIMEOUT_MS
         } else {
-            crate::constants::DEFAULT_PLUGIN_TIMEOUT_MS
+            DEFAULT_PLUGIN_TIMEOUT_MS
+        };
+
+        let memory_pages = if plugin.types.contains(&PluginType::Indexer) {
+            HIGH_MAX_MEMORY_PAGES
+        } else if plugin.types.contains(&PluginType::Resolver) {
+            DEFAULT_MAX_MEMORY_PAGES
+        } else {
+            CONSERVATIVE_MAX_MEMORY_PAGES
         };
 
         let mut plugin_methods = HashMap::new();
@@ -122,6 +132,7 @@ impl PluginManager {
             .map_err(|_| AppError::Runtime("Runtime lock poisoned".into()))?;
 
         runtime_guard.set_plugin_timeout(&plugin_id_str, timeout_ms);
+        runtime_guard.set_plugin_memory_limit(&plugin_id_str, memory_pages);
 
         if !runtime_guard.plugins.contains_key(&plugin_id_str) {
             runtime_guard

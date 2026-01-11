@@ -45,6 +45,7 @@ todo.md
 .prettierrc
 .prettierignore
 eslint.config.js
+notes.md
 
 *.dll
 plugins
