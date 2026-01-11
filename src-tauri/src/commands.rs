@@ -68,3 +68,21 @@ pub fn unload_plugin(
         plugin_id
     )))
 }
+
+#[tauri::command]
+pub fn refresh_plugin(
+    state: State<'_, AppState>,
+    plugin_id: String,
+) -> Result<ErrorResponse, AppError> {
+    let mut manager = state
+        .plugin_manager
+        .lock()
+        .map_err(|e| AppError::Runtime(format!("Failed to lock plugin manager: {}", e)))?;
+
+    manager.refresh_plugin(&plugin_id)?;
+
+    Ok(ErrorResponse::success(format!(
+        "Plugin '{}' refreshed from disk",
+        plugin_id
+    )))
+}

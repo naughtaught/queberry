@@ -46,6 +46,7 @@ pub fn run() {
             commands::call_plugin_method,
             commands::unregister_plugin,
             commands::unload_plugin,
+            commands::refresh_plugin,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

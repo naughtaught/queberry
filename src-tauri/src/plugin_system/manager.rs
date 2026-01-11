@@ -65,6 +65,12 @@ impl PluginManager {
     pub fn register_plugin(&mut self, plugin: Plugin) -> Result<(), AppError> {
         let plugin_id_str = plugin.id.clone();
 
+        if self.indexer_plugins.contains_key(&plugin_id_str)
+            || self.resolver_plugins.contains_key(&plugin_id_str)
+        {
+            self.unregister_plugin(&plugin_id_str);
+        }
+
         let rate_limit = if plugin.types.contains(&PluginType::Indexer) {
             INDEXER_RATE_LIMIT
         } else {
@@ -254,12 +260,11 @@ impl PluginManager {
     pub fn unregister_plugin(&mut self, plugin_id: &str) {
         self.indexer_plugins.remove(plugin_id);
         self.resolver_plugins.remove(plugin_id);
-
         self.method_lookup.remove(plugin_id);
-
         self.rate_limiter.remove_plugin(plugin_id);
-
         self.loading_locks.remove(plugin_id);
+
+        self.wasm_cache.remove(plugin_id);
 
         let _ = self.unload_plugin(plugin_id);
     }
@@ -271,11 +276,21 @@ impl PluginManager {
             .map_err(|_| AppError::Runtime("Runtime lock poisoned".into()))?;
 
         runtime_guard.plugins.remove(plugin_id);
-
-        drop(runtime_guard);
-
-        self.wasm_cache.remove(plugin_id);
-
         Ok(())
+    }
+
+    pub fn refresh_plugin(&mut self, plugin_id: &str) -> Result<(), AppError> {
+        self.unregister_plugin(plugin_id);
+
+        let plugin_dir = self.plugins_dir.join(plugin_id);
+        if !plugin_dir.exists() {
+            return Err(AppError::NotFound(format!(
+                "Plugin directory not found: {}",
+                plugin_id
+            )));
+        }
+
+        let plugin = crate::plugin_system::loader::load_plugin_from_dir(plugin_dir)?;
+        self.register_plugin(plugin)
     }
 }
