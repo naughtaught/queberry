@@ -19,6 +19,7 @@ pub struct PluginManager {
     method_lookup: HashMap<String, HashMap<String, String>>,
     loading_locks: Arc<DashMap<String, Arc<Mutex<()>>>>,
     wasm_cache: Arc<DashMap<String, Arc<Vec<u8>>>>,
+    execution_locks: Arc<DashMap<String, Arc<Mutex<()>>>>,
 }
 
 impl PluginManager {
@@ -39,6 +40,7 @@ impl PluginManager {
             method_lookup: HashMap::new(),
             loading_locks: Arc::new(DashMap::new()),
             wasm_cache: Arc::new(DashMap::new()),
+            execution_locks: Arc::new(DashMap::new()),
         }
     }
 
@@ -233,28 +235,30 @@ impl PluginManager {
             .check_limit(plugin_name)
             .map_err(|e| AppError::RateLimit(e.to_string()))?;
 
-        let plugin_method = self
-            .method_lookup
-            .get(plugin_name)
-            .and_then(|methods| methods.get(interface_method))
-            .ok_or_else(|| {
-                AppError::NotFound(format!(
-                    "Method '{}' not found in plugin '{}'",
-                    interface_method, plugin_name
-                ))
-            })?
+        let plugin_method = self.get_plugin_method(plugin_name, interface_method)?;
+
+        let exec_lock = self
+            .execution_locks
+            .entry(plugin_name.to_string())
+            .or_insert_with(|| Arc::new(Mutex::new(())))
             .clone();
+
+        let _guard = exec_lock
+            .lock()
+            .map_err(|_| AppError::Runtime("Plugin execution lock poisoned".into()))?;
 
         self.ensure_plugin_loaded(plugin_name)?;
 
-        let mut runtime_guard = self
-            .runtime
-            .write()
-            .map_err(|_| AppError::Runtime("Runtime lock poisoned".into()))?;
+        let result = {
+            let mut runtime_guard = self
+                .runtime
+                .write()
+                .map_err(|_| AppError::Runtime("Runtime lock poisoned".into()))?;
 
-        runtime_guard
-            .execute_plugin_method(plugin_name, &plugin_method, args)
-            .map_err(|e| AppError::Runtime(e.to_string()))
+            runtime_guard.execute_plugin_method(plugin_name, &plugin_method, args)
+        };
+
+        result.map_err(|e| AppError::Runtime(e.to_string()))
     }
 
     pub fn unregister_plugin(&mut self, plugin_id: &str) {
@@ -292,5 +296,22 @@ impl PluginManager {
 
         let plugin = crate::plugin_system::loader::load_plugin_from_dir(plugin_dir)?;
         self.register_plugin(plugin)
+    }
+
+    fn get_plugin_method(
+        &self,
+        plugin_name: &str,
+        interface_method: &str,
+    ) -> Result<String, AppError> {
+        self.method_lookup
+            .get(plugin_name)
+            .and_then(|methods| methods.get(interface_method))
+            .cloned()
+            .ok_or_else(|| {
+                AppError::NotFound(format!(
+                    "Method '{}' not found in plugin '{}'",
+                    interface_method, plugin_name
+                ))
+            })
     }
 }
