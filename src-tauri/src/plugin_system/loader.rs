@@ -143,7 +143,7 @@ fn clean_url_pattern(pattern: &str) -> String {
 
     let without_trailing_dot = without_wildcard.trim_end_matches('.');
 
-    if without_trailing_dot.starts_with("http://") || without_trailing_dot.starts_with("https://") {
+    if without_trailing_dot.contains("://") {
         without_trailing_dot.to_string()
     } else {
         format!("https://{}", without_trailing_dot)
@@ -244,7 +244,7 @@ fn is_private_ip(ip: &IpAddr) -> bool {
     }
 }
 
-fn validate_plugin(plugin: &Plugin) -> Result<(), AppError> {
+pub fn validate_plugin(plugin: &Plugin) -> Result<(), AppError> {
     let id_regex = get_plugin_id_regex();
     if !id_regex.is_match(&plugin.id) {
         return Err(AppError::Validation(format!(
