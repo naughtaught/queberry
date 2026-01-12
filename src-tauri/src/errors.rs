@@ -196,11 +196,15 @@ pub fn classify_plugin_error(
 ) -> AppError {
     let err_msg = error.to_lowercase();
 
-    if err_msg.contains("timeout") || err_msg.contains("deadline") || err_msg.contains("exceeded") {
-        return AppError::PluginTimeout {
+    if err_msg.contains("unreachable")
+        || err_msg.contains("trap")
+        || err_msg.contains("panic")
+        || err_msg.contains("abort")
+        || err_msg.contains("wasm trap")
+    {
+        return AppError::PluginCrashed {
             plugin_id: plugin_id.to_string(),
-            method: method.to_string(),
-            timeout_ms,
+            details: error.to_string(),
         };
     }
 
@@ -213,15 +217,11 @@ pub fn classify_plugin_error(
         return AppError::plugin_out_of_memory(plugin_id.to_string(), memory_limit, None);
     }
 
-    if err_msg.contains("unreachable")
-        || err_msg.contains("trap")
-        || err_msg.contains("panic")
-        || err_msg.contains("abort")
-        || err_msg.contains("wasm trap")
-    {
-        return AppError::PluginCrashed {
+    if err_msg.contains("timeout") || err_msg.contains("deadline") || err_msg.contains("exceeded") {
+        return AppError::PluginTimeout {
             plugin_id: plugin_id.to_string(),
-            details: error.to_string(),
+            method: method.to_string(),
+            timeout_ms,
         };
     }
 

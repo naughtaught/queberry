@@ -66,7 +66,6 @@ impl PluginRuntime {
         wasm_bytes: &[u8],
         allowed_hosts: &[String],
     ) -> Result<(), Box<dyn std::error::Error>> {
-        // Clone plugin_id for use in both closure and error handling
         let plugin_id_clone = plugin_id.clone();
 
         let result = panic::catch_unwind(AssertUnwindSafe(|| {
@@ -152,7 +151,6 @@ impl PluginRuntime {
         function_name: &str,
         args: Vec<Value>,
     ) -> Result<Value, Box<dyn std::error::Error>> {
-        // Create owned copies for use in error handling
         let plugin_id_owned = plugin_id.to_string();
         let function_name_owned = function_name.to_string();
 

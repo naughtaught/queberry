@@ -233,7 +233,7 @@ impl PluginManager {
     ) -> Result<Value, AppError> {
         self.rate_limiter
             .check_limit(plugin_name)
-            .map_err(|e| AppError::RateLimit(e.to_string()))?;
+            .map_err(|e| AppError::RateLimit(format!("Plugin '{}': {}", plugin_name, e)))?;
 
         let plugin_method = self.get_plugin_method(plugin_name, interface_method)?;
 
