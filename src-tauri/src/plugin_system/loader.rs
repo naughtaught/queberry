@@ -104,10 +104,13 @@ pub fn load_plugin_from_dir(plugin_dir: PathBuf) -> Result<Plugin, AppError> {
     Ok(plugin)
 }
 
-fn validate_and_extract_host(pattern: &str, allow_private: bool) -> Result<String, AppError> {
+pub fn validate_and_extract_host(pattern: &str, allow_private: bool) -> Result<String, AppError> {
+    // Clean the pattern first to handle URL schemes consistently
     let cleaned_pattern = clean_url_pattern(pattern);
 
-    let url = Url::parse(&cleaned_pattern).map_err(AppError::Url)?;
+    // Parse as URL to extract the host
+    let url = Url::parse(&cleaned_pattern)
+        .map_err(|e| AppError::Validation(format!("Invalid URL '{}': {}", pattern, e)))?;
 
     if url.scheme() != "http" && url.scheme() != "https" {
         return Err(AppError::Validation(format!(
@@ -119,6 +122,67 @@ fn validate_and_extract_host(pattern: &str, allow_private: bool) -> Result<Strin
     let host = url
         .host_str()
         .ok_or_else(|| AppError::Validation(format!("URL must have a host: {}", pattern)))?;
+
+    // Try to parse as IP address first
+    if let Ok(ip_addr) = host.parse::<IpAddr>() {
+        // It's a valid IP address
+        if !allow_private && is_private_ip(&ip_addr) {
+            return Err(AppError::Validation(format!(
+                "Access to private/local networks not allowed: {}. Set 'allow_private_networks: true' if needed.",
+                pattern
+            )));
+        }
+        return Ok(host.trim_end_matches('.').to_string());
+    }
+
+    // Check for problematic wildcard patterns in the host
+    if host == "*" || host == "*.*" || host.ends_with(".*") || host.contains("*.*") {
+        return Err(AppError::Validation(format!(
+            "Invalid wildcard pattern '{}'. Must specify a valid domain (e.g., '*.example.com')",
+            pattern
+        )));
+    }
+
+    // Handle wildcard patterns
+    if let Some(domain_part) = host.strip_prefix("*.") {
+        if domain_part.is_empty() || domain_part == "*" || !domain_part.contains('.') {
+            return Err(AppError::Validation(format!(
+                "Invalid wildcard pattern '{}'. Must specify a valid domain (e.g., '*.example.com')",
+                pattern
+            )));
+        }
+
+        // Check if wildcard is on a public suffix
+        // psl::suffix returns Option<Suffix>
+        if let Some(suffix) = psl::suffix(domain_part.as_bytes()) {
+            // Compare the suffix string with domain_part
+            let suffix_str = std::str::from_utf8(suffix.as_bytes()).map_err(|_| {
+                AppError::Validation(format!("Invalid UTF-8 in suffix: {:?}", suffix.as_bytes()))
+            })?;
+
+            if suffix_str == domain_part {
+                // The domain is a public suffix (like *.com, *.co.uk)
+                return Err(AppError::Validation(format!(
+                    "Wildcard cannot be on a public suffix: {}",
+                    pattern
+                )));
+            }
+        }
+    } else if host.contains('*') {
+        // Wildcard not at the beginning
+        return Err(AppError::Validation(format!(
+            "Wildcard must be at the beginning of the host: {}",
+            pattern
+        )));
+    }
+
+    // For non-wildcard, non-IP hosts, validate it's a proper domain
+    if !host.contains('*') {
+        // Try to parse with psl::domain to validate it's a proper domain
+        if psl::domain(host.as_bytes()).is_none() {
+            return Err(AppError::Validation(format!("Invalid domain '{}'", host)));
+        }
+    }
 
     if !allow_private && is_private_or_local_host(host)? {
         return Err(AppError::Validation(format!(
@@ -157,17 +221,31 @@ fn extract_host_from_pattern(host: &str, original_pattern: &str) -> Result<Strin
         return Ok(host.to_string());
     }
 
-    let registrable = psl::domain_str(host).ok_or_else(|| {
+    // For wildcard patterns, strip the wildcard first
+    let domain = if let Some(stripped) = host.strip_prefix("*.") {
+        stripped
+    } else {
+        host
+    };
+
+    // Get the registrable domain
+    let registrable_bytes = psl::domain(domain.as_bytes()).ok_or_else(|| {
         AppError::Validation(format!(
-            "Cannot extract registrable domain from '{}' (might be invalid or a public suffix)",
-            host
+            "Cannot extract registrable domain from '{}'",
+            domain
         ))
     })?;
 
-    Ok(registrable.to_string())
+    // Convert &[u8] to String
+    String::from_utf8(registrable_bytes.as_bytes().to_vec()).map_err(|_| {
+        AppError::Validation(format!(
+            "Invalid UTF-8 in domain: {:?}",
+            registrable_bytes.as_bytes()
+        ))
+    })
 }
 
-fn is_private_or_local_host(host: &str) -> Result<bool, AppError> {
+pub fn is_private_or_local_host(host: &str) -> Result<bool, AppError> {
     let host = host.trim_end_matches('.');
 
     if host.eq_ignore_ascii_case("localhost") || host.eq_ignore_ascii_case("localhost.localdomain")
@@ -194,7 +272,7 @@ fn is_private_or_local_host(host: &str) -> Result<bool, AppError> {
     Ok(false)
 }
 
-fn is_private_ip(ip: &IpAddr) -> bool {
+pub fn is_private_ip(ip: &IpAddr) -> bool {
     match ip {
         IpAddr::V4(ipv4) => {
             let octets = ipv4.octets();
