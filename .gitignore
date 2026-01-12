@@ -12,6 +12,10 @@ build
 # dependencies
 node_modules
 
+#lock files 
+bun.lock
+package-lock.json
+
 # Vite
 /src/vite.config.js.timestamp-*
 /src/vite.config.ts.timestamp-*
@@ -36,7 +40,7 @@ Thumbs.db
 # Tauri
 src-tauri/target/
 src-tauri/gen/schemas
-cargo.lock
+src-tauri/Cargo.lock
 
 # Personal
 todo.md
