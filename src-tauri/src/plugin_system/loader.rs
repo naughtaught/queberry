@@ -105,10 +105,8 @@ pub fn load_plugin_from_dir(plugin_dir: PathBuf) -> Result<Plugin, AppError> {
 }
 
 pub fn validate_and_extract_host(pattern: &str, allow_private: bool) -> Result<String, AppError> {
-    // Clean the pattern first to handle URL schemes consistently
     let cleaned_pattern = clean_url_pattern(pattern);
 
-    // Parse as URL to extract the host
     let url = Url::parse(&cleaned_pattern)
         .map_err(|e| AppError::Validation(format!("Invalid URL '{}': {}", pattern, e)))?;
 
@@ -123,9 +121,7 @@ pub fn validate_and_extract_host(pattern: &str, allow_private: bool) -> Result<S
         .host_str()
         .ok_or_else(|| AppError::Validation(format!("URL must have a host: {}", pattern)))?;
 
-    // Try to parse as IP address first
     if let Ok(ip_addr) = host.parse::<IpAddr>() {
-        // It's a valid IP address
         if !allow_private && is_private_ip(&ip_addr) {
             return Err(AppError::Validation(format!(
                 "Access to private/local networks not allowed: {}. Set 'allow_private_networks: true' if needed.",
@@ -135,7 +131,6 @@ pub fn validate_and_extract_host(pattern: &str, allow_private: bool) -> Result<S
         return Ok(host.trim_end_matches('.').to_string());
     }
 
-    // Check for problematic wildcard patterns in the host
     if host == "*" || host == "*.*" || host.ends_with(".*") || host.contains("*.*") {
         return Err(AppError::Validation(format!(
             "Invalid wildcard pattern '{}'. Must specify a valid domain (e.g., '*.example.com')",
@@ -152,16 +147,12 @@ pub fn validate_and_extract_host(pattern: &str, allow_private: bool) -> Result<S
             )));
         }
 
-        // Check if wildcard is on a public suffix
-        // psl::suffix returns Option<Suffix>
         if let Some(suffix) = psl::suffix(domain_part.as_bytes()) {
-            // Compare the suffix string with domain_part
             let suffix_str = std::str::from_utf8(suffix.as_bytes()).map_err(|_| {
                 AppError::Validation(format!("Invalid UTF-8 in suffix: {:?}", suffix.as_bytes()))
             })?;
 
             if suffix_str == domain_part {
-                // The domain is a public suffix (like *.com, *.co.uk)
                 return Err(AppError::Validation(format!(
                     "Wildcard cannot be on a public suffix: {}",
                     pattern
@@ -169,19 +160,14 @@ pub fn validate_and_extract_host(pattern: &str, allow_private: bool) -> Result<S
             }
         }
     } else if host.contains('*') {
-        // Wildcard not at the beginning
         return Err(AppError::Validation(format!(
             "Wildcard must be at the beginning of the host: {}",
             pattern
         )));
     }
 
-    // For non-wildcard, non-IP hosts, validate it's a proper domain
-    if !host.contains('*') {
-        // Try to parse with psl::domain to validate it's a proper domain
-        if psl::domain(host.as_bytes()).is_none() {
-            return Err(AppError::Validation(format!("Invalid domain '{}'", host)));
-        }
+    if !host.contains('*') && psl::domain(host.as_bytes()).is_none() {
+        return Err(AppError::Validation(format!("Invalid domain '{}'", host)));
     }
 
     if !allow_private && is_private_or_local_host(host)? {
@@ -221,7 +207,6 @@ fn extract_host_from_pattern(host: &str, original_pattern: &str) -> Result<Strin
         return Ok(host.to_string());
     }
 
-    // For wildcard patterns, strip the wildcard first
     let domain = if let Some(stripped) = host.strip_prefix("*.") {
         stripped
     } else {
@@ -387,7 +372,52 @@ pub fn validate_plugin(plugin: &Plugin) -> Result<(), AppError> {
         )));
     }
 
+    for method in &plugin.methods {
+        if method.interface_method.trim().is_empty() {
+            return Err(AppError::Validation(
+                "Interface method name cannot be empty".into(),
+            ));
+        }
+
+        if method.plugin_method.trim().is_empty() {
+            return Err(AppError::Validation(
+                "Plugin method name cannot be empty".into(),
+            ));
+        }
+
+        if !is_valid_method_name(&method.plugin_method) {
+            return Err(AppError::Validation(format!(
+                "Invalid plugin method name '{}'. Must contain only alphanumeric characters and underscores, starting with a letter",
+                method.plugin_method
+            )));
+        }
+    }
+
     Ok(())
+}
+
+fn is_valid_method_name(name: &str) -> bool {
+    let trimmed = name.trim();
+
+    if trimmed.is_empty() {
+        return false;
+    }
+
+    if trimmed.len() > 256 {
+        return false;
+    }
+
+    if trimmed.contains('\x00') || trimmed.chars().any(|c| c.is_control()) {
+        return false;
+    }
+
+    if !trimmed.chars().next().unwrap().is_ascii_alphabetic() {
+        return false;
+    }
+
+    trimmed
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '_')
 }
 
 pub fn load_all_plugins() -> Result<Vec<Plugin>, AppError> {
