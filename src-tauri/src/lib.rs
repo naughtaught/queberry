@@ -1,15 +1,23 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 mod commands;
 pub mod constants;
 pub mod errors;
 mod plugin_system;
 mod utils;
+mod video_player;
 
 use crate::plugin_system::loader::load_all_plugins;
 use crate::plugin_system::PluginManager;
-use commands::AppState;
+use crate::video_player::MpvPlayer;
 pub use errors::{AppError, ErrorDetail, ErrorResponse};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use tauri::Manager;
+
+pub struct AppState {
+    pub plugin_manager: Mutex<PluginManager>,
+    pub video_player: Arc<Mutex<Option<MpvPlayer>>>,
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -35,6 +43,7 @@ pub fn run() {
 
             let app_state = AppState {
                 plugin_manager: Mutex::new(plugin_manager),
+                video_player: Arc::new(Mutex::new(None)),
             };
 
             app.manage(app_state);
@@ -47,6 +56,8 @@ pub fn run() {
             commands::unregister_plugin,
             commands::unload_plugin,
             commands::refresh_plugin,
+            commands::video::load_video,
+            commands::video::play_video,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
