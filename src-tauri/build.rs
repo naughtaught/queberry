@@ -1,5 +1,4 @@
 fn main() {
-    // Configure Windows-specific MPV linking
     #[cfg(target_os = "windows")]
     {
         use std::env;
@@ -8,7 +7,6 @@ fn main() {
 
         println!("cargo:rerun-if-changed=lib/windows");
 
-        // Tell Cargo where to find the mpv.lib file
         let lib_path = PathBuf::from("lib/windows");
         if lib_path.exists() {
             println!("cargo:rustc-link-search=native={}", lib_path.display());
@@ -18,7 +16,6 @@ fn main() {
             eprintln!("Warning: lib/windows directory not found");
         }
 
-        // Copy the DLL to the output directory for easier debugging
         let dll_src = lib_path.join("libmpv-2.dll");
 
         if dll_src.exists() {
@@ -40,6 +37,5 @@ fn main() {
         }
     }
 
-    // Run Tauri build
     tauri_build::build()
 }
