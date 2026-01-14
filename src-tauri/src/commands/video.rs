@@ -1,7 +1,8 @@
 use crate::video_player::MpvPlayer;
 use crate::AppState;
+use raw_window_handle::{HasWindowHandle, RawWindowHandle};
 use serde::Serialize;
-use tauri::{command, State};
+use tauri::{command, State, WebviewWindow};
 
 #[derive(Serialize, Clone)]
 pub struct PlayerResponse<T> {
@@ -28,7 +29,10 @@ impl<T> PlayerResponse<T> {
     }
 }
 
-fn ensure_player_initialized(state: &tauri::State<'_, AppState>) -> Result<(), String> {
+fn ensure_player_initialized(
+    state: &tauri::State<'_, AppState>,
+    window: &WebviewWindow,
+) -> Result<(), String> {
     let mut player_guard = state
         .video_player
         .lock()
@@ -36,7 +40,11 @@ fn ensure_player_initialized(state: &tauri::State<'_, AppState>) -> Result<(), S
 
     if player_guard.is_none() {
         println!("Initializing MPV player...");
-        match MpvPlayer::new() {
+
+        // Get window handle ID
+        let window_id = get_window_handle_id(window);
+
+        match MpvPlayer::new(window_id) {
             Ok(player) => {
                 *player_guard = Some(player);
                 println!("MPV player initialized successfully");
@@ -49,12 +57,69 @@ fn ensure_player_initialized(state: &tauri::State<'_, AppState>) -> Result<(), S
     }
 }
 
+fn get_window_handle_id(window: &WebviewWindow) -> Option<i64> {
+    #[cfg(windows)]
+    {
+        if let Ok(handle) = window.window_handle() {
+            match handle.as_raw() {
+                RawWindowHandle::Win32(handle) => {
+                    // hwnd.get() returns isize directly, not Option<isize>
+                    let hwnd = handle.hwnd.get();
+                    println!("Got window HWND: {:?}", hwnd);
+                    return Some(hwnd as i64);
+                }
+                _ => {
+                    eprintln!("Unsupported window handle type");
+                }
+            }
+        } else {
+            eprintln!("Failed to get window handle");
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        if let Ok(handle) = window.window_handle() {
+            match handle.as_raw() {
+                RawWindowHandle::Xlib(handle) => {
+                    println!("Got X11 window ID: {}", handle.window);
+                    return Some(handle.window as i64);
+                }
+                RawWindowHandle::Wayland(handle) => {
+                    eprintln!("Wayland windows need special handling");
+                }
+                _ => {
+                    eprintln!("Unsupported window handle type");
+                }
+            }
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        if let Ok(handle) = window.window_handle() {
+            match handle.as_raw() {
+                RawWindowHandle::AppKit(handle) => {
+                    println!("Got macOS NSView pointer");
+                    return Some(handle.ns_view.as_ptr() as i64);
+                }
+                _ => {
+                    eprintln!("Unsupported window handle type");
+                }
+            }
+        }
+    }
+
+    None
+}
+
 #[command]
 pub async fn load_video(
     state: State<'_, AppState>,
+    window: WebviewWindow,
     url: String,
 ) -> Result<PlayerResponse<()>, String> {
-    if let Err(e) = ensure_player_initialized(&state) {
+    if let Err(e) = ensure_player_initialized(&state, &window) {
         return Ok(PlayerResponse::error(e));
     }
 
@@ -75,8 +140,11 @@ pub async fn load_video(
 }
 
 #[command]
-pub async fn play_video(state: State<'_, AppState>) -> Result<PlayerResponse<()>, String> {
-    if let Err(e) = ensure_player_initialized(&state) {
+pub async fn play_video(
+    state: State<'_, AppState>,
+    window: WebviewWindow,
+) -> Result<PlayerResponse<()>, String> {
+    if let Err(e) = ensure_player_initialized(&state, &window) {
         return Ok(PlayerResponse::error(e));
     }
 

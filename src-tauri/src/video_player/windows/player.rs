@@ -7,7 +7,7 @@ pub struct MpvPlayer {
 }
 
 impl MpvPlayer {
-    pub fn new() -> Result<Self, String> {
+    pub fn new(window_handle: Option<i64>) -> Result<Self, String> {
         #[cfg(target_os = "windows")]
         {
             let possible_paths = vec![
@@ -50,10 +50,28 @@ impl MpvPlayer {
         let _ = mpv.set_property("hwdec", "auto-safe");
         let _ = mpv.set_property("keep-open", "yes");
         let _ = mpv.set_property("force-window", "yes");
-        let _ = mpv.set_property("window-scale", 0.5);
 
         // Set initial volume
-        let _ = mpv.set_property("volume", 70.0);
+        let _ = mpv.set_property("volume", 40.0);
+
+        if let Some(window_id) = window_handle {
+            println!("Embedding MPV into window with ID: {}", window_id);
+
+            // Set window ID for embedding
+            if let Err(e) = mpv.set_property("wid", window_id) {
+                eprintln!("Failed to set window ID for embedding: {}", e);
+                // Fallback to windowed mode if embedding fails
+                let _ = mpv.set_property("force-window", "yes");
+            } else {
+                // Successfully embedded, don't force separate window
+                let _ = mpv.set_property("force-window", "no");
+                println!("Successfully embedded MPV into window");
+            }
+        } else {
+            // No window provided, create separate window
+            println!("No window handle provided, creating separate MPV window");
+            let _ = mpv.set_property("force-window", "yes");
+        }
 
         Ok(Self {
             mpv: Arc::new(Mutex::new(mpv)),
