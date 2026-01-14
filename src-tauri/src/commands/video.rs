@@ -1,6 +1,5 @@
 use crate::video_player::MpvPlayer;
 use crate::AppState;
-use raw_window_handle::{HasWindowHandle, RawWindowHandle};
 use serde::Serialize;
 use tauri::{command, State, WebviewWindow};
 
@@ -41,10 +40,7 @@ fn ensure_player_initialized(
     if player_guard.is_none() {
         println!("Initializing MPV player...");
 
-        // Get window handle ID
-        let window_id = get_window_handle_id(window);
-
-        match MpvPlayer::new(window_id) {
+        match MpvPlayer::new(Some(window)) {
             Ok(player) => {
                 *player_guard = Some(player);
                 println!("MPV player initialized successfully");
@@ -55,62 +51,6 @@ fn ensure_player_initialized(
     } else {
         Ok(())
     }
-}
-
-fn get_window_handle_id(window: &WebviewWindow) -> Option<i64> {
-    #[cfg(windows)]
-    {
-        if let Ok(handle) = window.window_handle() {
-            match handle.as_raw() {
-                RawWindowHandle::Win32(handle) => {
-                    // hwnd.get() returns isize directly, not Option<isize>
-                    let hwnd = handle.hwnd.get();
-                    println!("Got window HWND: {:?}", hwnd);
-                    return Some(hwnd as i64);
-                }
-                _ => {
-                    eprintln!("Unsupported window handle type");
-                }
-            }
-        } else {
-            eprintln!("Failed to get window handle");
-        }
-    }
-
-    #[cfg(target_os = "linux")]
-    {
-        if let Ok(handle) = window.window_handle() {
-            match handle.as_raw() {
-                RawWindowHandle::Xlib(handle) => {
-                    println!("Got X11 window ID: {}", handle.window);
-                    return Some(handle.window as i64);
-                }
-                RawWindowHandle::Wayland(handle) => {
-                    eprintln!("Wayland windows need special handling");
-                }
-                _ => {
-                    eprintln!("Unsupported window handle type");
-                }
-            }
-        }
-    }
-
-    #[cfg(target_os = "macos")]
-    {
-        if let Ok(handle) = window.window_handle() {
-            match handle.as_raw() {
-                RawWindowHandle::AppKit(handle) => {
-                    println!("Got macOS NSView pointer");
-                    return Some(handle.ns_view.as_ptr() as i64);
-                }
-                _ => {
-                    eprintln!("Unsupported window handle type");
-                }
-            }
-        }
-    }
-
-    None
 }
 
 #[command]
