@@ -41,6 +41,7 @@ Thumbs.db
 src-tauri/target/
 src-tauri/gen/schemas
 src-tauri/Cargo.lock
+src-tauri/lib/
 
 # Personal
 todo.md
