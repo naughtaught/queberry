@@ -52,7 +52,7 @@ pub fn run() {
             commands::refresh_plugin,
             commands::video::load_video,
             commands::video::toggle_play,
-            // commands::video::seek_video,
+            commands::video::seek_video,
             commands::video::set_video_volume,
             commands::video::get_audio_tracks,
             commands::video::get_subtitle_tracks,

@@ -175,20 +175,26 @@ impl MpvPlayer {
     }
 
     /// Seek to a position
-    pub async fn seek(&self, time: f64, absolute: bool) -> Result<()> {
-        let mpv = self.mpv.lock().await;
+    pub async fn seek(&self, time: f64, absolute: bool) -> Result<(), AppError> {
         let mode = if absolute { "absolute" } else { "relative" };
 
-        
-        mpv.command("seek", &[&time.to_string(), mode])
-            .map_err(|e| AppError::Runtime(format!("Failed to seek {} {}: {}", time, mode, e)))?;
+        // 1. Lock and execute the command.
+        // We convert the error to a String immediately so the !Send libmpv2::Error is dropped.
+        let is_paused = {
+            let mpv = self.mpv.lock().await;
 
-        // Check if paused and restart tracking if needed
-        if let Ok(paused) = mpv.get_property::<bool>("pause") {
-            if paused {
-                drop(mpv);
-                self.start_unified_tracking().await;
-            }
+            mpv.command("seek", &[&time.to_string(), mode])
+                .map_err(|e| {
+                    AppError::Runtime(format!("Failed to seek {} {}: {}", time, mode, e))
+                })?;
+
+            // 2. Check for pause while we still have the lock
+            mpv.get_property::<bool>("pause").unwrap_or(false)
+        }; // mpv lock and any temporary libmpv2 errors are dropped here
+
+        // 3. Now it is safe to await start_unified_tracking
+        if is_paused {
+            self.start_unified_tracking().await;
         }
 
         Ok(())

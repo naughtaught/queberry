@@ -10,10 +10,10 @@ pub fn get_mpv_config_dir() -> Result<PathBuf, String> {
             .join(".mpv")
     } else {
         // Production: use system config directory
-        let config_dir = dirs::config_dir()
+
+        dirs::config_dir()
             .ok_or("Failed to get config directory".to_string())?
-            .join("mpv");
-        config_dir
+            .join("mpv")
     };
 
     // Create directory if it doesn't exist

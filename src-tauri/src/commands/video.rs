@@ -94,29 +94,29 @@ pub struct SeekRequest {
     absolute: bool,
 }
 
-// #[command]
-// pub async fn seek_video(state: State<'_, AppState>, request: SeekRequest) -> Result<(), AppError> {
-//     // Clone the player while holding the lock briefly
-//     let player_clone = {
-//         let player = state
-//             .video_player
-//             .lock()
-//             .map_err(|e| AppError::Runtime(format!("Failed to lock player: {}", e)))?;
+#[command]
+pub async fn seek_video(state: State<'_, AppState>, request: SeekRequest) -> Result<(), AppError> {
+    // Clone the player while holding the lock briefly
+    let player_clone = {
+        let player = state
+            .video_player
+            .lock()
+            .map_err(|e| AppError::Runtime(format!("Failed to lock player: {}", e)))?;
 
-//         player
-//             .as_ref()
-//             .ok_or_else(|| AppError::NotFound("Player not initialized".to_string()))?
-//             .clone()
-//     }; // Lock released here
+        player
+            .as_ref()
+            .ok_or_else(|| AppError::NotFound("Player not initialized".to_string()))?
+            .clone()
+    }; // Lock released here
 
-//     // Use the clone without holding the lock
-//     player_clone
-//         .seek(request.time, request.absolute)
-//         .await
-//         .map_err(|e| AppError::Runtime(format!("Failed to seek: {}", e)))?;
+    // Use the clone without holding the lock
+    player_clone
+        .seek(request.time, request.absolute)
+        .await
+        .map_err(|e| AppError::Runtime(format!("Failed to seek: {}", e)))?;
 
-//     Ok(())
-// }
+    Ok(())
+}
 
 #[derive(Deserialize)]
 pub struct SetVolumeRequest {
