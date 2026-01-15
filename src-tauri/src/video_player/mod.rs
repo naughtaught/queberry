@@ -1,4 +1,9 @@
+pub mod audio;
+pub mod config;
 pub mod player;
+pub mod shaders;
+pub mod subtitles;
+pub mod types;
 pub mod utils;
 
 #[cfg(target_os = "linux")]

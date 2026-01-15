@@ -102,8 +102,8 @@ pub enum AppError {
     PluginInvalidOutput { plugin_id: String, details: String },
 }
 
-impl From<Box<dyn std::error::Error>> for AppError {
-    fn from(error: Box<dyn std::error::Error>) -> Self {
+impl From<Box<dyn std::error::Error + Send + Sync>> for AppError {
+    fn from(error: Box<dyn std::error::Error + Send + Sync>) -> Self {
         AppError::Runtime(error.to_string())
     }
 }
@@ -229,4 +229,72 @@ pub fn classify_plugin_error(
         "Plugin '{}' method '{}' failed: {}",
         plugin_id, method, error
     ))
+}
+
+pub type Result<T, E = AppError> = std::result::Result<T, E>;
+pub type PlayerResult<T> = Result<T>;
+
+#[derive(Serialize, Clone)]
+pub struct ApiResponse<T> {
+    pub success: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data: Option<T>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDetail>,
+}
+
+impl<T> ApiResponse<T> {
+    pub fn ok(data: T) -> Self {
+        Self {
+            success: true,
+            data: Some(data),
+            error: None,
+        }
+    }
+
+    pub fn err<E: Into<AppError>>(error: E) -> Self {
+        let app_error: AppError = error.into();
+        app_error.into()
+    }
+
+    pub fn error(code: u16, message: String) -> Self {
+        Self {
+            success: false,
+            data: None,
+            error: Some(ErrorDetail {
+                code,
+                message,
+                stack: None,
+            }),
+        }
+    }
+
+    pub fn from_result(result: Result<T, AppError>) -> Self {
+        match result {
+            Ok(data) => Self::ok(data),
+            Err(err) => err.into(),
+        }
+    }
+}
+
+impl<T> From<AppError> for ApiResponse<T> {
+    fn from(error: AppError) -> Self {
+        error.to_error_response().into()
+    }
+}
+
+impl<T> From<Result<T, AppError>> for ApiResponse<T> {
+    fn from(result: Result<T, AppError>) -> Self {
+        ApiResponse::from_result(result)
+    }
+}
+
+impl<T> From<ErrorResponse> for ApiResponse<T> {
+    fn from(error_response: ErrorResponse) -> Self {
+        Self {
+            success: error_response.success,
+            data: None,
+            error: error_response.error,
+        }
+    }
 }

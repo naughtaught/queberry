@@ -5,7 +5,7 @@ pub mod constants;
 pub mod errors;
 mod plugin_system;
 mod utils;
-mod video_player;
+pub mod video_player;
 
 use crate::plugin_system::loader::load_all_plugins;
 use crate::plugin_system::PluginManager;
