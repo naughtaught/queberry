@@ -3,6 +3,7 @@ use libmpv2::Mpv;
 use std::collections::HashMap;
 use std::path::PathBuf;
 
+#[derive(Clone)]
 pub struct MpvConfig {
     config_path: PathBuf,
 }
@@ -26,6 +27,49 @@ impl MpvConfig {
             if let Err(e) = mpv.set_property(key, value) {
                 log::warn!("Failed to set optional property {}: {}", key, e);
             }
+        }
+
+        Ok(())
+    }
+
+    pub fn set_window_id(&self, mpv: &Mpv, window_id: i64) -> Result<()> {
+        // For Wayland on Linux, we need to handle it differently
+        #[cfg(target_os = "linux")]
+        {
+            use raw_window_handle::HasWindowHandle;
+            use raw_window_handle::RawWindowHandle;
+
+            // Check if we're on Wayland
+            let is_wayland = std::env::var("WAYLAND_DISPLAY").is_ok();
+
+            if is_wayland {
+                // Wayland requires different approach - using `wid` with 0 often works
+                mpv.set_property("wid", 0).map_err(|e| {
+                    AppError::Runtime(format!("Failed to set Wayland window ID: {}", e))
+                })?;
+                log::info!("Using Wayland window embedding (wid=0)");
+            } else {
+                // X11
+                mpv.set_property("wid", window_id).map_err(|e| {
+                    AppError::Runtime(format!("Failed to set X11 window ID: {}", e))
+                })?;
+            }
+        }
+
+        #[cfg(target_os = "windows")]
+        {
+            mpv.set_property("wid", window_id).map_err(|e| {
+                AppError::Runtime(format!("Failed to set Windows window ID: {}", e))
+            })?;
+        }
+
+        #[cfg(target_os = "macos")]
+        {
+            // macOS may need special handling
+            // Sometimes it's "wid", sometimes other properties
+            mpv.set_property("wid", window_id)
+                .or_else(|_| mpv.set_property("macos-wid", window_id))
+                .map_err(|e| AppError::Runtime(format!("Failed to set macOS window ID: {}", e)))?;
         }
 
         Ok(())

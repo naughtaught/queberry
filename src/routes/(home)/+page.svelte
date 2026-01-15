@@ -11,7 +11,6 @@
             console.log('Video load response:', response)
 
             if (response.success) {
-                await invoke('play_video')
             } else {
                 console.error('Failed to load video:', response.error)
             }

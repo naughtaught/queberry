@@ -1,13 +1,9 @@
+// commands/plugin.rs
 use crate::errors::{AppError, ErrorResponse};
 use crate::plugin_system::loader::load_all_plugins;
-use crate::plugin_system::PluginManager;
+use crate::state::AppState; // Use the unified state
 use serde_json::Value;
-use std::sync::Mutex;
 use tauri::State;
-
-pub struct AppState {
-    pub plugin_manager: Mutex<PluginManager>,
-}
 
 #[tauri::command]
 pub fn get_plugins() -> Result<ErrorResponse, AppError> {
@@ -42,7 +38,6 @@ pub fn unregister_plugin(
         .map_err(|e| AppError::Runtime(format!("Failed to lock plugin manager: {}", e)))?;
 
     manager.unregister_plugin(&plugin_id);
-
     manager.unload_plugin(&plugin_id)?;
 
     Ok(ErrorResponse::success(format!(

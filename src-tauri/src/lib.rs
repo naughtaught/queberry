@@ -1,23 +1,19 @@
+// lib.rs
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod commands;
 pub mod constants;
 pub mod errors;
 mod plugin_system;
+mod state;
 mod utils;
-pub mod video_player;
+mod video_player;
 
 use crate::plugin_system::loader::load_all_plugins;
 use crate::plugin_system::PluginManager;
-use crate::video_player::MpvPlayer;
+use crate::state::AppState; // Use the unified state from state.rs
 pub use errors::{AppError, ErrorDetail, ErrorResponse};
-use std::sync::{Arc, Mutex};
 use tauri::Manager;
-
-pub struct AppState {
-    pub plugin_manager: Mutex<PluginManager>,
-    pub video_player: Arc<Mutex<Option<MpvPlayer>>>,
-}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -32,6 +28,7 @@ pub fn run() {
             }
 
             let plugins_dir = utils::get_plugins_dir()?;
+            let mpv_config_path = utils::get_mpv_config_dir()?;
 
             let mut plugin_manager = PluginManager::new(plugins_dir);
 
@@ -41,11 +38,8 @@ pub fn run() {
                 }
             }
 
-            let app_state = AppState {
-                plugin_manager: Mutex::new(plugin_manager),
-                video_player: Arc::new(Mutex::new(None)),
-            };
-
+            // Create the unified app state
+            let app_state = AppState::new(plugin_manager, mpv_config_path);
             app.manage(app_state);
 
             Ok(())
@@ -57,7 +51,20 @@ pub fn run() {
             commands::unload_plugin,
             commands::refresh_plugin,
             commands::video::load_video,
-            commands::video::play_video,
+            commands::video::toggle_play,
+            // commands::video::seek_video,
+            commands::video::set_video_volume,
+            commands::video::get_audio_tracks,
+            commands::video::get_subtitle_tracks,
+            commands::video::set_audio_track,
+            commands::video::set_subtitle_track,
+            commands::video::turn_off_subtitle_track,
+            commands::video::set_speaker_configuration,
+            commands::video::change_subtitle_size,
+            commands::video::audio_sync_correction,
+            commands::video::subtitle_sync_correction,
+            commands::video::add_to_playlist,
+            commands::video::close_video_player,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

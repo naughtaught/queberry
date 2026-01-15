@@ -1,6 +1,10 @@
 use raw_window_handle::{HasWindowHandle, RawWindowHandle};
 use tauri::WebviewWindow;
 
+pub fn init() {
+    log::info!("Performing Linux-specific MPV setup");
+}
+
 pub fn get_window_handle_id(window: &WebviewWindow) -> Option<i64> {
     if let Ok(handle) = window.window_handle() {
         match handle.as_raw() {

@@ -102,15 +102,15 @@ pub enum AppError {
     PluginInvalidOutput { plugin_id: String, details: String },
 }
 
-impl From<Box<dyn std::error::Error + Send + Sync>> for AppError {
-    fn from(error: Box<dyn std::error::Error + Send + Sync>) -> Self {
-        AppError::Runtime(error.to_string())
+impl From<String> for AppError {
+    fn from(s: String) -> Self {
+        AppError::Runtime(s)
     }
 }
 
-impl From<String> for AppError {
-    fn from(error: String) -> Self {
-        AppError::Runtime(error)
+impl From<Box<dyn std::error::Error + Send + Sync>> for AppError {
+    fn from(error: Box<dyn std::error::Error + Send + Sync>) -> Self {
+        AppError::Runtime(error.to_string())
     }
 }
 
