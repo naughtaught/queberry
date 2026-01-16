@@ -23,6 +23,11 @@ package-lock.json
 # Typescript
 /src/lib/types/
 
+# Sveltekit
+/src/lib/index.ts
+/src/app.d.ts
+/src/static/
+
 # IDEs and editors
 /.idea
 .project

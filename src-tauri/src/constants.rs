@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 pub const API_VERSION: &str = "v1.0";
 
 // RATE LIMITS
@@ -28,19 +26,3 @@ pub const fn pages_to_bytes(pages: u32) -> usize {
     const PAGE_SIZE: usize = 64 * 1024; // 64 KB
     pages as usize * PAGE_SIZE
 }
-
-// VIDEO
-pub const TIMESTAMP_TRACKING_INTERVAL: Duration = Duration::from_secs(1);
-pub const TIME_UPDATE_INTERVAL: Duration = Duration::from_secs(1);
-pub const MINIMUM_WATCHED_PERCENT: f64 = 10.0;
-pub const SUBTITLE_DEFAULT_POSITION: i64 = 95;
-pub const SUBTITLE_DEFAULT_SIZE: f64 = 1.2;
-pub const SUBTITLE_SIZE_STEP: f64 = 0.1;
-pub const SUBTITLE_SIZE_MIN: f64 = 0.1;
-pub const SUBTITLE_SIZE_MAX: f64 = 2.0;
-pub const AUDIO_OFFSET_STEP: f64 = 0.05;
-pub const SUBTITLE_OFFSET_STEP: f64 = 0.05;
-pub const CENTER_SPEAKER_STEP: f64 = 0.1;
-pub const CENTER_BOOST_MIN: f64 = 0.1;
-pub const CENTER_BOOST_MAX: f64 = 5.0;
-pub const SUBTITLE_OFFSET: i64 = 10;

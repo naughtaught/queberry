@@ -1,3 +1,4 @@
+use backtrace::Backtrace;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -122,19 +123,29 @@ impl From<&str> for AppError {
 
 impl AppError {
     pub fn to_error_response(&self) -> ErrorResponse {
-        match self {
-            AppError::Validation(msg) => ErrorResponse::error(400, msg.clone()),
-            AppError::Permission(msg) => ErrorResponse::error(403, msg.clone()),
-            AppError::NotFound(msg) => ErrorResponse::error(404, msg.clone()),
-            AppError::Timeout(msg) => ErrorResponse::error(408, msg.clone()),
-            AppError::PluginTimeout { .. } => ErrorResponse::error(408, self.to_string()),
-            AppError::RateLimit(msg) => ErrorResponse::error(429, msg.clone()),
-            AppError::Config(msg) => ErrorResponse::error(500, msg.clone()),
-            AppError::PluginOutOfMemory { .. } => ErrorResponse::error(507, self.to_string()),
-            AppError::PluginCrashed { .. } => ErrorResponse::error(500, self.to_string()),
-            AppError::PluginInvalidOutput { .. } => ErrorResponse::error(502, self.to_string()),
-            _ => ErrorResponse::error(500, self.to_string()),
-        }
+        let (code, message) = match self {
+            AppError::Validation(msg) => (400, msg.clone()),
+            AppError::Permission(msg) => (403, msg.clone()),
+            AppError::NotFound(msg) => (404, msg.clone()),
+            AppError::Timeout(msg) => (408, msg.clone()),
+            AppError::PluginTimeout { .. } => (408, self.to_string()),
+            AppError::RateLimit(msg) => (429, msg.clone()),
+            AppError::Config(msg) => (500, msg.clone()),
+            AppError::PluginOutOfMemory { .. } => (507, self.to_string()),
+            AppError::PluginCrashed { .. } => (500, self.to_string()),
+            AppError::PluginInvalidOutput { .. } => (502, self.to_string()),
+            AppError::Io(e) => (500, e.to_string()),
+            AppError::Json(e) => (500, e.to_string()),
+            AppError::Url(e) => (400, e.to_string()),
+            AppError::Runtime(msg) => (500, msg.clone()),
+        };
+
+        ErrorResponse::error_with_stack(code, message, self.get_stack_trace())
+    }
+
+    fn get_stack_trace(&self) -> String {
+        let backtrace = Backtrace::new();
+        format!("{:?}", backtrace)
     }
 
     pub fn plugin_out_of_memory(

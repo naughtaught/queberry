@@ -28,7 +28,6 @@ pub fn run() {
             }
 
             let plugins_dir = utils::get_plugins_dir()?;
-            let mpv_config_path = utils::get_mpv_config_dir()?;
 
             let mut plugin_manager = PluginManager::new(plugins_dir);
 
@@ -39,7 +38,7 @@ pub fn run() {
             }
 
             // Create the unified app state
-            let app_state = AppState::new(plugin_manager, mpv_config_path);
+            let app_state = AppState::new(plugin_manager);
             app.manage(app_state);
 
             Ok(())
@@ -52,19 +51,6 @@ pub fn run() {
             commands::refresh_plugin,
             commands::video::load_video,
             commands::video::toggle_play,
-            commands::video::seek_video,
-            commands::video::set_video_volume,
-            commands::video::get_audio_tracks,
-            commands::video::get_subtitle_tracks,
-            commands::video::set_audio_track,
-            commands::video::set_subtitle_track,
-            commands::video::turn_off_subtitle_track,
-            commands::video::set_speaker_configuration,
-            commands::video::change_subtitle_size,
-            commands::video::audio_sync_correction,
-            commands::video::subtitle_sync_correction,
-            commands::video::add_to_playlist,
-            commands::video::close_video_player,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

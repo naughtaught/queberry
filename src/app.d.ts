@@ -1,13 +1,22 @@
-// See https://svelte.dev/docs/kit/types#app.d.ts
-// for information about these interfaces
+import type { ApiResponse, ErrorDetail } from '$lib/types/api'
+
 declare global {
-	namespace App {
-		// interface Error {}
-		// interface Locals {}
-		// interface PageData {}
-		// interface PageState {}
-		// interface Platform {}
-	}
+    namespace App {
+        interface Response extends ApiResponse {
+            success: false
+            data: null
+            error: ErrorDetail | null
+        }
+
+        interface PageData {
+            success: boolean
+            error: ErrorDetail | null
+        }
+
+        // interface Locals {}
+        // interface PageState {}
+        // interface Platform {}
+    }
 }
 
-export {};
+export {}

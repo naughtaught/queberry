@@ -1,55 +1,35 @@
 use crate::errors::{AppError, Result};
 use libmpv2::Mpv;
 use std::collections::HashMap;
-use std::path::PathBuf;
 
-#[derive(Clone)]
-pub struct MpvConfig {
-    config_path: PathBuf,
-}
+#[derive(Debug, Clone, Default)]
+pub struct MpvConfig;
 
 impl MpvConfig {
-    pub fn new(config_path: PathBuf) -> Self {
-        Self { config_path }
+    pub fn new() -> Self {
+        Self
     }
 
     pub fn apply_to_mpv(&self, mpv: &Mpv) -> Result<()> {
         self.apply_optional_defaults(mpv)?;
-        self.load_config_file(mpv)?;
         self.apply_hardcoded_params(mpv)?;
         Ok(())
     }
 
-    fn apply_optional_defaults(&self, mpv: &Mpv) -> Result<()> {
-        let defaults = self.get_optional_defaults();
-
-        for (key, value) in defaults {
-            if let Err(e) = mpv.set_property(key, value) {
-                log::warn!("Failed to set optional property {}: {}", key, e);
-            }
-        }
-
-        Ok(())
-    }
-
     pub fn set_window_id(&self, mpv: &Mpv, window_id: i64) -> Result<()> {
-        // For Wayland on Linux, we need to handle it differently
         #[cfg(target_os = "linux")]
         {
             use raw_window_handle::HasWindowHandle;
             use raw_window_handle::RawWindowHandle;
 
-            // Check if we're on Wayland
             let is_wayland = std::env::var("WAYLAND_DISPLAY").is_ok();
 
             if is_wayland {
-                // Wayland requires different approach - using `wid` with 0 often works
                 mpv.set_property("wid", 0).map_err(|e| {
                     AppError::Runtime(format!("Failed to set Wayland window ID: {}", e))
                 })?;
                 log::info!("Using Wayland window embedding (wid=0)");
             } else {
-                // X11
                 mpv.set_property("wid", window_id).map_err(|e| {
                     AppError::Runtime(format!("Failed to set X11 window ID: {}", e))
                 })?;
@@ -136,13 +116,13 @@ impl MpvConfig {
         .collect()
     }
 
-    fn load_config_file(&self, _mpv: &Mpv) -> Result<()> {
-        let conf_path = self.config_path.join("mpv.conf");
+    fn apply_optional_defaults(&self, mpv: &Mpv) -> Result<()> {
+        let defaults = self.get_optional_defaults();
 
-        if conf_path.exists() {
-            log::info!("Loading MPV config from: {}", conf_path.display());
-            // MPV auto-loads from standard locations, but we can also explicitly load
-            // Note: libmpv2 may not have a direct load_config method, handle appropriately
+        for (key, value) in defaults {
+            if let Err(e) = mpv.set_property(key, value) {
+                log::warn!("Failed to set optional property {}: {}", key, e);
+            }
         }
 
         Ok(())
