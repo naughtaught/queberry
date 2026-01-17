@@ -15,9 +15,7 @@
             const response: Api.ApiResponse = await invoke('seek', {
                 seekAmount: seekAmount,
             })
-            if (response.success) {
-                console.log(response)
-            } else {
+            if (response.error) {
                 handleError(response.error!)
             }
         } catch (error) {

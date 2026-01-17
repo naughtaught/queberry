@@ -9,26 +9,27 @@
     let isPaused = $state(false)
     let backgroundColor = $state('bg-black')
     let currentTime = $state(0)
+    let is_completed = $state(false)
     let destroyListeners: (() => void) | undefined
-
-    $inspect(currentTime)
 
     const setupListeners = async (): Promise<() => void> => {
         const unlisteners: UnlistenFn[] = []
 
-        const events = [
-            {
-                event: 'current-time-update',
-                handler: (event: Api.TauriEvent<{ current_time: number }>) => {
-                    currentTime = event.payload.current_time
-                },
+        const timeUnlisten = await listen<{ current_time: number }>(
+            'current-time-update',
+            (event) => {
+                currentTime = event.payload.current_time
             },
-        ]
+        )
+        unlisteners.push(timeUnlisten)
 
-        for (const { event, handler } of events) {
-            const unlisten = await listen(event, handler)
-            unlisteners.push(unlisten)
-        }
+        const completeUnlisten = await listen<{ is_completed: boolean }>(
+            'video-completed',
+            (event) => {
+                is_completed = event.payload.is_completed
+            },
+        )
+        unlisteners.push(completeUnlisten)
 
         return () => {
             unlisteners.forEach((unlisten) => unlisten())
@@ -38,9 +39,12 @@
     onMount(async () => {
         document.body.setAttribute('data-page', 'video')
 
+        // 'D:/Media/Movies/The Raid (2012)',
+        // 'https://dn710604.ca.archive.org/0/items/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4',
+
         try {
             const response: Api.ApiResponse = await invoke('load_video', {
-                url: 'D:/Media/Movies/The Raid (2012)',
+                url: 'https://dn710604.ca.archive.org/0/items/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4',
             })
 
             if (response.success) {

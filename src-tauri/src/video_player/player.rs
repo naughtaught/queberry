@@ -20,8 +20,6 @@ impl MpvPlayer {
         #[cfg(target_os = "macos")]
         crate::video_player::platform::macos::init();
 
-        log::info!("Creating MPV instance");
-
         let mpv = Mpv::new().map_err(|e| {
             AppError::Runtime(format!(
                 "Failed to create mpv instance: {}. Please ensure libmpv is in your system PATH",
@@ -44,8 +42,6 @@ impl MpvPlayer {
     }
 
     pub fn load_file(&self, file: String) -> Result<()> {
-        log::info!("Loading file: {}", file);
-
         let mpv = self
             .mpv
             .lock()
@@ -55,6 +51,10 @@ impl MpvPlayer {
             .map_err(|e| AppError::Runtime(format!("Failed to load file '{}': {}", file, e)))?;
 
         self.tracker.start();
+
+        // TODO REMOVE THIS HARDCODED
+        mpv.set_property("volume", 10)
+            .map_err(|e| AppError::Runtime(format!("Failed to set volume: {}", e)))?;
 
         Ok(())
     }
@@ -84,11 +84,5 @@ impl MpvPlayer {
             .map_err(|e| AppError::Runtime(format!("Failed to seek {}: {}", seek_amount, e)))?;
 
         Ok(())
-    }
-}
-
-impl Drop for MpvPlayer {
-    fn drop(&mut self) {
-        log::info!("MpvPlayer dropped");
     }
 }
