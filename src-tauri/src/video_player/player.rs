@@ -68,6 +68,18 @@ impl MpvPlayer {
                 .map_err(|e| AppError::Runtime(format!("Failed to pause: {}", e)))
         }
     }
+
+    pub fn seek(&self, seek_amount: i32) -> Result<()> {
+        let mpv = self
+            .mpv
+            .lock()
+            .map_err(|e| AppError::Runtime(format!("Failed to lock MPV instance: {}", e)))?;
+
+        mpv.command("seek", &[&seek_amount.to_string(), "relative"])
+            .map_err(|e| AppError::Runtime(format!("Failed to seek {}: {}", seek_amount, e)))?;
+
+        Ok(())
+    }
 }
 
 impl Drop for MpvPlayer {

@@ -1,10 +1,9 @@
 <script lang="ts">
     import { invoke } from '@tauri-apps/api/core'
-    import type { Api } from '$lib/types/api'
     import { handleError } from '$lib'
+    import type { Api } from '$lib/types/api'
 
-
-    let { isPaused = $bindable()} = $props()
+    let { isPaused = $bindable() } = $props()
 
     const togglePlay = async (): Promise<void> => {
         try {
@@ -12,18 +11,17 @@
                 paused: isPaused,
             })
             if (response.success) {
-                isPaused = response.data!.paused; 
+                isPaused = response.data!.paused
             } else {
-                handleError(response.error!); 
+                handleError(response.error!)
             }
-            
         } catch (error) {
             const errorDetail: Api.ErrorDetail = {
-                code: 500, 
+                code: 500,
                 message: error instanceof Error ? error.message : String(error),
-                stack: error instanceof Error ? error.stack : undefined
-            };
-            handleError(errorDetail);
+                stack: error instanceof Error ? error.stack : undefined,
+            }
+            handleError(errorDetail)
         }
     }
 </script>

@@ -51,6 +51,7 @@ pub fn run() {
             commands::refresh_plugin,
             commands::video::load_video,
             commands::video::toggle_play,
+            commands::video::seek,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
