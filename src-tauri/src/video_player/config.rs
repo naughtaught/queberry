@@ -45,8 +45,7 @@ impl MpvConfig {
 
         #[cfg(target_os = "macos")]
         {
-            // macOS may need special handling
-            // Sometimes it's "wid", sometimes other properties
+            // macOS TODO
             mpv.set_property("wid", window_id)
                 .or_else(|_| mpv.set_property("macos-wid", window_id))
                 .map_err(|e| AppError::Runtime(format!("Failed to set macOS window ID: {}", e)))?;

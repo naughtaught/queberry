@@ -1,17 +1,18 @@
 use crate::errors::{AppError, Result};
 use crate::video_player::config::MpvConfig;
+use crate::video_player::tracker::PlayerTracker;
 use libmpv2::Mpv;
 use std::sync::{Arc, Mutex};
-use tauri::WebviewWindow;
+use tauri::{AppHandle, WebviewWindow};
 
-/// Main MPV player structure
 #[derive(Clone)]
 pub struct MpvPlayer {
     pub(crate) mpv: Arc<Mutex<Mpv>>,
+    tracker: PlayerTracker,
 }
 
 impl MpvPlayer {
-    pub fn new(window: WebviewWindow) -> Result<Self> {
+    pub fn new(window: WebviewWindow, app_handle: AppHandle) -> Result<Self> {
         #[cfg(target_os = "windows")]
         crate::video_player::platform::windows::init();
         #[cfg(target_os = "linux")]
@@ -37,7 +38,9 @@ impl MpvPlayer {
 
         let mpv = Arc::new(Mutex::new(mpv));
 
-        Ok(Self { mpv })
+        let tracker = PlayerTracker::new(Arc::clone(&mpv), app_handle);
+
+        Ok(Self { mpv, tracker })
     }
 
     pub fn load_file(&self, file: String) -> Result<()> {
@@ -50,6 +53,8 @@ impl MpvPlayer {
 
         mpv.command("loadfile", &[&file, "append-play"])
             .map_err(|e| AppError::Runtime(format!("Failed to load file '{}': {}", file, e)))?;
+
+        self.tracker.start();
 
         Ok(())
     }

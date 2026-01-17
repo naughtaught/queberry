@@ -5,7 +5,6 @@ use std::time::{Duration, Instant};
 
 #[derive(Clone)]
 pub struct RateLimiter {
-    // Use a tuple to store both timestamps and last cleanup time
     calls: Arc<DashMap<String, (Vec<Instant>, Instant)>>,
     limits: Arc<DashMap<String, usize>>,
     window_seconds: u64,

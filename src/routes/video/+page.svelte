@@ -1,14 +1,41 @@
 <script lang="ts">
     import { invoke } from '@tauri-apps/api/core'
+    import { listen } from '@tauri-apps/api/event'
+    import type { UnlistenFn } from '@tauri-apps/api/event'
     import { onDestroy, onMount } from 'svelte'
     import { handleError, VideoControls } from '$lib'
     import type { Api } from '$lib'
 
     let isPaused = $state(false)
     let backgroundColor = $state('bg-black')
-    let currentTime = $state(2)
+    let currentTime = $state(0)
+    let destroyListeners: (() => void) | undefined
 
-    onMount(async (): Promise<void> => {
+    $inspect(currentTime)
+
+    const setupListeners = async (): Promise<() => void> => {
+        const unlisteners: UnlistenFn[] = []
+
+        const events = [
+            {
+                event: 'current-time-update',
+                handler: (event: Api.TauriEvent<{ current_time: number }>) => {
+                    currentTime = event.payload.current_time
+                },
+            },
+        ]
+
+        for (const { event, handler } of events) {
+            const unlisten = await listen(event, handler)
+            unlisteners.push(unlisten)
+        }
+
+        return () => {
+            unlisteners.forEach((unlisten) => unlisten())
+        }
+    }
+
+    onMount(async () => {
         document.body.setAttribute('data-page', 'video')
 
         try {
@@ -21,6 +48,8 @@
             } else {
                 handleError(response.error!)
             }
+
+            destroyListeners = await setupListeners()
         } catch (error) {
             const errorDetail: Api.ErrorDetail = {
                 code: 500,
@@ -32,6 +61,7 @@
     })
 
     onDestroy(() => {
+        if (destroyListeners) destroyListeners()
         document.body.removeAttribute('data-page')
         backgroundColor = 'bg-black'
     })

@@ -2,10 +2,11 @@ use crate::errors::ApiResponse;
 use crate::state::AppState;
 use crate::video_player::player::MpvPlayer;
 use crate::video_player::types::{LoadVideoData, SeekData, TogglePlayData};
-use tauri::{command, State, WebviewWindow};
+use tauri::{command, AppHandle, State, WebviewWindow};
 
 #[command]
 pub fn load_video(
+    app: AppHandle,
     state: State<'_, AppState>,
     window: WebviewWindow,
     url: String,
@@ -18,7 +19,7 @@ pub fn load_video(
     };
 
     if player_guard.is_none() {
-        let player = match MpvPlayer::new(window) {
+        let player = match MpvPlayer::new(window, app) {
             Ok(player) => player,
             Err(e) => {
                 return ApiResponse::error(500, format!("Failed to create player: {}", e));

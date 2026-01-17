@@ -11,7 +11,7 @@ mod video_player;
 
 use crate::plugin_system::loader::load_all_plugins;
 use crate::plugin_system::PluginManager;
-use crate::state::AppState; // Use the unified state from state.rs
+use crate::state::AppState;
 pub use errors::{AppError, ErrorDetail, ErrorResponse};
 use tauri::Manager;
 
@@ -37,7 +37,6 @@ pub fn run() {
                 }
             }
 
-            // Create the unified app state
             let app_state = AppState::new(plugin_manager);
             app.manage(app_state);
 

@@ -9,7 +9,6 @@ pub mod macos;
 
 use tauri::WebviewWindow;
 
-/// Get window handle ID in a platform-independent way
 pub fn get_window_handle_id(window: &WebviewWindow) -> Option<i64> {
     #[cfg(target_os = "windows")]
     return crate::video_player::platform::windows::get_window_handle_id(window);
