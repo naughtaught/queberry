@@ -1,3 +1,4 @@
+pub mod init_plugins;
 pub mod loader;
 pub mod manager;
 pub mod rate_limiter;

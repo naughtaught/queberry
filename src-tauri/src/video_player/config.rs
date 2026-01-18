@@ -1,18 +1,32 @@
+use crate::db::types::UserSettings;
 use crate::errors::{AppError, Result};
 use libmpv2::Mpv;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Default)]
-pub struct MpvConfig;
+pub struct MpvConfig {
+    settings: Option<UserSettings>,
+}
 
 impl MpvConfig {
-    pub fn new() -> Self {
-        Self
+    pub fn new(settings: &UserSettings) -> Self {
+        Self {
+            settings: Some(settings.clone()),
+        }
     }
 
     pub fn apply_to_mpv(&self, mpv: &Mpv) -> Result<()> {
+        self.apply_user_settings(mpv)?;
         self.apply_optional_defaults(mpv)?;
         self.apply_hardcoded_params(mpv)?;
+        Ok(())
+    }
+
+    fn apply_user_settings(&self, mpv: &Mpv) -> Result<()> {
+        if let Some(settings) = &self.settings {
+            mpv.set_property("volume", settings.volume as i64)
+                .map_err(|e| AppError::Runtime(format!("Failed to set volume: {}", e)))?;
+        }
         Ok(())
     }
 

@@ -1,4 +1,6 @@
 use backtrace::Backtrace;
+use rusqlite::Error as SqliteError;
+use rusqlite::ErrorCode;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -101,6 +103,9 @@ pub enum AppError {
 
     #[error("Plugin '{plugin_id}' returned invalid data: {details}")]
     PluginInvalidOutput { plugin_id: String, details: String },
+
+    #[error("Database error: {0}")]
+    Database(String),
 }
 
 impl From<String> for AppError {
@@ -138,6 +143,7 @@ impl AppError {
             AppError::Json(e) => (500, e.to_string()),
             AppError::Url(e) => (400, e.to_string()),
             AppError::Runtime(msg) => (500, msg.clone()),
+            AppError::Database(msg) => (500, msg.clone()),
         };
 
         ErrorResponse::error_with_stack(code, message, self.get_stack_trace())
@@ -306,6 +312,68 @@ impl<T> From<ErrorResponse> for ApiResponse<T> {
             success: error_response.success,
             data: None,
             error: error_response.error,
+        }
+    }
+}
+
+impl From<SqliteError> for AppError {
+    fn from(error: SqliteError) -> Self {
+        match error {
+            SqliteError::QueryReturnedNoRows => AppError::NotFound("Record not found".to_string()),
+
+            SqliteError::SqliteFailure(err_code, err_msg) => match err_code.code {
+                // Access .code here
+                ErrorCode::ConstraintViolation => {
+                    let msg = err_msg.unwrap_or_default();
+                    if msg.contains("UNIQUE") {
+                        AppError::Validation(format!("Duplicate entry: {}", msg))
+                    } else {
+                        AppError::Validation(format!("Constraint violation: {}", msg))
+                    }
+                }
+                ErrorCode::NotFound => {
+                    AppError::NotFound("Database resource not found".to_string())
+                }
+                ErrorCode::PermissionDenied => {
+                    AppError::Permission("Database permission denied".to_string())
+                }
+                ErrorCode::DatabaseCorrupt => {
+                    AppError::Database("Database file is corrupt".to_string())
+                }
+                ErrorCode::DiskFull => AppError::Runtime("Disk full".to_string()),
+                _ => {
+                    AppError::Database(format!("SQLite error ({:?}): {:?}", err_code.code, err_msg))
+                }
+            },
+
+            SqliteError::FromSqlConversionFailure(_, _, _)
+            | SqliteError::ToSqlConversionFailure(_)
+            | SqliteError::InvalidColumnType(_, _, _) => {
+                AppError::Runtime("Data type conversion error".to_string())
+            }
+
+            SqliteError::InvalidParameterName(name) => {
+                AppError::Validation(format!("Invalid parameter name: {}", name))
+            }
+            SqliteError::InvalidParameterCount(given, expected) => {
+                AppError::Validation(format!("Expected {} parameters, got {}", expected, given))
+            }
+
+            SqliteError::InvalidColumnIndex(idx) => {
+                AppError::Runtime(format!("Invalid column index: {}", idx))
+            }
+            SqliteError::InvalidColumnName(name) => {
+                AppError::Runtime(format!("Invalid column name: {}", name))
+            }
+
+            SqliteError::MultipleStatement => {
+                AppError::Database("Multiple statements not allowed".to_string())
+            }
+            SqliteError::ExecuteReturnedResults => {
+                AppError::Runtime("Execute statement returned results".to_string())
+            }
+
+            _ => AppError::Runtime(format!("Database error: {}", error)),
         }
     }
 }

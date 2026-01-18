@@ -45,6 +45,7 @@
         try {
             const response: Api.ApiResponse = await invoke('load_video', {
                 url: 'https://dn710604.ca.archive.org/0/items/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4',
+                userId: 1,
             })
 
             if (response.success) {

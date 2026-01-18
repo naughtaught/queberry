@@ -1,16 +1,16 @@
-// lib.rs
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod commands;
 pub mod constants;
+pub mod db;
 pub mod errors;
 mod plugin_system;
 mod state;
 mod utils;
 mod video_player;
 
-use crate::plugin_system::loader::load_all_plugins;
-use crate::plugin_system::PluginManager;
+use crate::db::init_db;
+use crate::plugin_system::init_plugins;
 use crate::state::AppState;
 pub use errors::{AppError, ErrorDetail, ErrorResponse};
 use tauri::Manager;
@@ -27,17 +27,27 @@ pub fn run() {
                 )?;
             }
 
-            let plugins_dir = utils::get_plugins_dir()?;
-
-            let mut plugin_manager = PluginManager::new(plugins_dir);
-
-            for plugin in load_all_plugins()? {
-                if let Err(e) = plugin_manager.register_plugin(plugin) {
-                    eprintln!("Failed to register plugin: {}", e);
+            let plugin_manager = match init_plugins::init_plugins() {
+                Ok(manager) => manager,
+                Err(e) => {
+                    eprintln!("Failed to initialize plugins: {}", e);
+                    return Err(e);
                 }
-            }
+            };
 
-            let app_state = AppState::new(plugin_manager);
+            let database = match init_db::init_db() {
+                Ok(db) => {
+                    println!("Database initialized successfully");
+                    Some(db)
+                }
+                Err(e) => {
+                    eprintln!("Failed to initialize database: {}", e);
+                    // TODO ERROR HANDLING
+                    None
+                }
+            };
+
+            let app_state = AppState::new(plugin_manager, database);
             app.manage(app_state);
 
             Ok(())
@@ -51,6 +61,7 @@ pub fn run() {
             commands::video::load_video,
             commands::video::toggle_play,
             commands::video::seek,
+            commands::db::test_db,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

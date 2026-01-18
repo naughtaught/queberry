@@ -2,14 +2,17 @@ use crate::errors::ApiResponse;
 use crate::state::AppState;
 use crate::video_player::player::MpvPlayer;
 use crate::video_player::types::{LoadVideoData, SeekData, TogglePlayData};
+use crate::AppError;
 use tauri::{command, AppHandle, State, WebviewWindow};
 
 #[command]
 pub fn load_video(
+    app_state: tauri::State<AppState>,
     app: AppHandle,
     state: State<'_, AppState>,
     window: WebviewWindow,
     url: String,
+    user_id: i32,
 ) -> ApiResponse<LoadVideoData> {
     let mut player_guard = match state.video_player.lock() {
         Ok(guard) => guard,
@@ -18,8 +21,18 @@ pub fn load_video(
         }
     };
 
+    let settings_manager = match app_state.get_settings_manager() {
+        Some(manager) => manager,
+        None => return ApiResponse::err(AppError::Runtime("Settings not initialized".to_string())),
+    };
+
+    let settings = match settings_manager.get_settings(user_id) {
+        Ok(settings) => settings,
+        Err(e) => return ApiResponse::err(e),
+    };
+
     if player_guard.is_none() {
-        let player = match MpvPlayer::new(window, app) {
+        let player = match MpvPlayer::new(window, app, &settings) {
             Ok(player) => player,
             Err(e) => {
                 return ApiResponse::error(500, format!("Failed to create player: {}", e));

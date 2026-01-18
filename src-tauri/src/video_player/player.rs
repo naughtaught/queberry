@@ -1,3 +1,4 @@
+use crate::db::types::UserSettings;
 use crate::errors::{AppError, Result};
 use crate::video_player::config::MpvConfig;
 use crate::video_player::tracker::PlayerTracker;
@@ -12,7 +13,11 @@ pub struct MpvPlayer {
 }
 
 impl MpvPlayer {
-    pub fn new(window: WebviewWindow, app_handle: AppHandle) -> Result<Self> {
+    pub fn new(
+        window: WebviewWindow,
+        app_handle: AppHandle,
+        settings: &UserSettings,
+    ) -> Result<Self> {
         #[cfg(target_os = "windows")]
         crate::video_player::platform::windows::init();
         #[cfg(target_os = "linux")]
@@ -30,13 +35,13 @@ impl MpvPlayer {
         let window_id = crate::video_player::platform::get_window_handle_id(&window)
             .ok_or_else(|| AppError::Runtime("Window handle not available".to_string()))?;
 
-        let config = MpvConfig::new();
+        let config = MpvConfig::new(settings);
         config.set_window_id(&mpv, window_id)?;
         config.apply_to_mpv(&mpv)?;
 
         let mpv = Arc::new(Mutex::new(mpv));
 
-        let tracker = PlayerTracker::new(Arc::clone(&mpv), app_handle);
+        let tracker = PlayerTracker::new(Arc::clone(&mpv), app_handle, settings.complete_percent);
 
         Ok(Self { mpv, tracker })
     }
@@ -51,10 +56,6 @@ impl MpvPlayer {
             .map_err(|e| AppError::Runtime(format!("Failed to load file '{}': {}", file, e)))?;
 
         self.tracker.start();
-
-        // TODO REMOVE THIS HARDCODED
-        mpv.set_property("volume", 10)
-            .map_err(|e| AppError::Runtime(format!("Failed to set volume: {}", e)))?;
 
         Ok(())
     }

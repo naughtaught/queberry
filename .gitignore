@@ -48,6 +48,10 @@ src-tauri/gen/schemas
 src-tauri/Cargo.lock
 src-tauri/lib/
 
+# Database
+src-tauri/db/
+src-tauri/src/db/migrations
+
 # Personal
 todo.md
 *.txt
