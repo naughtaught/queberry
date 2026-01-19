@@ -1,6 +1,7 @@
 use crate::db::types::UserSettings;
 use crate::errors::{AppError, Result};
 use crate::video_player::config::MpvConfig;
+use crate::video_player::events::MpvEventHandler;
 use crate::video_player::tracker::PlayerTracker;
 use libmpv2::Mpv;
 use std::sync::{Arc, Mutex};
@@ -42,6 +43,9 @@ impl MpvPlayer {
         let mpv = Arc::new(Mutex::new(mpv));
 
         let tracker = PlayerTracker::new(Arc::clone(&mpv), app_handle, settings.complete_percent);
+
+        let event_logger = MpvEventHandler::new(Arc::clone(&mpv));
+        event_logger.start();
 
         Ok(Self { mpv, tracker })
     }

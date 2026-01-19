@@ -17,3 +17,8 @@ pub struct SeekData {
     pub message: String,
     pub seek_amount: i32,
 }
+
+#[derive(Serialize, Clone, Debug)]
+pub struct Metadata {
+    pub duration: f64,
+}
