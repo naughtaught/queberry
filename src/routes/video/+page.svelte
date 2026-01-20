@@ -3,24 +3,20 @@
     import { listen } from '@tauri-apps/api/event'
     import type { UnlistenFn } from '@tauri-apps/api/event'
     import { onDestroy, onMount } from 'svelte'
-    import { handleError, VideoControls } from '$lib'
-    import type { Api } from '$lib'
+    import { handleError, VideoControls, videoMetadata, videoState } from '$lib'
+    import type { Api, Video } from '$lib'
 
     let isPaused = $state(false)
     let backgroundColor = $state('bg-black')
-    let currentTime = $state(0)
     let is_completed = $state(false)
     let destroyListeners: (() => void) | undefined
 
     const setupListeners = async (): Promise<() => void> => {
         const unlisteners: UnlistenFn[] = []
 
-        const timeUnlisten = await listen<{ current_time: number }>(
-            'current-time-update',
-            (event) => {
-                currentTime = event.payload.current_time
-            },
-        )
+        const timeUnlisten = await listen<Api.VideoState>('current-video-state', (event) => {
+            $videoState = event.payload
+        })
         unlisteners.push(timeUnlisten)
 
         const completeUnlisten = await listen<{ is_completed: boolean }>(
@@ -30,6 +26,11 @@
             },
         )
         unlisteners.push(completeUnlisten)
+
+        const metadataUnlisten = await listen<Api.Metadata>('video-metadata', (event) => {
+            $videoMetadata = event.payload
+        })
+        unlisteners.push(metadataUnlisten)
 
         return () => {
             unlisteners.forEach((unlisten) => unlisten())
@@ -76,7 +77,7 @@
     <div class="group pointer-events-none absolute inset-0 z-20 h-full w-full">
         <div class="pointer-events-auto absolute bottom-0 left-0 w-full">
             <div class="opacity-0 transition-opacity group-hover:opacity-100">
-                <VideoControls bind:isPaused bind:currentTime />
+                <VideoControls bind:isPaused />
             </div>
         </div>
     </div>

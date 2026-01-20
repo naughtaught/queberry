@@ -42,9 +42,13 @@ impl MpvPlayer {
 
         let mpv = Arc::new(Mutex::new(mpv));
 
-        let tracker = PlayerTracker::new(Arc::clone(&mpv), app_handle, settings.complete_percent);
+        let tracker = PlayerTracker::new(
+            Arc::clone(&mpv),
+            app_handle.clone(),
+            settings.complete_percent,
+        );
 
-        let event_logger = MpvEventHandler::new(Arc::clone(&mpv));
+        let event_logger = MpvEventHandler::new(Arc::clone(&mpv), app_handle.clone());
         event_logger.start();
 
         Ok(Self { mpv, tracker })
@@ -79,7 +83,7 @@ impl MpvPlayer {
         }
     }
 
-    pub fn seek(&self, seek_amount: i32) -> Result<()> {
+    pub fn seek(&self, seek_amount: i8) -> Result<()> {
         let mpv = self
             .mpv
             .lock()
@@ -87,6 +91,18 @@ impl MpvPlayer {
 
         mpv.command("seek", &[&seek_amount.to_string(), "relative"])
             .map_err(|e| AppError::Runtime(format!("Failed to seek {}: {}", seek_amount, e)))?;
+
+        Ok(())
+    }
+
+    pub fn set_time(&self, time: f64) -> Result<()> {
+        let mpv = self
+            .mpv
+            .lock()
+            .map_err(|e| AppError::Runtime(format!("Failed to lock MPV instance: {}", e)))?;
+
+        mpv.command("seek", &[&time.to_string(), "absolute"])
+            .map_err(|e| AppError::Runtime(format!("Failed to seek {}: {}", time, e)))?;
 
         Ok(())
     }

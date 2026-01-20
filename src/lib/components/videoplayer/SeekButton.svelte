@@ -1,16 +1,16 @@
 <script lang="ts">
     import { invoke } from '@tauri-apps/api/core'
-    import { handleError } from '$lib'
+    import { handleError, videoState } from '$lib'
     import type { Api } from '$lib/types/api'
 
-    let { direction, currentTime } = $props()
+    let { direction } = $props()
 
     let label = $derived(direction === 'forward' ? 'Forward' : 'Back')
     let seekAmount = $derived(direction === 'forward' ? 30 : -30)
     let svgClass = $derived(direction === 'forward' ? '-scale-x-100 transform' : '')
 
     const seek = async () => {
-        if (currentTime < 1) return
+        if ($videoState.current_time < 1) return
         try {
             const response: Api.ApiResponse = await invoke('seek', {
                 seekAmount: seekAmount,
@@ -31,7 +31,7 @@
 
 <button
     aria-label={label}
-    class={currentTime >= 1 ? 'fill-white hover:cursor-pointer' : 'fill-neutral-700'}
+    class={$videoState.current_time >= 1 ? 'fill-white hover:cursor-pointer' : 'fill-neutral-700'}
     onclick={seek}>
     <svg class={svgClass} height="15px" width="15px" viewBox="0 0 330.002 330.002">
         <path

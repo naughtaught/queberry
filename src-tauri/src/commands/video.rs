@@ -1,7 +1,7 @@
 use crate::errors::ApiResponse;
 use crate::state::AppState;
 use crate::video_player::player::MpvPlayer;
-use crate::video_player::types::{LoadVideoData, SeekData, TogglePlayData};
+use crate::video_player::types::{LoadVideoData, SeekData, SetTime, TogglePlayData};
 use crate::AppError;
 use tauri::{command, AppHandle, State, WebviewWindow};
 
@@ -79,7 +79,7 @@ pub fn toggle_play(state: State<'_, AppState>, paused: bool) -> ApiResponse<Togg
 }
 
 #[command]
-pub fn seek(state: State<'_, AppState>, seek_amount: i32) -> ApiResponse<SeekData> {
+pub fn seek(state: State<'_, AppState>, seek_amount: i8) -> ApiResponse<SeekData> {
     let player_guard = match state.video_player.lock() {
         Ok(guard) => guard,
         Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
@@ -97,5 +97,27 @@ pub fn seek(state: State<'_, AppState>, seek_amount: i32) -> ApiResponse<SeekDat
     ApiResponse::ok(SeekData {
         message: "Time adjusted successfully".to_string(),
         seek_amount,
+    })
+}
+
+#[command]
+pub fn set_time(state: State<'_, AppState>, time: f64) -> ApiResponse<SetTime> {
+    let player_guard = match state.video_player.lock() {
+        Ok(guard) => guard,
+        Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
+    };
+
+    let player = match player_guard.as_ref() {
+        Some(player) => player,
+        None => return ApiResponse::error(404, "No player available".to_string()),
+    };
+
+    if let Err(e) = player.set_time(time) {
+        return ApiResponse::error(500, format!("Failed to seek: {}", e));
+    }
+
+    ApiResponse::ok(SetTime {
+        message: "Time adjusted successfully".to_string(),
+        time,
     })
 }

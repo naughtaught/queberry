@@ -15,10 +15,30 @@ pub struct TogglePlayData {
 #[derive(Serialize, Clone)]
 pub struct SeekData {
     pub message: String,
-    pub seek_amount: i32,
+    pub seek_amount: i8,
+}
+
+#[derive(Serialize, Clone)]
+pub struct SetTime {
+    pub message: String,
+    pub time: f64,
 }
 
 #[derive(Serialize, Clone, Debug)]
 pub struct Metadata {
     pub duration: f64,
+}
+
+#[derive(Serialize, Clone)]
+pub struct VideoState {
+    pub current_time: u64,
+    pub cache_time: u64,
+    pub cache_speed: u64,
+    pub is_buffering: bool,
+    pub buffering_percent: u64,
+}
+
+#[derive(Serialize, Clone)]
+pub struct CompletionEvent {
+    pub is_completed: bool,
 }

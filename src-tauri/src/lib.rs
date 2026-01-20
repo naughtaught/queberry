@@ -61,6 +61,7 @@ pub fn run() {
             commands::video::load_video,
             commands::video::toggle_play,
             commands::video::seek,
+            commands::video::set_time,
             commands::db::test_db,
         ])
         .run(tauri::generate_context!())
