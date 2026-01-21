@@ -6,7 +6,6 @@
     import { handleError, VideoControls, videoMetadata, videoState } from '$lib'
     import type { Api, Video } from '$lib'
 
-    let isPaused = $state(false)
     let backgroundColor = $state('bg-black')
     let is_completed = $state(false)
     let destroyListeners: (() => void) | undefined
@@ -52,6 +51,7 @@
             if (response.success) {
                 backgroundColor = 'bg-transparent'
             } else {
+                // TODO redirect
                 handleError(response.error!)
             }
 
@@ -62,6 +62,7 @@
                 message: error instanceof Error ? error.message : String(error),
                 stack: error instanceof Error ? error.stack : undefined,
             }
+            // TODO redirect
             handleError(errorDetail)
         }
     })
@@ -77,7 +78,7 @@
     <div class="group pointer-events-none absolute inset-0 z-20 h-full w-full">
         <div class="pointer-events-auto absolute bottom-0 left-0 w-full">
             <div class="opacity-0 transition-opacity group-hover:opacity-100">
-                <VideoControls bind:isPaused />
+                <VideoControls />
             </div>
         </div>
     </div>

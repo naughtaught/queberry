@@ -13,6 +13,7 @@ export const defaultvideoState = readable<Api.VideoState>({
     cache_speed: 0,
     is_buffering: true,
     buffering_percent: 0,
+    is_paused: false,
 })
 
 export const videoState = writable<Api.VideoState>(get(defaultvideoState))

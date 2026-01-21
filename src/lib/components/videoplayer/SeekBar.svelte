@@ -97,18 +97,15 @@
         const playedPercent = ($videoState.current_time / $videoMetadata.duration) * 100
         const cachedEndPercent = (cachedEndPosition / $videoMetadata.duration) * 100
 
-        const primary = '#ff6600'
-        const primaryTransparent = 'rgba(255,102,0,0.3)'
-
         const bg = `linear-gradient(
-            to right,
-            ${primary} 0%,
-            ${primary} ${playedPercent}%,
-            ${primaryTransparent} ${playedPercent}%,
-            ${primaryTransparent} ${cachedEndPercent}%,
-            #a3a3a3 ${cachedEndPercent}%,
-            #a3a3a3 100%
-        )`
+        to right,
+        var(--color-primary) 0%,
+        var(--color-primary) ${playedPercent}%,
+        color-mix(in srgb, var(--color-primary) 30%, transparent) ${playedPercent}%,
+        color-mix(in srgb, var(--color-primary) 30%, transparent) ${cachedEndPercent}%,
+        #a3a3a3 ${cachedEndPercent}%,
+        #a3a3a3 100%
+    )`
 
         sliderElement.style.background = bg
     })
@@ -127,13 +124,13 @@
                 onpointerdown={handlePointerDown}
                 onpointerup={() => handlePointerUp(sliderValue)}
                 oninput={handleInput}
-                class="h-1 w-full cursor-pointer appearance-none rounded-full from-[#ff6600] to-[#ff6600] [&::-webkit-slider-thumb]:h-2 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#ff6600] [&::-webkit-slider-thumb]:shadow-md" />
+                class=" from-bg-primary to-bg-primary h-1 w-full cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none" />
             <div
-                class={`pointer-events-none absolute -translate-x-1/2 transform rounded bg-[#ff6600] px-2 py-1 text-xs text-white transition-opacity duration-200 ${isDragging ? 'opacity-100' : 'opacity-0'}`}
+                class={`pointer-events-none absolute -translate-x-1/2 transform rounded bg-primary px-2 py-1 text-xs text-white transition-opacity duration-200 ${isDragging ? 'opacity-100' : 'opacity-0'}`}
                 style="left: {sliderPosition}%; top:-20px; z-index: 10;">
                 {displayValue}
                 <div
-                    class="absolute left-1/2 -translate-x-1/2 border-t-4 border-r-4 border-l-4 border-solid border-[#ff6600] border-r-transparent border-l-transparent"
+                    class="absolute left-1/2 -translate-x-1/2 border-t-4 border-r-4 border-l-4 border-solid border-primary border-r-transparent border-l-transparent"
                     style="top: 100%;">
                 </div>
             </div>

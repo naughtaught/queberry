@@ -36,6 +36,7 @@ pub struct VideoState {
     pub cache_speed: u64,
     pub is_buffering: bool,
     pub buffering_percent: u64,
+    pub is_paused: bool,
 }
 
 #[derive(Serialize, Clone)]
