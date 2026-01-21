@@ -1,16 +1,42 @@
-use crate::state::AppState;
+use crate::{errors::ApiResponse, state::AppState, AppError};
 use tauri::State;
 
 #[tauri::command]
-pub fn test_db(state: State<AppState>) -> Result<String, String> {
-    let db_lock = state
-        .database
-        .lock()
-        .map_err(|e| format!("Failed to lock database: {}", e))?;
+pub async fn get_user_settings(
+    app_state: State<'_, AppState>,
+    user_id: i32,
+) -> Result<ApiResponse<serde_json::Value>, String> {
+    let result = (|| -> Result<serde_json::Value, AppError> {
+        let settings_manager = app_state
+            .get_settings_manager()
+            .ok_or_else(|| AppError::Runtime("Settings not initialized".to_string()))?;
 
-    if db_lock.is_some() {
-        Ok("Database is available".to_string())
-    } else {
-        Ok("Database is not available".to_string())
+        let settings = settings_manager.get_settings(user_id)?;
+        Ok(settings.to_frontend_json())
+    })();
+
+    match result {
+        Ok(data) => Ok(ApiResponse::ok(data)),
+        Err(e) => Ok(ApiResponse::err(e)),
+    }
+}
+
+#[tauri::command]
+pub async fn update_user_settings(
+    app_state: State<'_, AppState>,
+    settings: crate::db::types::UserSettings,
+) -> Result<ApiResponse<()>, String> {
+    let result = (|| -> Result<(), AppError> {
+        let settings_manager = app_state
+            .get_settings_manager()
+            .ok_or_else(|| AppError::Runtime("Settings not initialized".to_string()))?;
+
+        settings_manager.update_settings(&settings)?;
+        Ok(())
+    })();
+
+    match result {
+        Ok(_) => Ok(ApiResponse::ok(())),
+        Err(e) => Ok(ApiResponse::err(e)),
     }
 }

@@ -1,7 +1,8 @@
+use crate::db::settings::SettingsManager;
 use crate::errors::ApiResponse;
 use crate::state::AppState;
 use crate::video_player::player::MpvPlayer;
-use crate::video_player::types::{LoadVideoData, SeekData, SetTime, TogglePlayData};
+use crate::video_player::types::{LoadVideoData, SeekData, SetTime, SetVolume, TogglePlayData};
 use crate::AppError;
 use tauri::{command, AppHandle, State, WebviewWindow};
 
@@ -21,7 +22,7 @@ pub fn load_video(
         }
     };
 
-    let settings_manager = match app_state.get_settings_manager() {
+    let settings_manager: &SettingsManager = match app_state.get_settings_manager() {
         Some(manager) => manager,
         None => return ApiResponse::err(AppError::Runtime("Settings not initialized".to_string())),
     };
@@ -113,11 +114,33 @@ pub fn set_time(state: State<'_, AppState>, time: f64) -> ApiResponse<SetTime> {
     };
 
     if let Err(e) = player.set_time(time) {
-        return ApiResponse::error(500, format!("Failed to seek: {}", e));
+        return ApiResponse::error(500, format!("Failed to set time: {}", e));
     }
 
     ApiResponse::ok(SetTime {
         message: "Time adjusted successfully".to_string(),
         time,
+    })
+}
+
+#[command]
+pub fn set_volume(state: State<'_, AppState>, volume: f64) -> ApiResponse<SetVolume> {
+    let player_guard = match state.video_player.lock() {
+        Ok(guard) => guard,
+        Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
+    };
+
+    let player = match player_guard.as_ref() {
+        Some(player) => player,
+        None => return ApiResponse::error(404, "No player available".to_string()),
+    };
+
+    if let Err(e) = player.set_volume(volume) {
+        return ApiResponse::error(500, format!("Failed to set volume: {}", e));
+    }
+
+    ApiResponse::ok(SetVolume {
+        message: "Volume adjusted successfully".to_string(),
+        volume,
     })
 }

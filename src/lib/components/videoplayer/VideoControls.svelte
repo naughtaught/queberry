@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { PlayButton, SeekBar, SeekButton } from '$lib'
+    import { PlayButton, SeekBar, SeekButton, Volume } from '$lib'
 </script>
 
 <div class="fixed bottom-0 left-0 flex h-28 w-full flex-col bg-black px-4">
@@ -11,6 +11,9 @@
             <SeekButton direction="back" />
             <PlayButton />
             <SeekButton direction="forward" />
+        </div>
+        <div class="flex w-1/4 items-center justify-end gap-2">
+            <Volume />
         </div>
     </div>
 </div>

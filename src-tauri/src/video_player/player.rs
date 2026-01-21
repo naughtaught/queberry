@@ -45,7 +45,7 @@ impl MpvPlayer {
         let tracker = PlayerTracker::new(
             Arc::clone(&mpv),
             app_handle.clone(),
-            settings.complete_percent,
+            settings.completion_percent,
         );
 
         let event_logger = MpvEventHandler::new(Arc::clone(&mpv), app_handle.clone());
@@ -103,6 +103,29 @@ impl MpvPlayer {
 
         mpv.command("seek", &[&time.to_string(), "absolute"])
             .map_err(|e| AppError::Runtime(format!("Failed to seek {}: {}", time, e)))?;
+
+        Ok(())
+    }
+
+    pub fn set_volume(&self, volume: f64) -> Result<()> {
+        let mpv = self
+            .mpv
+            .lock()
+            .map_err(|e| AppError::Runtime(format!("Failed to lock MPV instance: {}", e)))?;
+
+        let volume = volume.trunc();
+
+        if volume <= 0.0 {
+            mpv.set_property("mute", true)
+                .map_err(|e| AppError::Runtime(format!("Failed to mute: {}", e)))?;
+        } else {
+            mpv.set_property("mute", false)
+                .map_err(|e| AppError::Runtime(format!("Failed to unmute: {}", e)))?;
+
+            mpv.set_property("volume", volume).map_err(|e| {
+                AppError::Runtime(format!("Failed to set volume {}: {}", volume, e))
+            })?;
+        }
 
         Ok(())
     }

@@ -3,11 +3,10 @@
     import { listen } from '@tauri-apps/api/event'
     import type { UnlistenFn } from '@tauri-apps/api/event'
     import { onDestroy, onMount } from 'svelte'
-    import { handleError, VideoControls, videoMetadata, videoState } from '$lib'
-    import type { Api, Video } from '$lib'
+    import { handleError, VideoControls, videoMetadata, videoState, settings, type Api } from '$lib'
 
     let backgroundColor = $state('bg-black')
-    let is_completed = $state(false)
+    let isCompleted = $state(false)
     let destroyListeners: (() => void) | undefined
 
     const setupListeners = async (): Promise<() => void> => {
@@ -18,10 +17,10 @@
         })
         unlisteners.push(timeUnlisten)
 
-        const completeUnlisten = await listen<{ is_completed: boolean }>(
+        const completeUnlisten = await listen<{ isCompleted: boolean }>(
             'video-completed',
             (event) => {
-                is_completed = event.payload.is_completed
+                isCompleted = event.payload.isCompleted
             },
         )
         unlisteners.push(completeUnlisten)

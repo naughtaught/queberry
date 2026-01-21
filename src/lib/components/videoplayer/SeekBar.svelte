@@ -1,17 +1,21 @@
 <script lang="ts">
     import { invoke } from '@tauri-apps/api/core'
-    import { videoMetadata, videoState } from '$lib/stores/video'
-    import { handleError, type Api } from '$lib'
+    import { handleError, settings, videoMetadata, videoState, type Api } from '$lib'
 
-    let cacheTime = $derived($videoState.cache_time)
+    let cacheTime = $derived($videoState.cacheTime)
     let isDragging = $state(false)
     let sliderValue = $state(0)
     let sliderPosition = $state(0)
     let sliderElement: HTMLInputElement
     let min = 0
+    let displayDurationMode = $state($settings.durationDisplay)
 
     let displayCurrent = $derived.by(() => {
-        return formatTime($videoState.current_time)
+        if (displayDurationMode === 'Time Remaining') {
+            const remaining = $videoMetadata.duration - $videoState.currentTime
+            return '-' + formatTime(remaining)
+        }
+        return formatTime($videoState.currentTime)
     })
     let displayDuration = $derived.by(() => {
         return formatTime($videoMetadata.duration)
@@ -45,7 +49,7 @@
                 time: time,
             })
             if (response.success) {
-                $videoState.current_time = response.data!.time
+                $videoState.currentTime = response.data.time
             } else {
                 handleError(response.error!)
             }
@@ -68,7 +72,7 @@
     }
 
     $effect(() => {
-        if (!isDragging) sliderValue = $videoState.current_time
+        if (!isDragging) sliderValue = $videoState.currentTime
     })
 
     $effect(() => {
@@ -94,7 +98,7 @@
     $effect(() => {
         if (!$videoMetadata.duration) return
 
-        const playedPercent = ($videoState.current_time / $videoMetadata.duration) * 100
+        const playedPercent = ($videoState.currentTime / $videoMetadata.duration) * 100
         const cachedEndPercent = (cachedEndPosition / $videoMetadata.duration) * 100
 
         const bg = `linear-gradient(
@@ -124,7 +128,7 @@
                 onpointerdown={handlePointerDown}
                 onpointerup={() => handlePointerUp(sliderValue)}
                 oninput={handleInput}
-                class=" from-bg-primary to-bg-primary h-1 w-full cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none" />
+                class="from-bg-primary to-bg-primary h-1 w-full cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none" />
             <div
                 class={`pointer-events-none absolute -translate-x-1/2 transform rounded bg-primary px-2 py-1 text-xs text-white transition-opacity duration-200 ${isDragging ? 'opacity-100' : 'opacity-0'}`}
                 style="left: {sliderPosition}%; top:-20px; z-index: 10;">
@@ -136,8 +140,12 @@
             </div>
         </div>
     </div>
-    <div class="flex justify-between text-sm">
+    <div class="flex justify-between text-sm text-white">
         <p>{displayCurrent}</p>
-        <p>{displayDuration}</p>
+        <button
+            onclick={() => {
+                displayDurationMode =
+                    displayDurationMode === 'Duration' ? 'Time Remaining' : 'Duration'
+            }}>{displayDuration}</button>
     </div>
 </div>

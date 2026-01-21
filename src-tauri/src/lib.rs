@@ -62,7 +62,9 @@ pub fn run() {
             commands::video::toggle_play,
             commands::video::seek,
             commands::video::set_time,
-            commands::db::test_db,
+            commands::video::set_volume,
+            commands::db::update_user_settings,
+            commands::db::get_user_settings,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

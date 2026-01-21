@@ -30,6 +30,7 @@ pub struct Metadata {
 }
 
 #[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct VideoState {
     pub current_time: u64,
     pub cache_time: u64,
@@ -40,6 +41,13 @@ pub struct VideoState {
 }
 
 #[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct CompletionEvent {
     pub is_completed: bool,
+}
+
+#[derive(Serialize, Clone)]
+pub struct SetVolume {
+    pub message: String,
+    pub volume: f64,
 }
