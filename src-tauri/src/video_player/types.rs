@@ -51,3 +51,8 @@ pub struct SetVolume {
     pub message: String,
     pub volume: f64,
 }
+
+#[derive(Serialize, Clone)]
+pub struct CloseVideoPlayer {
+    pub message: String,
+}

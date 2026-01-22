@@ -1,5 +1,8 @@
 use libmpv2::Mpv;
-use std::sync::{Arc, Mutex};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc, Mutex,
+};
 use tauri::{async_runtime, AppHandle, Emitter};
 
 use crate::video_player::types::{CompletionEvent, VideoState};
@@ -9,6 +12,7 @@ pub struct PlayerTracker {
     mpv: Arc<Mutex<Mpv>>,
     app_handle: AppHandle,
     complete_percent: i32,
+    should_stop: Arc<AtomicBool>,
 }
 
 impl PlayerTracker {
@@ -17,13 +21,21 @@ impl PlayerTracker {
             mpv,
             app_handle,
             complete_percent,
+            should_stop: Arc::new(AtomicBool::new(false)),
         }
     }
 
     pub fn start(&self) {
+        self.should_stop.store(true, Ordering::Relaxed);
+
+        std::thread::sleep(std::time::Duration::from_millis(100));
+
+        self.should_stop.store(false, Ordering::Relaxed);
+
         let mpv_clone = Arc::clone(&self.mpv);
         let app_handle_clone = self.app_handle.clone();
         let complete_percent = self.complete_percent;
+        let should_stop = Arc::clone(&self.should_stop);
 
         async_runtime::spawn(async move {
             let mut interval = tokio::time::interval(std::time::Duration::from_millis(500));
@@ -31,6 +43,11 @@ impl PlayerTracker {
             let complete_percent_i64 = complete_percent as i64;
 
             loop {
+                if should_stop.load(Ordering::Relaxed) {
+                    log::info!("Player tracker stopped");
+                    break;
+                }
+
                 interval.tick().await;
 
                 if let Ok(guard) = mpv_clone.lock() {
@@ -110,5 +127,9 @@ impl PlayerTracker {
                 }
             }
         });
+    }
+
+    pub fn stop(&self) {
+        self.should_stop.store(true, Ordering::Relaxed);
     }
 }

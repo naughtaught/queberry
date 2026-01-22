@@ -1,9 +1,7 @@
-import { writable } from 'svelte/store'
-import { type User } from '$lib'
+import { get, readable, writable } from 'svelte/store'
+import { type Api } from '$lib'
 
-export const settings = writable<User.Settings>()
-
-export const defaultSettings = writable<User.Settings>({
+const defaultSettings = readable<Api.UserSettings>({
     id: 0,
     userId: 0,
     preferredTheme: 'Default',
@@ -33,3 +31,5 @@ export const defaultSettings = writable<User.Settings>({
     downloadRateLimit: 0,
     screensaverTimeout: 30,
 })
+
+export const settings = writable<Api.UserSettings>(get(defaultSettings))

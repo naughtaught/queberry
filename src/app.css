@@ -1,10 +1,22 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
+@source "../../frontend/src/lib/data/tailwind-safelist.txt";
+
 
 @theme {
-    --color-background: #181818;
-    --color-primary: #2596be;
+    --color-backgroundColor: #181818;
+    --color-primaryColor: #2596be;
+    --color-contrastColor: #be4d25;
+    --color-tetradicColor1: #9925be;
+    --color-tetradicColor2: #49be25;
+
+    --color-textColor: #ffffff;
+    --color-detailsPageTextColor: #ffffff;
+
+    --font-primary: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+	--font-secondary: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+
 }
 
 html,
@@ -16,9 +28,40 @@ body {
 }
 
 body {
-    @apply bg-background;
+    @apply bg-backgroundColor;
 }
 
 body[data-page='video'] {
     @apply bg-transparent;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    @apply font-primary text-textColor;
+}
+
+p,
+a,
+li,
+label,
+input,
+button,
+select,
+span {
+    @apply font-secondary text-textColor text-shadow-sm/10 text-shadow-black/30;
+}
+
+svg {
+    @apply drop-shadow-md;
+}
+
+
+@layer utilities {
+	.textShadow {
+		@apply text-shadow-sm/30 text-shadow-black/30;
+	}
 }

@@ -18,6 +18,7 @@ use tauri::Manager;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_process::init())
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -63,6 +64,7 @@ pub fn run() {
             commands::video::seek,
             commands::video::set_time,
             commands::video::set_volume,
+            commands::video::close_video_player,
             commands::db::update_user_settings,
             commands::db::get_user_settings,
         ])

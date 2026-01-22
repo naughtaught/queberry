@@ -129,4 +129,25 @@ impl MpvPlayer {
 
         Ok(())
     }
+
+    pub fn shutdown(&self) -> Result<()> {
+        self.tracker.stop();
+
+        std::thread::sleep(std::time::Duration::from_millis(100));
+
+        {
+            let mpv = self
+                .mpv
+                .lock()
+                .map_err(|e| AppError::Runtime(format!("Failed to lock MPV instance: {}", e)))?;
+
+            mpv.command("stop", &[])
+                .map_err(|e| AppError::Runtime(format!("Failed to clear playlist: {}", e)))?;
+            mpv.command("playlist-clear", &[])
+                .map_err(|e| AppError::Runtime(format!("Failed to clear playlist: {}", e)))?;
+        }
+
+        log::info!("MPV player shutdown completed");
+        Ok(())
+    }
 }

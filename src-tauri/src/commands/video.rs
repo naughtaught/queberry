@@ -2,7 +2,9 @@ use crate::db::settings::SettingsManager;
 use crate::errors::ApiResponse;
 use crate::state::AppState;
 use crate::video_player::player::MpvPlayer;
-use crate::video_player::types::{LoadVideoData, SeekData, SetTime, SetVolume, TogglePlayData};
+use crate::video_player::types::{
+    CloseVideoPlayer, LoadVideoData, SeekData, SetTime, SetVolume, TogglePlayData,
+};
 use crate::AppError;
 use tauri::{command, AppHandle, State, WebviewWindow};
 
@@ -142,5 +144,26 @@ pub fn set_volume(state: State<'_, AppState>, volume: f64) -> ApiResponse<SetVol
     ApiResponse::ok(SetVolume {
         message: "Volume adjusted successfully".to_string(),
         volume,
+    })
+}
+
+#[command]
+pub fn close_video_player(state: State<'_, AppState>) -> ApiResponse<CloseVideoPlayer> {
+    let player_guard = match state.video_player.lock() {
+        Ok(guard) => guard,
+        Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
+    };
+
+    let player = match player_guard.as_ref() {
+        Some(player) => player,
+        None => return ApiResponse::error(404, "No player available".to_string()),
+    };
+
+    if let Err(e) = player.shutdown() {
+        return ApiResponse::error(500, format!("Failed to close video player: {}", e));
+    }
+
+    ApiResponse::ok(CloseVideoPlayer {
+        message: "Video player closed successfully".to_string(),
     })
 }

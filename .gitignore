@@ -52,6 +52,9 @@ src-tauri/lib/
 src-tauri/db/
 src-tauri/src/db/migrations
 
+# Data
+/src/lib/components/data
+
 # Personal
 todo.md
 *.txt
@@ -59,7 +62,6 @@ todo.md
 .prettierrc
 .prettierignore
 eslint.config.js
-notes.md
 
 *.dll
 plugins

@@ -103,15 +103,15 @@
 
         const bg = `linear-gradient(
         to right,
-        var(--color-primary) 0%,
-        var(--color-primary) ${playedPercent}%,
-        color-mix(in srgb, var(--color-primary) 30%, transparent) ${playedPercent}%,
-        color-mix(in srgb, var(--color-primary) 30%, transparent) ${cachedEndPercent}%,
+        var(--color-primaryColor) 0%,
+        var(--color-primaryColor) ${playedPercent}%,
+        color-mix(in srgb, var(--color-primaryColor) 30%, transparent) ${playedPercent}%,
+        color-mix(in srgb, var(--color-primaryColor) 30%, transparent) ${cachedEndPercent}%,
         #a3a3a3 ${cachedEndPercent}%,
         #a3a3a3 100%
     )`
 
-        sliderElement.style.background = bg
+        sliderElement.style.backgroundColor = bg
     })
 </script>
 
@@ -128,19 +128,19 @@
                 onpointerdown={handlePointerDown}
                 onpointerup={() => handlePointerUp(sliderValue)}
                 oninput={handleInput}
-                class="from-bg-primary to-bg-primary h-1 w-full cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none" />
+                class="from-bg-primaryColor to-bg-primaryColor h-1 w-full cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none" />
             <div
-                class={`pointer-events-none absolute -translate-x-1/2 transform rounded bg-primary px-2 py-1 text-xs text-white transition-opacity duration-200 ${isDragging ? 'opacity-100' : 'opacity-0'}`}
+                class={`pointer-events-none absolute -translate-x-1/2 transform rounded bg-primaryColor px-2 py-1 text-xs text-textColor transition-opacity duration-200 ${isDragging ? 'opacity-100' : 'opacity-0'}`}
                 style="left: {sliderPosition}%; top:-20px; z-index: 10;">
                 {displayValue}
                 <div
-                    class="absolute left-1/2 -translate-x-1/2 border-t-4 border-r-4 border-l-4 border-solid border-primary border-r-transparent border-l-transparent"
+                    class="absolute left-1/2 -translate-x-1/2 border-t-4 border-r-4 border-l-4 border-solid border-primaryColor border-r-transparent border-l-transparent"
                     style="top: 100%;">
                 </div>
             </div>
         </div>
     </div>
-    <div class="flex justify-between text-sm text-white">
+    <div class="flex justify-between text-sm text-textColor">
         <p>{displayCurrent}</p>
         <button
             onclick={() => {

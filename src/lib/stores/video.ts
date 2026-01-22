@@ -1,13 +1,14 @@
 import { get, readable, writable } from 'svelte/store'
-import { type Api, type Video } from '$lib'
+import { type Api } from '$lib'
 
-export const defaultMetaData = readable<Video.VideoMetadata>({
+const defaultMetaData = readable<Api.Metadata>({
+    title: '',
     duration: 0,
 })
 
-export const videoMetadata = writable<Video.VideoMetadata>(get(defaultMetaData))
+export const videoMetadata = writable<Api.Metadata>(get(defaultMetaData))
 
-export const defaultvideoState = readable<Api.VideoState>({
+const defaultvideoState = readable<Api.VideoState>({
     currentTime: 0,
     cacheTime: 0,
     cacheSpeed: 0,

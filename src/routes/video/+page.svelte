@@ -1,12 +1,17 @@
 <script lang="ts">
     import { invoke } from '@tauri-apps/api/core'
-    import { listen } from '@tauri-apps/api/event'
-    import type { UnlistenFn } from '@tauri-apps/api/event'
+    import { listen, type UnlistenFn } from '@tauri-apps/api/event'
     import { onDestroy, onMount } from 'svelte'
-    import { handleError, VideoControls, videoMetadata, videoState, settings, type Api } from '$lib'
+    import {
+        handleError,
+        VideoControls,
+        videoMetadata,
+        videoState,
+        VideoHeader,
+        type Api,
+    } from '$lib'
 
     let backgroundColor = $state('bg-black')
-    let isCompleted = $state(false)
     let destroyListeners: (() => void) | undefined
 
     const setupListeners = async (): Promise<() => void> => {
@@ -20,7 +25,7 @@
         const completeUnlisten = await listen<{ isCompleted: boolean }>(
             'video-completed',
             (event) => {
-                isCompleted = event.payload.isCompleted
+                // TODO
             },
         )
         unlisteners.push(completeUnlisten)
@@ -75,6 +80,11 @@
 
 <div class="relative h-full w-full {backgroundColor}" id="app-container">
     <div class="group pointer-events-none absolute inset-0 z-20 h-full w-full">
+        <div class="pointer-events-auto absolute top-0 left-0 w-full">
+            <div class="opacity-0 transition-opacity group-hover:opacity-100">
+                <VideoHeader />
+            </div>
+        </div>
         <div class="pointer-events-auto absolute bottom-0 left-0 w-full">
             <div class="opacity-0 transition-opacity group-hover:opacity-100">
                 <VideoControls />

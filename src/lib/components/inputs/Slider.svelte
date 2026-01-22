@@ -69,7 +69,7 @@
 
 <div class="relative w-full">
     {#if label}
-        <div class="text-text flex items-center text-sm">
+        <div class="text-textColor flex items-center text-sm">
             <span>{label}</span>
             <div class="flex items-center">
                 <input
@@ -80,7 +80,7 @@
                     {min}
                     {max}
                     {step}
-                    class="text-text ml-1 w-9 rounded border border-neutral-300 text-center text-xs" />
+                    class="text-textColor ml-1 w-9 rounded border border-neutral-300 text-center text-xs" />
                 <span class="ml-1">%</span>
             </div>
         </div>
@@ -96,11 +96,11 @@
         onpointerdown={handlePointerDown}
         onpointerup={handlePointerUp}
         aria-label={label || 'Slider'}
-        class="h-1 w-full cursor-pointer appearance-none rounded-full bg-neutral-400 bg-linear-to-r from-primary to-primary bg-no-repeat [&::-webkit-slider-thumb]:h-0 [&::-webkit-slider-thumb]:w-0 [&::-webkit-slider-thumb]:appearance-none"
+        class="h-1 w-full cursor-pointer appearance-none rounded-full bg-neutral-400 bg-linear-to-r from-primaryColor to-primaryColor bg-no-repeat [&::-webkit-slider-thumb]:h-0 [&::-webkit-slider-thumb]:w-0 [&::-webkit-slider-thumb]:appearance-none"
         style="background-size: var(--slider-progress) 100%;" />
     {#if tooltip}
         <div
-            class={`pointer-events-none absolute -translate-x-1/2 transform rounded bg-primary px-2 py-1 text-xs text-white transition-opacity duration-200 ${isDragging ? 'opacity-100' : 'opacity-0'}`}
+            class={`pointer-events-none absolute -translate-x-1/2 transform rounded bg-primaryColor px-2 py-1 text-xs text-textColor transition-opacity duration-200 ${isDragging ? 'opacity-100' : 'opacity-0'}`}
             style:left={`${sliderPosition}%`}
             style:top={tooltipPosition ? '-1.5rem' : 'auto'}
             style:bottom={tooltipPosition ? 'auto' : '-1.5rem'}>
@@ -110,7 +110,7 @@
                 class:border-b-4={!tooltipPosition}
                 class:bottom-[-4px]={tooltipPosition}
                 class:top-[-4px]={!tooltipPosition}
-                class="absolute left-1/2 -ml-1 border-r-4 border-l-4 border-solid border-primary border-r-transparent border-l-transparent">
+                class="absolute left-1/2 -ml-1 border-r-4 border-l-4 border-solid border-primaryColor border-r-transparent border-l-transparent">
             </div>
         </div>
     {/if}

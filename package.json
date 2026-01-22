@@ -40,6 +40,7 @@
 	},
 	"dependencies": {
 		"@sveltejs/adapter-static": "^3.0.10",
-		"@tauri-apps/api": "^2.9.1"
+		"@tauri-apps/api": "^2.9.1",
+		"@tauri-apps/plugin-process": "~2"
 	}
 }
