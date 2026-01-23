@@ -8,8 +8,11 @@
         videoMetadata,
         videoState,
         VideoHeader,
+        defaultVideoMetadata,
+        defaultVideoState,
         type Api,
     } from '$lib'
+    import { goto } from '$app/navigation'
 
     let backgroundColor = $state('bg-black')
     let destroyListeners: (() => void) | undefined
@@ -34,6 +37,13 @@
             $videoMetadata = event.payload
         })
         unlisteners.push(metadataUnlisten)
+
+        const shutdownUnlisten = await listen('video-shutdown', (event) => {
+            console.log('shutdown emit received')
+            // TODO nav to previous page
+            goto('/')
+        })
+        unlisteners.push(shutdownUnlisten)
 
         return () => {
             unlisteners.forEach((unlisten) => unlisten())
@@ -75,6 +85,9 @@
         if (destroyListeners) destroyListeners()
         document.body.removeAttribute('data-page')
         backgroundColor = 'bg-black'
+
+        $videoMetadata = $defaultVideoMetadata
+        $videoState = $defaultVideoState
     })
 </script>
 

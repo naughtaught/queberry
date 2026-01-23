@@ -28,8 +28,6 @@
         return Math.min(cacheTimeNum, $videoMetadata.duration)
     })
 
-    const thumbWidth = 16
-
     const formatTime = (seconds: number) => {
         const sec = Math.floor(seconds % 60)
         const min = Math.floor((seconds / 60) % 60)
@@ -85,33 +83,36 @@
         const sliderRect = sliderElement.getBoundingClientRect()
         const sliderWidth = sliderRect.width
 
-        const effectiveWidth = sliderWidth - thumbWidth
-        const effectiveStart = thumbWidth / 2
-
         const percentage = (val - min) / ($videoMetadata.duration - min)
 
-        const adjustedPosition = effectiveStart + percentage * effectiveWidth
+        const adjustedPosition = percentage * sliderWidth
 
         sliderPosition = (adjustedPosition / sliderWidth) * 100
     }
 
     $effect(() => {
-        if (!$videoMetadata.duration) return
+        if (!sliderElement) return
 
-        const playedPercent = ($videoState.currentTime / $videoMetadata.duration) * 100
-        const cachedEndPercent = (cachedEndPosition / $videoMetadata.duration) * 100
+        let playedPercent = 0
+        let cachedEndPercent = 0
 
-        const bg = `linear-gradient(
-        to right,
-        var(--color-primaryColor) 0%,
-        var(--color-primaryColor) ${playedPercent}%,
-        color-mix(in srgb, var(--color-primaryColor) 30%, transparent) ${playedPercent}%,
-        color-mix(in srgb, var(--color-primaryColor) 30%, transparent) ${cachedEndPercent}%,
-        #a3a3a3 ${cachedEndPercent}%,
-        #a3a3a3 100%
-    )`
+        if ($videoMetadata.duration && $videoMetadata.duration > 0) {
+            playedPercent = ($videoState.currentTime / $videoMetadata.duration) * 100
+            cachedEndPercent = (cachedEndPosition / $videoMetadata.duration) * 100
+        }
 
-        sliderElement.style.backgroundColor = bg
+        playedPercent = Math.max(0, Math.min(100, playedPercent))
+        cachedEndPercent = Math.max(0, Math.min(100, cachedEndPercent))
+
+        sliderElement.style.background = `linear-gradient(
+            to right,
+            var(--color-primaryColor) 0%,
+            var(--color-primaryColor) ${playedPercent}%,
+            rgb(from var(--color-primaryColor) r g b / 0.3)  ${playedPercent}%,
+            rgb(from var(--color-primaryColor) r g b / 0.3)  ${cachedEndPercent}%,
+            var(--color-neutral-400) ${cachedEndPercent}%,
+            var(--color-neutral-400) 100%
+        )`
     })
 </script>
 

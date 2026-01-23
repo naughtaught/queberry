@@ -5,11 +5,13 @@ use std::thread;
 use std::time::Duration;
 use tauri::{AppHandle, Emitter};
 
+use crate::video_player::player::MpvPlayer;
 use crate::video_player::types::Metadata;
 
 pub struct MpvEventHandler {
     mpv: Arc<Mutex<Mpv>>,
     app_handle: AppHandle,
+    player: Option<Arc<Mutex<MpvPlayer>>>,
 }
 
 enum EventType {
@@ -20,12 +22,21 @@ enum EventType {
 
 impl MpvEventHandler {
     pub fn new(mpv: Arc<Mutex<Mpv>>, app_handle: AppHandle) -> Self {
-        Self { mpv, app_handle }
+        Self {
+            mpv,
+            app_handle,
+            player: None,
+        }
+    }
+
+    pub fn set_player(&mut self, player: Arc<Mutex<MpvPlayer>>) {
+        self.player = Some(player);
     }
 
     pub fn start(&self) {
         let mpv_clone = Arc::clone(&self.mpv);
         let app_handle_clone = self.app_handle.clone();
+        let player_clone = self.player.clone();
 
         thread::spawn(move || {
             log::info!("MPV event logger started");
@@ -68,8 +79,17 @@ impl MpvEventHandler {
                             }
                         }
                         EventType::EndFile => {
-                            // TODO
-                            log::info!("MPV Event: EndFile - reason code: {}", reason)
+                            log::info!("MPV Event: EndFile - reason code: {}", reason);
+                            // TODO add if not next playlist item
+                            if reason == 0 {
+                                if let Some(ref player) = player_clone {
+                                    if let Ok(p) = player.lock() {
+                                        if let Err(e) = p.shutdown() {
+                                            log::error!("Failed to shutdown player: {}", e);
+                                        }
+                                    }
+                                }
+                            }
                         }
                         EventType::Shutdown => {
                             // TODO

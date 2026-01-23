@@ -1,16 +1,15 @@
 use crate::db::types::UserSettings;
 use crate::errors::{AppError, Result};
-use crate::video_player::config::MpvConfig;
-use crate::video_player::events::MpvEventHandler;
-use crate::video_player::tracker::PlayerTracker;
+use crate::video_player::{config::MpvConfig, events::MpvEventHandler, tracker::PlayerTracker};
 use libmpv2::Mpv;
 use std::sync::{Arc, Mutex};
-use tauri::{AppHandle, WebviewWindow};
+use tauri::{AppHandle, Emitter, WebviewWindow};
 
 #[derive(Clone)]
 pub struct MpvPlayer {
     pub(crate) mpv: Arc<Mutex<Mpv>>,
     tracker: PlayerTracker,
+    app_handle: AppHandle,
 }
 
 impl MpvPlayer {
@@ -48,10 +47,17 @@ impl MpvPlayer {
             settings.completion_percent,
         );
 
-        let event_logger = MpvEventHandler::new(Arc::clone(&mpv), app_handle.clone());
-        event_logger.start();
+        let player = Self {
+            mpv,
+            tracker,
+            app_handle: app_handle.clone(),
+        };
+        let player_shared = Arc::new(Mutex::new(player.clone()));
+        let mut event_handler = MpvEventHandler::new(Arc::clone(&player.mpv), app_handle.clone());
+        event_handler.set_player(Arc::clone(&player_shared));
+        event_handler.start();
 
-        Ok(Self { mpv, tracker })
+        Ok(player)
     }
 
     pub fn load_file(&self, file: String) -> Result<()> {
@@ -131,6 +137,8 @@ impl MpvPlayer {
     }
 
     pub fn shutdown(&self) -> Result<()> {
+        log::info!("MPV shutdown called");
+
         self.tracker.stop();
 
         std::thread::sleep(std::time::Duration::from_millis(100));
@@ -146,6 +154,8 @@ impl MpvPlayer {
             mpv.command("playlist-clear", &[])
                 .map_err(|e| AppError::Runtime(format!("Failed to clear playlist: {}", e)))?;
         }
+
+        let _ = self.app_handle.emit("video-shutdown", ());
 
         log::info!("MPV player shutdown completed");
         Ok(())

@@ -25,6 +25,6 @@ export { closeApp } from './functions/ui/closeApp.ts'
 
 // Stores
 export { handleError } from './stores/errorHandling'
-export { videoMetadata, videoState } from './stores/video'
+export { videoMetadata, videoState, defaultVideoMetadata, defaultVideoState } from './stores/video'
 export { settings } from './stores/user'
 export { appState } from './stores/app'

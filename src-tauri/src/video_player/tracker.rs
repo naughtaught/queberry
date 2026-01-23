@@ -38,7 +38,7 @@ impl PlayerTracker {
         let should_stop = Arc::clone(&self.should_stop);
 
         async_runtime::spawn(async move {
-            let mut interval = tokio::time::interval(std::time::Duration::from_millis(500));
+            let mut interval = tokio::time::interval(std::time::Duration::from_secs(1));
             let mut completed_event_emitted = false;
             let complete_percent_i64 = complete_percent as i64;
 
