@@ -48,7 +48,7 @@ impl UserSettings {
             preferred_audio_language: "Source".to_string(),
             preferred_subtitle_language: "en".to_string(),
             subtitle_display: "Auto".to_string(),
-            audio_channels: "2.0".to_string(),
+            audio_channels: "5.1".to_string(),
             default_resolver: "torbox".to_string(),
             file_size_limit: 20,
             disabled_plugins: "[]".to_string(),

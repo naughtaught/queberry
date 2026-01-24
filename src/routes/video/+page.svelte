@@ -25,16 +25,13 @@
         })
         unlisteners.push(timeUnlisten)
 
-        const completeUnlisten = await listen<{ isCompleted: boolean }>(
-            'video-completed',
-            (event) => {
-                // TODO
-            },
-        )
+        const completeUnlisten = await listen<{ isCompleted: boolean }>('video-completed', (event) => {
+            // TODO
+        })
         unlisteners.push(completeUnlisten)
 
         const metadataUnlisten = await listen<Api.Metadata>('video-metadata', (event) => {
-            $videoMetadata = event.payload
+            $videoMetadata = { ...event.payload }
         })
         unlisteners.push(metadataUnlisten)
 

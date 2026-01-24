@@ -1,4 +1,3 @@
-// video_player/events.rs
 use libmpv2::{events::Event, Mpv};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -107,17 +106,34 @@ impl MpvEventHandler {
     }
 
     fn get_metadata(mpv: Arc<Mutex<Mpv>>) -> Result<Metadata, String> {
-        let duration = Self::get_duration(mpv)?;
-        Ok(Metadata { duration })
+        // TODO Title
+        let title = "Test Title".to_string();
+        let duration = Self::get_duration(&mpv)?;
+        let audio_channel = Self::get_audio_channel(&mpv)?;
+        Ok(Metadata {
+            title,
+            duration,
+            audio_channel,
+        })
     }
 
-    fn get_duration(mpv: Arc<Mutex<Mpv>>) -> Result<f64, String> {
+    fn get_duration(mpv: &Arc<Mutex<Mpv>>) -> Result<f64, String> {
         let mpv_guard = mpv
             .lock()
             .map_err(|e| format!("Failed to lock MPV mutex: {}", e))?;
 
         mpv_guard
             .get_property("duration")
+            .map_err(|e| format!("Failed to get duration property: {}", e))
+    }
+
+    fn get_audio_channel(mpv: &Arc<Mutex<Mpv>>) -> Result<String, String> {
+        let mpv_guard = mpv
+            .lock()
+            .map_err(|e| format!("Failed to lock MPV mutex: {}", e))?;
+
+        mpv_guard
+            .get_property("audio-channels")
             .map_err(|e| format!("Failed to get duration property: {}", e))
     }
 }

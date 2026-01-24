@@ -1,5 +1,6 @@
 use crate::db::types::UserSettings;
 use crate::errors::{AppError, Result};
+use crate::video_player::audio;
 use crate::video_player::{config::MpvConfig, events::MpvEventHandler, tracker::PlayerTracker};
 use libmpv2::Mpv;
 use std::sync::{Arc, Mutex};
@@ -159,5 +160,14 @@ impl MpvPlayer {
 
         log::info!("MPV player shutdown completed");
         Ok(())
+    }
+
+    pub fn set_audio_channel(&self, audio_channel: &str) -> Result<()> {
+        let mpv = self
+            .mpv
+            .lock()
+            .map_err(|e| AppError::Runtime(format!("Failed to lock MPV instance: {}", e)))?;
+
+        audio::set_audio_channel(&mpv, audio_channel)
     }
 }

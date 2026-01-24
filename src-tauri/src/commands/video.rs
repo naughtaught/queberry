@@ -3,7 +3,7 @@ use crate::errors::ApiResponse;
 use crate::state::AppState;
 use crate::video_player::player::MpvPlayer;
 use crate::video_player::types::{
-    CloseVideoPlayer, LoadVideoData, SeekData, SetTime, SetVolume, TogglePlayData,
+    CloseVideoPlayer, LoadVideoData, SeekData, SetAudioChannel, SetTime, SetVolume, TogglePlayData,
 };
 use crate::AppError;
 use tauri::{command, AppHandle, State, WebviewWindow};
@@ -165,5 +165,30 @@ pub fn close_video_player(state: State<'_, AppState>) -> ApiResponse<CloseVideoP
 
     ApiResponse::ok(CloseVideoPlayer {
         message: "Video player closed successfully".to_string(),
+    })
+}
+
+#[command]
+pub fn set_audio_channel(
+    state: State<'_, AppState>,
+    channel: String,
+) -> ApiResponse<SetAudioChannel> {
+    let player_guard = match state.video_player.lock() {
+        Ok(guard) => guard,
+        Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
+    };
+
+    let player = match player_guard.as_ref() {
+        Some(player) => player,
+        None => return ApiResponse::error(404, "No player available".to_string()),
+    };
+
+    if let Err(e) = player.set_audio_channel(&channel) {
+        return ApiResponse::error(500, format!("Failed to set audio channel: {}", e));
+    }
+
+    ApiResponse::ok(SetAudioChannel {
+        message: "Video player audio channel changed successfully".to_string(),
+        channel,
     })
 }

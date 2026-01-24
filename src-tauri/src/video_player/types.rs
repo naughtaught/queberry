@@ -25,8 +25,11 @@ pub struct SetTime {
 }
 
 #[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct Metadata {
+    pub title: String,
     pub duration: f64,
+    pub audio_channel: String,
 }
 
 #[derive(Serialize, Clone)]
@@ -55,4 +58,10 @@ pub struct SetVolume {
 #[derive(Serialize, Clone)]
 pub struct CloseVideoPlayer {
     pub message: String,
+}
+
+#[derive(Serialize, Clone)]
+pub struct SetAudioChannel {
+    pub message: String,
+    pub channel: String,
 }

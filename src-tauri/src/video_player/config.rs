@@ -1,5 +1,6 @@
 use crate::db::types::UserSettings;
 use crate::errors::{AppError, Result};
+use crate::video_player::audio;
 use libmpv2::Mpv;
 use std::collections::HashMap;
 
@@ -24,8 +25,13 @@ impl MpvConfig {
 
     fn apply_user_settings(&self, mpv: &Mpv) -> Result<()> {
         if let Some(settings) = &self.settings {
-            mpv.set_property("volume", settings.volume as i64)
-                .map_err(|e| AppError::Runtime(format!("Failed to set volume: {}", e)))?;
+            if settings.volume >= 0 && settings.volume <= 100 {
+                mpv.set_property("volume", settings.volume as i64)
+                    .map_err(|e| AppError::Runtime(format!("Failed to set volume: {}", e)))?;
+            }
+            if !settings.audio_channels.is_empty() {
+                audio::set_audio_channel(mpv, &settings.audio_channels)?;
+            }
         }
         Ok(())
     }
