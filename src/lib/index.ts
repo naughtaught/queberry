@@ -19,6 +19,7 @@ export { default as Volume } from './components/videoplayer/Volume.svelte'
 export { default as VideoHeader } from './components/videoplayer/VideoHeader.svelte'
 export { default as AudioChannels } from './components/videoplayer/AudioChannels.svelte'
 export { default as SelectModal } from './components/videoplayer/SelectModal.svelte'
+export { default as SubtitleButton } from './components/videoplayer/SubtitleButton.svelte'
 
 // Functions/UI
 export { toggleFullscreen } from './functions/ui/toggleFullscreen.ts'
@@ -27,12 +28,6 @@ export { closeApp } from './functions/ui/closeApp.ts'
 
 // Stores
 export { handleError } from './stores/errorHandling'
-export {
-    videoMetadata,
-    videoState,
-    defaultVideoMetadata,
-    defaultVideoState,
-    audioChannelOptions,
-} from './stores/video'
+export { videoMetadata, videoState, defaultVideoMetadata, defaultVideoState, audioChannelOptions } from './stores/video'
 export { settings } from './stores/user'
 export { appState } from './stores/app'

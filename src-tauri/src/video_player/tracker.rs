@@ -44,7 +44,6 @@ impl PlayerTracker {
 
             loop {
                 if should_stop.load(Ordering::Relaxed) {
-                    log::info!("Player tracker stopped");
                     break;
                 }
 

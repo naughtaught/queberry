@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { PlayButton, SeekBar, SeekButton, Volume, AudioChannels } from '$lib'
+    import { PlayButton, SeekBar, SeekButton, Volume, AudioChannels, SubtitleButton } from '$lib'
 
     let currentModal = $state(null)
 </script>
@@ -10,6 +10,7 @@
     </div>
     <div class="flex w-full items-center justify-between">
         <div class="flex w-1/4 justify-start gap-4">
+            <SubtitleButton bind:currentModal />
             <AudioChannels bind:currentModal />
         </div>
         <div class="flex w-2/4 items-center justify-center gap-6">

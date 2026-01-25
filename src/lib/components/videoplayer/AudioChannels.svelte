@@ -25,26 +25,26 @@
     }
 </script>
 
-{#if currentModal === 'Speakers'}
+{#if currentModal === 'AudioChannels'}
     <SelectModal
         bind:currentModal
         tracks={$audioChannelOptions}
         currentTrack={$videoMetadata.audioChannel}
         bottom="bottom-16"
         left="left-30"
-        func={(track: string, _trackId: number) => {
+        func={(track: string) => {
             setAudioChannels(track)
         }} />
 {/if}
 
 <button
-    aria-label="Speaker Configuration"
+    aria-label="Set Audio Channels"
     class="fill-white hover:cursor-pointer"
     onclick={() => {
-        if (currentModal === 'Speakers') {
+        if (currentModal === 'AudioChannels') {
             currentModal = null
         } else {
-            currentModal = 'Speakers'
+            currentModal = 'AudioChannels'
         }
     }}>
     <svg width="18px" height="18px" viewBox="0 0 512 512">

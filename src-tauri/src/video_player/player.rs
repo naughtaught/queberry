@@ -1,6 +1,7 @@
 use crate::db::types::UserSettings;
 use crate::errors::{AppError, Result};
 use crate::video_player::audio;
+use crate::video_player::subtitles::SubtitleManager;
 use crate::video_player::{config::MpvConfig, events::MpvEventHandler, tracker::PlayerTracker};
 use libmpv2::Mpv;
 use std::sync::{Arc, Mutex};
@@ -138,8 +139,6 @@ impl MpvPlayer {
     }
 
     pub fn shutdown(&self) -> Result<()> {
-        log::info!("MPV shutdown called");
-
         self.tracker.stop();
 
         std::thread::sleep(std::time::Duration::from_millis(100));
@@ -158,7 +157,6 @@ impl MpvPlayer {
 
         let _ = self.app_handle.emit("video-shutdown", ());
 
-        log::info!("MPV player shutdown completed");
         Ok(())
     }
 
@@ -169,5 +167,10 @@ impl MpvPlayer {
             .map_err(|e| AppError::Runtime(format!("Failed to lock MPV instance: {}", e)))?;
 
         audio::set_audio_channel(&mpv, audio_channel)
+    }
+
+    pub fn set_subtitles(&self, subtitle_id: i64) -> Result<()> {
+        let subtitle_manager = SubtitleManager::new(Arc::clone(&self.mpv));
+        subtitle_manager.set_subtitle(Some(subtitle_id))
     }
 }

@@ -1,35 +1,46 @@
 use serde::Serialize;
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize)]
 pub struct LoadVideoData {
     pub message: String,
     pub url: String,
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize)]
 pub struct TogglePlayData {
     pub message: String,
     pub paused: bool,
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize)]
 pub struct SeekData {
     pub message: String,
     pub seek_amount: i8,
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize)]
 pub struct SetTime {
     pub message: String,
     pub time: f64,
 }
 
-#[derive(Serialize, Clone, Debug)]
+#[derive(Serialize, Clone)]
+pub struct SubtitleTrackInfo {
+    pub id: Option<i64>,
+    pub lang: String,
+    pub title: String,
+    pub forced: bool,
+    pub sdh: bool,
+}
+
+#[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Metadata {
     pub title: String,
     pub duration: f64,
     pub audio_channel: String,
+    pub subtitle_tracks: Vec<SubtitleTrackInfo>,
+    pub current_subtitle_track: Option<SubtitleTrackInfo>,
 }
 
 #[derive(Serialize, Clone)]
@@ -49,19 +60,25 @@ pub struct CompletionEvent {
     pub is_completed: bool,
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize)]
 pub struct SetVolume {
     pub message: String,
     pub volume: f64,
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize)]
 pub struct CloseVideoPlayer {
     pub message: String,
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize)]
 pub struct SetAudioChannel {
     pub message: String,
     pub channel: String,
+}
+
+#[derive(Serialize)]
+pub struct SubtitleResponse {
+    pub message: String,
+    pub current_subtitle: Option<SubtitleTrackInfo>,
 }

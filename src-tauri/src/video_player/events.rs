@@ -5,6 +5,7 @@ use std::time::Duration;
 use tauri::{AppHandle, Emitter};
 
 use crate::video_player::player::MpvPlayer;
+use crate::video_player::subtitles::SubtitleManager;
 use crate::video_player::types::Metadata;
 
 pub struct MpvEventHandler {
@@ -38,8 +39,6 @@ impl MpvEventHandler {
         let player_clone = self.player.clone();
 
         thread::spawn(move || {
-            log::info!("MPV event logger started");
-
             loop {
                 let event_data = {
                     let mut mpv_guard = match mpv_clone.lock() {
@@ -69,16 +68,13 @@ impl MpvEventHandler {
                 if let Some((event_type, reason)) = event_data {
                     match event_type {
                         EventType::FileLoaded => {
-                            log::info!("MPV Event: FileLoaded");
                             if let Ok(metadata) = Self::get_metadata(Arc::clone(&mpv_clone)) {
-                                log::info!("Loaded file metadata: {:?}", metadata);
                                 if let Err(e) = app_handle_clone.emit("video-metadata", metadata) {
                                     log::error!("Failed to emit video-metadata event: {}", e);
                                 }
                             }
                         }
                         EventType::EndFile => {
-                            log::info!("MPV Event: EndFile - reason code: {}", reason);
                             // TODO add if not next playlist item
                             if reason == 0 {
                                 if let Some(ref player) = player_clone {
@@ -92,7 +88,6 @@ impl MpvEventHandler {
                         }
                         EventType::Shutdown => {
                             // TODO
-                            log::info!("MPV Event: Shutdown");
                             break;
                         }
                     }
@@ -100,20 +95,30 @@ impl MpvEventHandler {
 
                 thread::sleep(Duration::from_millis(10));
             }
-
-            log::info!("MPV event logger stopped");
         });
     }
 
     fn get_metadata(mpv: Arc<Mutex<Mpv>>) -> Result<Metadata, String> {
         // TODO Title
         let title = "Test Title".to_string();
+
         let duration = Self::get_duration(&mpv)?;
         let audio_channel = Self::get_audio_channel(&mpv)?;
+
+        let subtitle_manager = SubtitleManager::new(Arc::clone(&mpv));
+        let subtitle_tracks = subtitle_manager
+            .get_all_subtitles()
+            .map_err(|e| format!("Failed to get subtitle tracks: {}", e))?;
+        let current_subtitle_track = subtitle_manager
+            .get_current_subtitle()
+            .map_err(|e| format!("Failed to get current subtitle: {}", e))?;
+
         Ok(Metadata {
             title,
             duration,
             audio_channel,
+            subtitle_tracks,
+            current_subtitle_track,
         })
     }
 

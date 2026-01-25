@@ -36,7 +36,6 @@
         unlisteners.push(metadataUnlisten)
 
         const shutdownUnlisten = await listen('video-shutdown', (event) => {
-            console.log('shutdown emit received')
             // TODO nav to previous page
             goto('/')
         })
@@ -55,7 +54,7 @@
 
         try {
             const response: Api.ApiResponse = await invoke('load_video', {
-                url: 'https://dn710604.ca.archive.org/0/items/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4',
+                url: 'D:/Media/Movies/The Raid (2012)',
                 userId: 1,
             })
 
