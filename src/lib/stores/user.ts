@@ -4,7 +4,7 @@ import { type Api } from '$lib'
 const defaultSettings = readable<Api.UserSettings>({
     id: 0,
     userId: 0,
-    preferredTheme: 'Default',
+    preferredTheme: 'default',
     isLightMode: false,
     imageScaling: 100,
     autoplay: true,

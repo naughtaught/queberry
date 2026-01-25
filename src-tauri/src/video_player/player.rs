@@ -12,6 +12,7 @@ pub struct MpvPlayer {
     pub(crate) mpv: Arc<Mutex<Mpv>>,
     tracker: PlayerTracker,
     app_handle: AppHandle,
+    pub user_settings: UserSettings,
 }
 
 impl MpvPlayer {
@@ -53,6 +54,7 @@ impl MpvPlayer {
             mpv,
             tracker,
             app_handle: app_handle.clone(),
+            user_settings: settings.clone(),
         };
         let player_shared = Arc::new(Mutex::new(player.clone()));
         let mut event_handler = MpvEventHandler::new(Arc::clone(&player.mpv), app_handle.clone());

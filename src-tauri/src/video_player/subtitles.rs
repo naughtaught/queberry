@@ -1,4 +1,6 @@
+use crate::db::types::UserSettings;
 use crate::errors::{AppError, Result};
+use crate::utils::language::language_matches;
 use crate::video_player::types::SubtitleTrackInfo;
 use libmpv2::Mpv;
 use std::sync::{Arc, Mutex};
@@ -158,5 +160,107 @@ impl SubtitleManager {
         }
 
         Ok(())
+    }
+
+    fn find_best_subtitle_track(
+        &self,
+        subtitle_tracks: &[SubtitleTrackInfo],
+        video_language: &str,
+        user_settings: &UserSettings,
+    ) -> Result<Option<SubtitleTrackInfo>, AppError> {
+        let filtered: Vec<SubtitleTrackInfo> = subtitle_tracks
+            .iter()
+            .filter(|track| !track.title.to_lowercase().contains("commentary"))
+            .cloned()
+            .collect();
+
+        if filtered.is_empty() {
+            return Ok(None);
+        }
+
+        if video_language.is_empty() {
+            return Ok(None);
+        }
+
+        let preferred_subtitle_language = &user_settings.preferred_subtitle_language;
+
+        match user_settings.subtitle_display.to_lowercase().as_str() {
+            "off" => Ok(None),
+            "on" => {
+                let candidates: Vec<SubtitleTrackInfo> = filtered
+                    .iter()
+                    .filter(|track| language_matches(&track.lang, preferred_subtitle_language))
+                    .cloned()
+                    .collect();
+
+                if candidates.is_empty() {
+                    Ok(None)
+                } else {
+                    let best_track = candidates
+                        .into_iter()
+                        .min_by_key(|track| self.score_subtitle_track(track))
+                        .unwrap();
+                    Ok(Some(best_track))
+                }
+            }
+            "auto" => {
+                if language_matches(video_language, preferred_subtitle_language) {
+                    let forced_track = filtered
+                        .iter()
+                        .find(|track| {
+                            language_matches(&track.lang, preferred_subtitle_language)
+                                && track.forced
+                        })
+                        .cloned();
+
+                    Ok(forced_track)
+                } else {
+                    let candidates: Vec<SubtitleTrackInfo> = filtered
+                        .iter()
+                        .filter(|track| language_matches(&track.lang, preferred_subtitle_language))
+                        .cloned()
+                        .collect();
+
+                    if candidates.is_empty() {
+                        Ok(None)
+                    } else {
+                        let best_track = candidates
+                            .into_iter()
+                            .min_by_key(|track| self.score_subtitle_track(track))
+                            .unwrap();
+                        Ok(Some(best_track))
+                    }
+                }
+            }
+            _ => Ok(None),
+        }
+    }
+
+    fn score_subtitle_track(&self, track: &SubtitleTrackInfo) -> i32 {
+        let mut score = 0;
+
+        if track.sdh {
+            score += 2;
+        }
+
+        if track.forced {
+            score += 1;
+        }
+
+        score
+    }
+
+    pub fn auto_select_subtitle(
+        &self,
+        video_language: &str,
+        user_settings: &UserSettings,
+    ) -> Result<(), AppError> {
+        let all_subtitles = self.get_all_subtitles()?;
+
+        let best_track =
+            self.find_best_subtitle_track(&all_subtitles, video_language, user_settings)?;
+
+        let track_id = best_track.and_then(|track| track.id);
+        self.set_subtitle(track_id)
     }
 }

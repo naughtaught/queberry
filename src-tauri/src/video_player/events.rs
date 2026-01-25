@@ -68,7 +68,9 @@ impl MpvEventHandler {
                 if let Some((event_type, reason)) = event_data {
                     match event_type {
                         EventType::FileLoaded => {
-                            if let Ok(metadata) = Self::get_metadata(Arc::clone(&mpv_clone)) {
+                            if let Ok(metadata) =
+                                Self::get_metadata(Arc::clone(&mpv_clone), player_clone.clone())
+                            {
                                 if let Err(e) = app_handle_clone.emit("video-metadata", metadata) {
                                     log::error!("Failed to emit video-metadata event: {}", e);
                                 }
@@ -98,7 +100,10 @@ impl MpvEventHandler {
         });
     }
 
-    fn get_metadata(mpv: Arc<Mutex<Mpv>>) -> Result<Metadata, String> {
+    fn get_metadata(
+        mpv: Arc<Mutex<Mpv>>,
+        player: Option<Arc<Mutex<MpvPlayer>>>,
+    ) -> Result<Metadata, String> {
         // TODO Title
         let title = "Test Title".to_string();
 
@@ -109,6 +114,26 @@ impl MpvEventHandler {
         let subtitle_tracks = subtitle_manager
             .get_all_subtitles()
             .map_err(|e| format!("Failed to get subtitle tracks: {}", e))?;
+        // TODO pass video langauge
+        let video_language = "th";
+        let user_settings = match player {
+            Some(player_arc) => match player_arc.lock() {
+                Ok(player) => Some(player.user_settings.clone()),
+                Err(_) => None,
+            },
+            None => None,
+        };
+
+        if let Some(settings) = user_settings {
+            subtitle_manager
+                .auto_select_subtitle(video_language, &settings)
+                .map_err(|e| format!("Failed to auto set subtitle: {}", e))?;
+        } else {
+            subtitle_manager
+                .set_subtitle(None)
+                .map_err(|e| format!("Failed to disable subtitles: {}", e))?;
+        }
+
         let current_subtitle_track = subtitle_manager
             .get_current_subtitle()
             .map_err(|e| format!("Failed to get current subtitle: {}", e))?;
