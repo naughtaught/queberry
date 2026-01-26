@@ -1,7 +1,7 @@
 import { handleError, type Api } from '$lib'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 
-export const minimizeApp = async () => {
+export const minimizeApp = async (): Promise<void> => {
     const appWindow = getCurrentWindow()
 
     try {

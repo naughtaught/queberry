@@ -7,7 +7,7 @@
     const setAudioChannels = async (channel: string): Promise<void> => {
         try {
             const response: Api.ApiResponse = await invoke('set_audio_channel', {
-                channel: channel,
+                channel,
             })
             if (response.success) {
                 $videoMetadata.audioChannel = response.data!.channel

@@ -6,7 +6,7 @@ export const defaultVideoMetadata = readable<Api.Metadata>({
     duration: 0,
     audioChannel: '5.1',
     subtitleTracks: [],
-    currentSubtitleTrack: null
+    currentSubtitleTrack: null,
 })
 
 export const videoMetadata = writable<Api.Metadata>(get(defaultVideoMetadata))

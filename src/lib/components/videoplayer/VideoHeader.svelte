@@ -2,23 +2,14 @@
     import { invoke } from '@tauri-apps/api/core'
     import { onDestroy, onMount } from 'svelte'
     import { page } from '$app/state'
-    import {
-        HeaderButton,
-        videoMetadata,
-        appState,
-        toggleFullscreen,
-        minimizeApp,
-        type Api,
-        handleError,
-    } from '$lib'
+    import { HeaderButton, videoMetadata, appState, toggleFullscreen, minimizeApp, type Api, handleError } from '$lib'
     import { goto } from '$app/navigation'
+    import { resolve } from '$app/paths'
 
     let now = $state(new Date())
     let interval: ReturnType<typeof setInterval>
 
-    let localUserTime = $derived(
-        now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
-    )
+    const localUserTime = $derived(now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }))
 
     onMount(() => {
         interval = setInterval(() => {
@@ -30,12 +21,12 @@
         clearInterval(interval)
     })
 
-    const closeVideoPlayer = async () => {
+    const closeVideoPlayer = async (): Promise<void> => {
         try {
             const response: Api.ApiResponse = await invoke('close_video_player', {})
             if (response.success) {
                 // TODO Navigation from here
-                goto('/')
+                goto(resolve('/', {}))
             } else {
                 handleError(response.error!)
             }
@@ -55,10 +46,7 @@
     data-tauri-drag-region="true">
     <p class="text-xs">{$videoMetadata.title}</p>
     <div class="flex items-center gap-4">
-        <p
-            class="text-xs {page.url.pathname.includes('details')
-                ? 'text-detailsPageTextColor'
-                : 'text-textColor'}">
+        <p class="text-xs {page.url.pathname.includes('details') ? 'text-detailsPageTextColor' : 'text-textColor'}">
             {localUserTime}
         </p>
         <button onclick={minimizeApp} data-action="minimize">

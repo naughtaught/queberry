@@ -2,49 +2,45 @@
     import { invoke } from '@tauri-apps/api/core'
     import { handleError, settings, videoMetadata, videoState, type Api } from '$lib'
 
-    let cacheTime = $derived($videoState.cacheTime)
+    const cacheTime = $derived($videoState.cacheTime)
     let isDragging = $state(false)
     let sliderValue = $state(0)
     let sliderPosition = $state(0)
     let sliderElement: HTMLInputElement
-    let min = 0
+    const min = 0
     let displayDurationMode = $state($settings.durationDisplay)
 
-    let displayCurrent = $derived.by(() => {
+    const displayCurrent = $derived.by(() => {
         if (displayDurationMode === 'Time Remaining') {
             const remaining = $videoMetadata.duration - $videoState.currentTime
-            return '-' + formatTime(remaining)
+            return `-${formatTime(remaining)}`
         }
         return formatTime($videoState.currentTime)
     })
-    let displayDuration = $derived.by(() => {
-        return formatTime($videoMetadata.duration)
-    })
-    let displayValue = $derived.by(() => {
-        return formatTime(sliderValue)
-    })
-    let cachedEndPosition = $derived.by(() => {
+    const displayDuration = $derived.by(() => formatTime($videoMetadata.duration))
+    const displayValue = $derived.by(() => formatTime(sliderValue))
+    const cachedEndPosition = $derived.by(() => {
         const cacheTimeNum = Number(cacheTime) || 0
         return Math.min(cacheTimeNum, $videoMetadata.duration)
     })
 
-    const formatTime = (seconds: number) => {
-        const sec = Math.floor(seconds % 60)
-        const min = Math.floor((seconds / 60) % 60)
-        const hr = Math.floor(seconds / 3600)
-        const pad = (n: number) => n.toString().padStart(2, '0')
-        return hr > 0 ? `${pad(hr)}:${pad(min)}:${pad(sec)}` : `${pad(min)}:${pad(sec)}`
+    const formatTime = (seconds: number): string => {
+        const second = Math.floor(seconds % 60)
+        const minute = Math.floor((seconds / 60) % 60)
+        const hour = Math.floor(seconds / 3600)
+        const pad = (n: number): string => n.toString().padStart(2, '0')
+        return hour > 0 ? `${pad(hour)}:${pad(minute)}:${pad(second)}` : `${pad(minute)}:${pad(second)}`
     }
 
-    const handlePointerDown = () => {
+    const handlePointerDown = (): void => {
         isDragging = true
         updatePosition(sliderValue)
     }
 
-    const handlePointerUp = async (time: number) => {
+    const handlePointerUp = async (time: number): Promise<void> => {
         try {
             const response: Api.ApiResponse = await invoke('set_time', {
-                time: time,
+                time,
             })
             if (response.success) {
                 $videoState.currentTime = response.data.time
@@ -62,7 +58,7 @@
         isDragging = false
     }
 
-    const handleInput = (e: Event) => {
+    const handleInput = (e: Event): void => {
         if (isDragging) {
             const target = e.target as HTMLInputElement
             updatePosition(target.valueAsNumber)
@@ -77,7 +73,7 @@
         if (isDragging) updatePosition(sliderValue)
     })
 
-    const updatePosition = (val: number) => {
+    const updatePosition = (val: number): void => {
         if (!sliderElement) return
 
         const sliderRect = sliderElement.getBoundingClientRect()
@@ -145,8 +141,7 @@
         <p>{displayCurrent}</p>
         <button
             onclick={() => {
-                displayDurationMode =
-                    displayDurationMode === 'Duration' ? 'Time Remaining' : 'Duration'
+                displayDurationMode = displayDurationMode === 'Duration' ? 'Time Remaining' : 'Duration'
             }}>{displayDuration}</button>
     </div>
 </div>

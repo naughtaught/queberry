@@ -1,14 +1,5 @@
 <script lang="ts">
-    let {
-        min,
-        max,
-        value = $bindable(),
-        step = 1,
-        func,
-        label,
-        tooltip = true,
-        tooltipPosition = true,
-    } = $props()
+    let { min, max, value = $bindable(), step = 1, func, label, tooltip = true, tooltipPosition = true } = $props()
 
     let isDragging = $state(false)
     let sliderPosition = $state(0)
@@ -16,7 +7,7 @@
 
     const thumbWidth = 20
 
-    const handleChange = () => {
+    const handleChange = (): void => {
         const constrainedValue = Math.max(min, Math.min(max, value))
 
         updatePosition(constrainedValue)
@@ -27,7 +18,7 @@
         func()
     }
 
-    const handleBlur = () => {
+    const handleBlur = (): void => {
         if (value < min) {
             value = min
         } else if (value > max) {
@@ -38,14 +29,14 @@
         func()
     }
 
-    const handlePointerDown = () => {
+    const handlePointerDown = (): void => {
         isDragging = true
         updatePosition(value)
     }
 
-    const handlePointerUp = () => (isDragging = false)
+    const handlePointerUp = (): boolean => (isDragging = false)
 
-    const updatePosition = (val: number) => {
+    const updatePosition = (val: number): void => {
         if (!sliderElement) return
 
         const sliderRect = sliderElement.getBoundingClientRect()
@@ -69,7 +60,7 @@
 
 <div class="relative w-full">
     {#if label}
-        <div class="text-textColor flex items-center text-sm">
+        <div class="flex items-center text-sm text-textColor">
             <span>{label}</span>
             <div class="flex items-center">
                 <input
@@ -80,7 +71,7 @@
                     {min}
                     {max}
                     {step}
-                    class="text-textColor ml-1 w-9 rounded border border-neutral-300 text-center text-xs" />
+                    class="ml-1 w-9 rounded border border-neutral-300 text-center text-xs text-textColor" />
                 <span class="ml-1">%</span>
             </div>
         </div>

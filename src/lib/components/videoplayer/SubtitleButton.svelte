@@ -4,7 +4,7 @@
 
     let { currentModal = $bindable() } = $props()
 
-    const setSubtitleTrack = async (trackId: number) => {
+    const setSubtitleTrack = async (trackId: number): Promise<void> => {
         try {
             const response: Api.ApiResponse = await invoke('set_subtitle', {
                 subtitleId: trackId,

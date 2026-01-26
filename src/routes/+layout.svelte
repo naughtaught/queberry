@@ -4,7 +4,7 @@
     import { Header } from '$lib'
     import { page } from '$app/state'
 
-    let { children } = $props()
+    const { children } = $props()
 </script>
 
 {#if !page.url.pathname.includes('video')}

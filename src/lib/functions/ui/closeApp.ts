@@ -1,7 +1,7 @@
 import { exit } from '@tauri-apps/plugin-process'
 import { handleError, type Api } from '$lib'
 
-export const closeApp = async () => {
+export const closeApp = async (): Promise<void> => {
     try {
         await exit(0)
     } catch (error) {

@@ -4,7 +4,7 @@
 
     let previousVolume = $state($settings.volume)
 
-    const setVolume = async () => {
+    const setVolume = async (): Promise<void> => {
         // TODO emit
         try {
             const response: Api.ApiResponse = await invoke('set_volume', {
@@ -25,7 +25,7 @@
         }
     }
 
-    const toggleMute = () => {
+    const toggleMute = (): void => {
         if ($settings.volume > 0) {
             previousVolume = $settings.volume
             $settings.volume = 0

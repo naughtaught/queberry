@@ -3,7 +3,7 @@ import { handleError } from '$lib/stores/errorHandling'
 import type { Api } from '$lib/types/api'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 
-export const toggleFullscreen = async () => {
+export const toggleFullscreen = async (): Promise<void> => {
     const window = getCurrentWindow()
     try {
         const isFullscreen = await window.isFullscreen()

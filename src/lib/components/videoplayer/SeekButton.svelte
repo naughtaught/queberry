@@ -2,17 +2,17 @@
     import { invoke } from '@tauri-apps/api/core'
     import { handleError, videoState, type Api } from '$lib'
 
-    let { direction } = $props()
+    const { direction } = $props()
 
-    let label = $derived(direction === 'forward' ? 'Forward' : 'Back')
-    let seekAmount = $derived(direction === 'forward' ? 30 : -30)
-    let svgClass = $derived(direction === 'forward' ? '-scale-x-100 transform' : '')
+    const label = $derived(direction === 'forward' ? 'Forward' : 'Back')
+    const seekAmount = $derived(direction === 'forward' ? 30 : -30)
+    const svgClass = $derived(direction === 'forward' ? '-scale-x-100 transform' : '')
 
-    const seek = async () => {
+    const seek = async (): Promise<void> => {
         if ($videoState.currentTime < 1) return
         try {
             const response: Api.ApiResponse = await invoke('seek', {
-                seekAmount: seekAmount,
+                seekAmount,
             })
             if (response.error) {
                 handleError(response.error!)

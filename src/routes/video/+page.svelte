@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { goto } from '$app/navigation'
+    import { resolve } from '$app/paths'
     import { invoke } from '@tauri-apps/api/core'
     import { listen, type UnlistenFn } from '@tauri-apps/api/event'
     import { onDestroy, onMount } from 'svelte'
@@ -12,7 +14,6 @@
         defaultVideoState,
         type Api,
     } from '$lib'
-    import { goto } from '$app/navigation'
 
     let backgroundColor = $state('bg-black')
     let destroyListeners: (() => void) | undefined
@@ -25,7 +26,7 @@
         })
         unlisteners.push(timeUnlisten)
 
-        const completeUnlisten = await listen<{ isCompleted: boolean }>('video-completed', (event) => {
+        const completeUnlisten = await listen<{ isCompleted: boolean }>('video-completed', (_event) => {
             // TODO
         })
         unlisteners.push(completeUnlisten)
@@ -35,9 +36,9 @@
         })
         unlisteners.push(metadataUnlisten)
 
-        const shutdownUnlisten = await listen('video-shutdown', (event) => {
+        const shutdownUnlisten = await listen('video-shutdown', (_event) => {
             // TODO nav to previous page
-            goto('/')
+            goto(resolve('/', {}))
         })
         unlisteners.push(shutdownUnlisten)
 

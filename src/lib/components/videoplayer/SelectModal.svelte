@@ -3,7 +3,7 @@
 
     let { tracks, currentTrack, bottom, left, currentModal = $bindable(), func } = $props()
 
-    let displayTracks = $derived.by(() => {
+    const displayTracks = $derived.by(() => {
         if (currentModal === 'AudioChannels') {
             return tracks.map((track: { value: string; name: string }) => ({
                 value: track.value,
