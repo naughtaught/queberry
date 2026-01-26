@@ -6,11 +6,11 @@
 
     const setSubtitleTrack = async (trackId: number): Promise<void> => {
         try {
-            const response: Api.ApiResponse = await invoke('set_subtitle', {
-                subtitleId: trackId,
+            const response: Api.ApiResponse = await invoke('set_subtitle_track', {
+                subtitleTrackId: trackId,
             })
             if (response.success) {
-                $videoMetadata.currentSubtitleTrack = response.data!.current_subtitle
+                $videoMetadata.currentSubtitleTrack = response.data!.current_subtitle_track
             } else {
                 handleError(response.error!)
             }

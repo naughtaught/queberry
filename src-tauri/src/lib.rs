@@ -66,7 +66,8 @@ pub fn run() {
             commands::video::set_volume,
             commands::video::close_video_player,
             commands::video::set_audio_channel,
-            commands::video::set_subtitle,
+            commands::video::set_audio_track,
+            commands::video::set_subtitle_track,
             commands::db::update_user_settings,
             commands::db::get_user_settings,
         ])

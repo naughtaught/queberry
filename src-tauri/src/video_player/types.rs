@@ -41,6 +41,8 @@ pub struct Metadata {
     pub audio_channel: String,
     pub subtitle_tracks: Vec<SubtitleTrackInfo>,
     pub current_subtitle_track: Option<SubtitleTrackInfo>,
+    pub audio_tracks: Vec<AudioTrackInfo>,
+    pub current_audio_track: Option<AudioTrackInfo>,
 }
 
 #[derive(Serialize, Clone)]
@@ -78,7 +80,25 @@ pub struct SetAudioChannel {
 }
 
 #[derive(Serialize)]
-pub struct SubtitleResponse {
+pub struct SubtitleTrackResponse {
     pub message: String,
-    pub current_subtitle: Option<SubtitleTrackInfo>,
+    pub current_subtitle_track: Option<SubtitleTrackInfo>,
+}
+
+#[derive(Serialize, Clone)]
+pub struct AudioTrackInfo {
+    pub id: Option<i64>,
+    pub lang: String,
+    pub title: String,
+    pub codec: String,
+    pub channels: Option<i64>,
+    pub sample_rate: Option<i64>,
+    pub bitrate: Option<i64>,
+    pub default: bool,
+}
+
+#[derive(Serialize)]
+pub struct AudioTrackResponse {
+    pub message: String,
+    pub current_audio_track: Option<AudioTrackInfo>,
 }

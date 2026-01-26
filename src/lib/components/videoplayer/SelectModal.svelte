@@ -22,13 +22,25 @@
                     isSelected: track.id === currentTrack?.id,
                 })),
             ]
+        } else if (currentModal === 'Audio') {
+            return [
+                { value: 0, label: 'Off', isSelected: currentTrack === null },
+                ...tracks.map((track: Api.AudioTrackInfo) => ({
+                    value: track.id,
+                    label:
+                        track.lang && track.title
+                            ? `${track.lang} - ${track.title}`
+                            : track.lang || track.title || `Track ${track.id}`,
+                    isSelected: track.id === currentTrack?.id,
+                })),
+            ]
         }
         return []
     })
 </script>
 
 <div
-    class="fixed box-border bg-backgroundColor {bottom} {left} scrollbar scrollbar z-10 max-h-[80vh] w-auto max-w-125 overflow-x-hidden overflow-y-auto rounded p-2 shadow-lg"
+    class="fixed box-border bg-backgroundColor {bottom} {left} scrollbar scrollbar z-10 max-h-[80vh] w-auto max-w-[75vw] overflow-x-hidden overflow-y-auto rounded p-2 shadow-lg"
     id="track-selection-modal">
     {#if displayTracks.length > 0}
         <div class="flex flex-col gap-1">

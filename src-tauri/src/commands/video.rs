@@ -3,11 +3,12 @@ use std::sync::Arc;
 use crate::db::settings::SettingsManager;
 use crate::errors::ApiResponse;
 use crate::state::AppState;
+use crate::video_player::audio::AudioManager;
 use crate::video_player::player::MpvPlayer;
 use crate::video_player::subtitles::SubtitleManager;
 use crate::video_player::types::{
-    CloseVideoPlayer, LoadVideoData, SeekData, SetAudioChannel, SetTime, SetVolume,
-    SubtitleResponse, TogglePlayData,
+    AudioTrackResponse, CloseVideoPlayer, LoadVideoData, SeekData, SetAudioChannel, SetTime,
+    SetVolume, SubtitleTrackResponse, TogglePlayData,
 };
 use crate::AppError;
 use tauri::{command, AppHandle, State, WebviewWindow};
@@ -198,7 +199,10 @@ pub fn set_audio_channel(
 }
 
 #[command]
-pub fn set_subtitle(state: State<'_, AppState>, subtitle_id: i64) -> ApiResponse<SubtitleResponse> {
+pub fn set_subtitle_track(
+    state: State<'_, AppState>,
+    subtitle_track_id: i64,
+) -> ApiResponse<SubtitleTrackResponse> {
     let player_guard = match state.video_player.lock() {
         Ok(guard) => guard,
         Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
@@ -209,13 +213,43 @@ pub fn set_subtitle(state: State<'_, AppState>, subtitle_id: i64) -> ApiResponse
         None => return ApiResponse::error(404, "No player available".to_string()),
     };
 
-    match player.set_subtitles(subtitle_id) {
+    match player.set_subtitle_track(subtitle_track_id) {
         Ok(_) => {
             let subtitle_manager = SubtitleManager::new(Arc::clone(&player.mpv));
-            match subtitle_manager.get_current_subtitle() {
-                Ok(current_subtitle) => ApiResponse::ok(SubtitleResponse {
+            match subtitle_manager.get_current_subtitle_track() {
+                Ok(current_subtitle_track) => ApiResponse::ok(SubtitleTrackResponse {
                     message: "Subtitle set successfully".to_string(),
-                    current_subtitle,
+                    current_subtitle_track,
+                }),
+                Err(e) => ApiResponse::error(500, format!("Failed to get current subtitle: {}", e)),
+            }
+        }
+        Err(e) => ApiResponse::error(500, format!("Failed to set subtitle: {}", e)),
+    }
+}
+
+#[command]
+pub fn set_audio_track(
+    state: State<'_, AppState>,
+    audio_track_id: i64,
+) -> ApiResponse<AudioTrackResponse> {
+    let player_guard = match state.video_player.lock() {
+        Ok(guard) => guard,
+        Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
+    };
+
+    let player = match player_guard.as_ref() {
+        Some(player) => player,
+        None => return ApiResponse::error(404, "No player available".to_string()),
+    };
+
+    match player.set_audio_track(audio_track_id) {
+        Ok(_) => {
+            let audio_manager = AudioManager::new(Arc::clone(&player.mpv));
+            match audio_manager.get_current_audio_track() {
+                Ok(current_audio_track) => ApiResponse::ok(AudioTrackResponse {
+                    message: "Audio track set successfully".to_string(),
+                    current_audio_track,
                 }),
                 Err(e) => ApiResponse::error(500, format!("Failed to get current subtitle: {}", e)),
             }

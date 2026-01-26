@@ -4,6 +4,7 @@ use std::thread;
 use std::time::Duration;
 use tauri::{AppHandle, Emitter};
 
+use crate::video_player::audio::AudioManager;
 use crate::video_player::player::MpvPlayer;
 use crate::video_player::subtitles::SubtitleManager;
 use crate::video_player::types::Metadata;
@@ -110,10 +111,6 @@ impl MpvEventHandler {
         let duration = Self::get_duration(&mpv)?;
         let audio_channel = Self::get_audio_channel(&mpv)?;
 
-        let subtitle_manager = SubtitleManager::new(Arc::clone(&mpv));
-        let subtitle_tracks = subtitle_manager
-            .get_all_subtitles()
-            .map_err(|e| format!("Failed to get subtitle tracks: {}", e))?;
         // TODO pass video langauge
         let video_language = "th";
         let user_settings = match player {
@@ -124,18 +121,34 @@ impl MpvEventHandler {
             None => None,
         };
 
+        let audio_manager = AudioManager::new(Arc::clone(&mpv));
+        let audio_tracks = audio_manager
+            .get_all_audio_tracks()
+            .map_err(|e| format!("Failed to get audio tracks: {}", e))?;
+        if let Some(settings) = &user_settings {
+            audio_manager
+                .auto_select_audio_track(video_language, settings)
+                .map_err(|e| format!("Failed to auto set audio track: {}", e))?;
+        }
+        let current_audio_track = audio_manager
+            .get_current_audio_track()
+            .map_err(|e| format!("Failed to get current audio track: {}", e))?;
+
+        let subtitle_manager = SubtitleManager::new(Arc::clone(&mpv));
+        let subtitle_tracks = subtitle_manager
+            .get_all_subtitle_tracks()
+            .map_err(|e| format!("Failed to get subtitle tracks: {}", e))?;
         if let Some(settings) = user_settings {
             subtitle_manager
-                .auto_select_subtitle(video_language, &settings)
+                .auto_select_subtitle_track(video_language, &settings)
                 .map_err(|e| format!("Failed to auto set subtitle: {}", e))?;
         } else {
             subtitle_manager
-                .set_subtitle(None)
+                .set_subtitle_track(None)
                 .map_err(|e| format!("Failed to disable subtitles: {}", e))?;
         }
-
         let current_subtitle_track = subtitle_manager
-            .get_current_subtitle()
+            .get_current_subtitle_track()
             .map_err(|e| format!("Failed to get current subtitle: {}", e))?;
 
         Ok(Metadata {
@@ -144,6 +157,8 @@ impl MpvEventHandler {
             audio_channel,
             subtitle_tracks,
             current_subtitle_track,
+            audio_tracks,
+            current_audio_track,
         })
     }
 

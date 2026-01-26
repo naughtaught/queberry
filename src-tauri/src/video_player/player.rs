@@ -1,6 +1,6 @@
 use crate::db::types::UserSettings;
 use crate::errors::{AppError, Result};
-use crate::video_player::audio;
+use crate::video_player::audio::{self, AudioManager};
 use crate::video_player::subtitles::SubtitleManager;
 use crate::video_player::{config::MpvConfig, events::MpvEventHandler, tracker::PlayerTracker};
 use libmpv2::Mpv;
@@ -171,8 +171,13 @@ impl MpvPlayer {
         audio::set_audio_channel(&mpv, audio_channel)
     }
 
-    pub fn set_subtitles(&self, subtitle_id: i64) -> Result<()> {
+    pub fn set_subtitle_track(&self, subtitle_track_id: i64) -> Result<()> {
         let subtitle_manager = SubtitleManager::new(Arc::clone(&self.mpv));
-        subtitle_manager.set_subtitle(Some(subtitle_id))
+        subtitle_manager.set_subtitle_track(Some(subtitle_track_id))
+    }
+
+    pub fn set_audio_track(&self, audio_track_id: i64) -> Result<()> {
+        let audio_manager = AudioManager::new(Arc::clone(&self.mpv));
+        audio_manager.set_audio_track(Some(audio_track_id))
     }
 }

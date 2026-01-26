@@ -14,7 +14,7 @@ impl SubtitleManager {
         Self { mpv }
     }
 
-    pub fn get_current_subtitle(&self) -> Result<Option<SubtitleTrackInfo>, AppError> {
+    pub fn get_current_subtitle_track(&self) -> Result<Option<SubtitleTrackInfo>, AppError> {
         let mpv_guard = self
             .mpv
             .lock()
@@ -45,7 +45,7 @@ impl SubtitleManager {
                 };
 
                 if track_type == "sub" {
-                    return Ok(Some(self.extract_subtitle_info(&mpv_guard, i)?));
+                    return Ok(Some(self.extract_subtitle_track_info(&mpv_guard, i)?));
                 }
             }
         }
@@ -53,7 +53,7 @@ impl SubtitleManager {
         Ok(None)
     }
 
-    pub fn get_all_subtitles(&self) -> Result<Vec<SubtitleTrackInfo>, AppError> {
+    pub fn get_all_subtitle_tracks(&self) -> Result<Vec<SubtitleTrackInfo>, AppError> {
         let mpv_guard = self
             .mpv
             .lock()
@@ -73,7 +73,7 @@ impl SubtitleManager {
             };
 
             if track_type == "sub" {
-                match self.extract_subtitle_info(&mpv_guard, i) {
+                match self.extract_subtitle_track_info(&mpv_guard, i) {
                     Ok(info) => subtitles.push(info),
                     Err(e) => log::warn!("Failed to extract subtitle info for track {}: {}", i, e),
                 }
@@ -83,7 +83,7 @@ impl SubtitleManager {
         Ok(subtitles)
     }
 
-    fn extract_subtitle_info(
+    fn extract_subtitle_track_info(
         &self,
         mpv: &Mpv,
         track_index: i64,
@@ -136,7 +136,7 @@ impl SubtitleManager {
             || codec.to_lowercase().contains("cc")
     }
 
-    pub fn set_subtitle(&self, track_id: Option<i64>) -> Result<(), AppError> {
+    pub fn set_subtitle_track(&self, track_id: Option<i64>) -> Result<(), AppError> {
         let mpv_guard = self
             .mpv
             .lock()
@@ -250,17 +250,17 @@ impl SubtitleManager {
         score
     }
 
-    pub fn auto_select_subtitle(
+    pub fn auto_select_subtitle_track(
         &self,
         video_language: &str,
         user_settings: &UserSettings,
     ) -> Result<(), AppError> {
-        let all_subtitles = self.get_all_subtitles()?;
+        let all_subtitles = self.get_all_subtitle_tracks()?;
 
         let best_track =
             self.find_best_subtitle_track(&all_subtitles, video_language, user_settings)?;
 
         let track_id = best_track.and_then(|track| track.id);
-        self.set_subtitle(track_id)
+        self.set_subtitle_track(track_id)
     }
 }
