@@ -1,7 +1,7 @@
 use crate::db::types::UserSettings;
 use crate::errors::{AppError, Result};
 use crate::utils::language::language_matches;
-use crate::video_player::types::SubtitleTrackInfo;
+use crate::video_player::types::{CaptionType, SubtitleTrackInfo};
 use libmpv2::Mpv;
 use std::sync::{Arc, Mutex};
 
@@ -106,34 +106,37 @@ impl SubtitleManager {
             .get_property(&codec_prop)
             .unwrap_or_else(|_| "".to_string());
 
-        let forced = Self::is_forced_subtitle(&title, &lang, &codec);
-        let sdh = Self::is_sdh_subtitle(&title, &lang, &codec);
+        let caption_type = Self::detect_caption_type(&title, &codec);
 
         Ok(SubtitleTrackInfo {
             id: if id == -1 { None } else { Some(id) },
             lang,
             title,
-            forced,
-            sdh,
+            caption_type,
         })
     }
 
-    fn is_forced_subtitle(_title: &str, _lang: &str, codec: &str) -> bool {
-        let lower_title = _title.to_lowercase();
-        lower_title.contains("forced")
-            || lower_title.contains("foreign")
-            || codec.to_lowercase().contains("forced")
-    }
+    fn detect_caption_type(title: &str, codec: &str) -> CaptionType {
+        let lower_title = title.to_lowercase();
+        let lower_codec = codec.to_lowercase();
 
-    fn is_sdh_subtitle(_title: &str, _lang: &str, codec: &str) -> bool {
-        let lower_title = _title.to_lowercase();
-        lower_title.contains("sdh")
+        if lower_title.contains("commentary") || lower_codec.contains("commentary") {
+            CaptionType::Commentary
+        } else if lower_title.contains("forced") || lower_codec.contains("forced") {
+            CaptionType::Forced
+        } else if lower_title.contains("[cc]")
+            || lower_title.contains("closed caption")
+            || lower_codec.contains("cc")
+        {
+            CaptionType::Cc
+        } else if lower_title.contains("sdh")
             || lower_title.contains("hard of hearing")
             || lower_title.contains("hearing impaired")
-            || lower_title.contains("[cc]")
-            || lower_title.contains("caption")
-            || codec.to_lowercase().contains("sdh")
-            || codec.to_lowercase().contains("cc")
+        {
+            CaptionType::Sdh
+        } else {
+            CaptionType::Normal
+        }
     }
 
     pub fn set_subtitle_track(&self, track_id: Option<i64>) -> Result<(), AppError> {
@@ -209,7 +212,7 @@ impl SubtitleManager {
                         .iter()
                         .find(|track| {
                             language_matches(&track.lang, preferred_subtitle_language)
-                                && track.forced
+                                && track.caption_type == CaptionType::Forced
                         })
                         .cloned();
 
@@ -239,11 +242,11 @@ impl SubtitleManager {
     fn score_subtitle_track(&self, track: &SubtitleTrackInfo) -> i32 {
         let mut score = 0;
 
-        if track.sdh {
+        if track.caption_type == CaptionType::Sdh {
             score += 2;
         }
 
-        if track.forced {
+        if track.caption_type == CaptionType::Forced {
             score += 1;
         }
 

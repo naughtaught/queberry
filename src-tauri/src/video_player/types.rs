@@ -25,12 +25,23 @@ pub struct SetTime {
 }
 
 #[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct SubtitleTrackInfo {
     pub id: Option<i64>,
     pub lang: String,
     pub title: String,
-    pub forced: bool,
-    pub sdh: bool,
+    pub caption_type: CaptionType,
+}
+
+#[derive(Serialize, Clone, PartialEq)]
+pub enum CaptionType {
+    Normal,
+    #[serde(rename = "SDH")]
+    Sdh,
+    #[serde(rename = "CC")]
+    Cc,
+    Forced,
+    Commentary,
 }
 
 #[derive(Serialize, Clone)]
@@ -86,6 +97,7 @@ pub struct SubtitleTrackResponse {
 }
 
 #[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct AudioTrackInfo {
     pub id: Option<i64>,
     pub lang: String,
