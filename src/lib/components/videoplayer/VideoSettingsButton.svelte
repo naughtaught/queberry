@@ -1,10 +1,12 @@
 <script lang="ts">
+    import { VideoSettingsModal } from '$lib'
+
     let { currentModal = $bindable() } = $props()
 </script>
 
-<!-- {#if currentModal === 'Settings'}
-	<VideoSettingsModal bind:currentModal bottom="bottom-16" left="left-4" />
-{/if} -->
+{#if currentModal === 'Settings'}
+    <VideoSettingsModal bind:currentModal bottom="bottom-16" left="left-4" />
+{/if}
 
 <button
     aria-label="Video Settings"

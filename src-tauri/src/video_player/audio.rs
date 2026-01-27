@@ -300,3 +300,17 @@ pub fn set_audio_channel(mpv: &Mpv, audio_channel: &str) -> Result<()> {
 
     Ok(())
 }
+
+pub fn av_sync_adjust(mpv: &Mpv, value: f64) -> Result<()> {
+    let current_time = mpv
+        .get_property::<f64>("time-pos")
+        .map_err(|e| AppError::Runtime(format!("Failed to get current time: {}", e)))?;
+
+    mpv.set_property("audio-delay", value)
+        .map_err(|e| AppError::Runtime(format!("Failed to adjust audio by {}: {}", value, e)))?;
+
+    mpv.command("seek", &[&format!("{}", current_time), "absolute", "exact"])
+        .map_err(|e| AppError::Runtime(format!("Failed to seek: {}", e)))?;
+
+    Ok(())
+}

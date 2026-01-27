@@ -3,6 +3,7 @@
     import { handleError, settings, videoMetadata, videoState, type Api } from '$lib'
 
     const cacheTime = $derived($videoState.cacheTime)
+    const thumbWidth = 8
     let isDragging = $state(false)
     let sliderValue = $state(0)
     let sliderPosition = $state(0)
@@ -79,9 +80,12 @@
         const sliderRect = sliderElement.getBoundingClientRect()
         const sliderWidth = sliderRect.width
 
+        const effectiveWidth = sliderWidth - thumbWidth
+        const effectiveStart = thumbWidth / 2
+
         const percentage = (val - min) / ($videoMetadata.duration - min)
 
-        const adjustedPosition = percentage * sliderWidth
+        const adjustedPosition = effectiveStart + percentage * effectiveWidth
 
         sliderPosition = (adjustedPosition / sliderWidth) * 100
     }
@@ -125,7 +129,7 @@
                 onpointerdown={handlePointerDown}
                 onpointerup={() => handlePointerUp(sliderValue)}
                 oninput={handleInput}
-                class="from-bg-primaryColor to-bg-primaryColor h-1 w-full cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none" />
+                class="from-bg-primaryColor to-bg-primaryColor h-1 w-full cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-2 [&::-webkit-slider-thumb]:w-2 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primaryShade-200 [&::-webkit-slider-thumb]:shadow-md" />
             <div
                 class={`pointer-events-none absolute -translate-x-1/2 transform rounded bg-primaryColor px-2 py-1 text-xs text-textColor transition-opacity duration-200 ${isDragging ? 'opacity-100' : 'opacity-0'}`}
                 style="left: {sliderPosition}%; top:-20px; z-index: 10;">

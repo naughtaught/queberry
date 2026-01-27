@@ -180,4 +180,13 @@ impl MpvPlayer {
         let audio_manager = AudioManager::new(Arc::clone(&self.mpv));
         audio_manager.set_audio_track(Some(audio_track_id))
     }
+
+    pub fn av_sync_adjust(&self, value: f64) -> Result<()> {
+        let mpv = self
+            .mpv
+            .lock()
+            .map_err(|e| AppError::Runtime(format!("Failed to lock MPV instance: {}", e)))?;
+
+        audio::av_sync_adjust(&mpv, value)
+    }
 }

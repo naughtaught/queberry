@@ -7,8 +7,8 @@ use crate::video_player::audio::AudioManager;
 use crate::video_player::player::MpvPlayer;
 use crate::video_player::subtitles::SubtitleManager;
 use crate::video_player::types::{
-    AudioTrackResponse, CloseVideoPlayer, LoadVideoData, SeekData, SetAudioChannel, SetTime,
-    SetVolume, SubtitleTrackResponse, TogglePlayData,
+    AudioTrackResponse, CloseVideoPlayer, LoadVideoData, SeekData, SetAudioChannel,
+    SetAudioVideoAdjust, SetTime, SetVolume, SubtitleTrackResponse, TogglePlayData,
 };
 use crate::AppError;
 use tauri::{command, AppHandle, State, WebviewWindow};
@@ -256,4 +256,25 @@ pub fn set_audio_track(
         }
         Err(e) => ApiResponse::error(500, format!("Failed to set subtitle: {}", e)),
     }
+}
+
+#[command]
+pub fn av_sync_adjust(state: State<'_, AppState>, value: f64) -> ApiResponse<SetAudioVideoAdjust> {
+    let player_guard = match state.video_player.lock() {
+        Ok(guard) => guard,
+        Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
+    };
+
+    let player = match player_guard.as_ref() {
+        Some(player) => player,
+        None => return ApiResponse::error(404, "No player available".to_string()),
+    };
+
+    if let Err(e) = player.av_sync_adjust(value) {
+        return ApiResponse::error(500, format!("Failed to set av adjustment: {}", e));
+    }
+
+    ApiResponse::ok(SetAudioVideoAdjust {
+        message: "Video player audio video sync changed successfully".to_string(),
+    })
 }

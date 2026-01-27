@@ -14,6 +14,26 @@
     --color-textColor: #ffffff;
     --color-detailsPageTextColor: #ffffff;
 
+    --color-primaryTint-100: #3ba1c5;
+    --color-primaryTint-200: #51abcb;
+    --color-primaryTint-300: #66b6d2;
+    --color-primaryTint-400: #7cc0d8;
+    --color-primaryTint-500: #92cbdf;
+    --color-primaryTint-600: #a8d5e5;
+    --color-primaryTint-700: #bee0ec;
+    --color-primaryTint-800: #d3eaf2;
+    --color-primaryTint-900: #e9f5f9;
+
+    --color-primaryShade-100: #2187ab;
+    --color-primaryShade-200: #1e7898;
+    --color-primaryShade-300: #1a6985;
+    --color-primaryShade-400: #165a72;
+    --color-primaryShade-500: #134b5f;
+    --color-primaryShade-600: #0f3c4c;
+    --color-primaryShade-700: #0b2d39;
+    --color-primaryShade-800: #071e26;
+    --color-primaryShade-900: #040f13;
+
     --color-rating-90: #00ff00;
     --color-rating-80: #55ff00;
     --color-rating-70: #a6ff00;

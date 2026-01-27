@@ -31,6 +31,8 @@ export { default as SubtitleTrackButton } from './components/videoplayer/Subtitl
 export { default as AudioTrackButton } from './components/videoplayer/AudioTrackButton.svelte'
 export { default as VideoSettingsButton } from './components/videoplayer/VideoSettingsButton.svelte'
 export { default as VideoMenuButton } from './components/videoplayer/VideoMenuButton.svelte'
+export { default as OffsetAdjustButton } from './components/videoplayer/OffsetAdjustButton.svelte'
+export { default as VideoSettingsModal } from './components/videoplayer/VideoSettingsModal.svelte'
 
 // Functions/UI
 export { toggleFullscreen } from './functions/ui/toggleFullscreen.ts'

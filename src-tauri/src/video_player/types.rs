@@ -114,3 +114,8 @@ pub struct AudioTrackResponse {
     pub message: String,
     pub current_audio_track: Option<AudioTrackInfo>,
 }
+
+#[derive(Serialize)]
+pub struct SetAudioVideoAdjust {
+    pub message: String,
+}
