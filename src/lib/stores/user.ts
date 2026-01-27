@@ -33,3 +33,5 @@ const defaultSettings = readable<Api.UserSettings>({
 })
 
 export const settings = writable<Api.UserSettings>(get(defaultSettings))
+
+export const user = writable<Api.User | null>()

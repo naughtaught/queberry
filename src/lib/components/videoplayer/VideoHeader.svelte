@@ -1,10 +1,19 @@
 <script lang="ts">
     import { invoke } from '@tauri-apps/api/core'
     import { onDestroy, onMount } from 'svelte'
-    import { page } from '$app/state'
-    import { HeaderButton, videoMetadata, appState, toggleFullscreen, minimizeApp, type Api, handleError } from '$lib'
     import { goto } from '$app/navigation'
     import { resolve } from '$app/paths'
+    import { page } from '$app/state'
+    import {
+        HeaderButton,
+        videoMetadata,
+        appState,
+        toggleFullscreen,
+        minimizeApp,
+        handleError,
+        VideoMenuButton,
+        type Api,
+    } from '$lib'
 
     let now = $state(new Date())
     let interval: ReturnType<typeof setInterval>
@@ -44,6 +53,7 @@
 <div
     class="fixed top-0 left-0 flex h-7 w-full items-center justify-between bg-black px-2"
     data-tauri-drag-region="true">
+    <button><VideoMenuButton /></button>
     <p class="text-xs">{$videoMetadata.title}</p>
     <div class="flex items-center gap-4">
         <p class="text-xs {page.url.pathname.includes('details') ? 'text-detailsPageTextColor' : 'text-textColor'}">

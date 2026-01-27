@@ -65,7 +65,7 @@
 </script>
 
 <div
-    class="fixed box-border bg-backgroundColor {bottom} {left} scrollbar scrollbar z-10 max-h-[80vh] w-auto max-w-[75vw] overflow-x-hidden overflow-y-auto rounded p-2 shadow-lg">
+    class="fixed box-border bg-backgroundColor {bottom} {left}  z-10 max-h-[80vh] w-auto max-w-[75vw] overflow-x-hidden overflow-y-auto rounded p-2 shadow-lg">
     {#if displayTracks.length > 0}
         <div class="flex flex-col gap-1">
             {#each displayTracks as track (track.value)}
