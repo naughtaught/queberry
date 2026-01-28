@@ -10,7 +10,7 @@
         VideoSettingsButton,
     } from '$lib'
 
-    let currentModal = $state(null)
+    let { currentModal = $bindable(), previousVolume = $bindable() } = $props()
 </script>
 
 <div class="fixed bottom-0 left-0 flex h-28 w-full flex-col bg-black px-4">
@@ -30,7 +30,7 @@
             <SeekButton direction="forward" />
         </div>
         <div class="flex w-1/4 items-center justify-end gap-2">
-            <Volume />
+            <Volume bind:previousVolume />
         </div>
     </div>
 </div>

@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { invoke } from '@tauri-apps/api/core'
     import { onDestroy, onMount } from 'svelte'
     import { goto } from '$app/navigation'
     import { resolve } from '$app/paths'
@@ -10,9 +9,8 @@
         appState,
         toggleFullscreen,
         minimizeApp,
-        handleError,
         VideoMenuButton,
-        type Api,
+        invokeFunction,
     } from '$lib'
 
     let now = $state(new Date())
@@ -31,21 +29,10 @@
     })
 
     const closeVideoPlayer = async (): Promise<void> => {
-        try {
-            const response: Api.ApiResponse = await invoke('close_video_player', {})
-            if (response.success) {
-                // TODO Navigation from here
-                goto(resolve('/', {}))
-            } else {
-                handleError(response.error!)
-            }
-        } catch (error) {
-            const errorDetail: Api.ErrorDetail = {
-                code: 500,
-                message: error instanceof Error ? error.message : String(error),
-                stack: error instanceof Error ? error.stack : undefined,
-            }
-            handleError(errorDetail)
+        const response = await invokeFunction('close_video_player', {})
+        if (response.success) {
+            // TODO Navigation from here
+            goto(resolve('/', {}))
         }
     }
 </script>

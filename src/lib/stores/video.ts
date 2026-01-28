@@ -42,8 +42,19 @@ export const audioChannelOptions = readable([
 
 export const speakerLayoutsWithCenter = ['3.0', '3.1', '5.0', '5.1', '6.0', '6.1', '7.1']
 
-export const defaultSessionSettings = readable({
+export const defaultSessionSettings = writable({
     centerSpeakerLevel: 0,
+    volume: 30,
 })
 
 export const sessionSettings = writable(get(defaultSessionSettings))
+
+export const defaultKeyboardShortcuts = readable([
+    { id: 'pause', name: 'Play/Pause', key: 'Space' },
+    { id: 'fullscreen', name: 'Toggle Fullscreen', key: 'KeyF' },
+    { id: 'mute', name: 'Mute/Unmute', key: 'KeyM' },
+    { id: 'forward', name: 'Forward 30s', key: 'ArrowRight' },
+    { id: 'rewind', name: 'Rewind 30s', key: 'ArrowLeft' },
+])
+
+export const keyboardShortcuts = writable(get(defaultKeyboardShortcuts))

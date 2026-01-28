@@ -1,27 +1,13 @@
 <script lang="ts">
-    import { invoke } from '@tauri-apps/api/core'
-    import { videoMetadata, SelectModal, handleError, type Api } from '$lib'
+    import { videoMetadata, SelectModal, invokeFunction } from '$lib'
 
     let { currentModal = $bindable() } = $props()
 
     const setAudioTrack = async (trackId: number): Promise<void> => {
-        try {
-            const response: Api.ApiResponse = await invoke('set_audio_track', {
-                audioTrackId: trackId,
-            })
-            if (response.success) {
-                $videoMetadata.currentAudioTrack = response.data!.current_audio_track
-            } else {
-                handleError(response.error!)
-            }
-        } catch (error) {
-            const errorDetail: Api.ErrorDetail = {
-                code: 500,
-                message: error instanceof Error ? error.message : String(error),
-                stack: error instanceof Error ? error.stack : undefined,
-            }
-            handleError(errorDetail)
-        }
+        const response = await invokeFunction('set_audio_track', {
+            value: trackId,
+        })
+        if (response.success) $videoMetadata.currentAudioTrack = response.data.value
     }
 </script>
 

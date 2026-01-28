@@ -5,7 +5,7 @@ use std::sync::{
 };
 use tauri::{async_runtime, AppHandle, Emitter};
 
-use crate::video_player::types::{CompletionEvent, VideoState};
+use crate::video_player::types::VideoState;
 
 #[derive(Clone)]
 pub struct PlayerTracker {
@@ -77,8 +77,7 @@ impl PlayerTracker {
                     if !completed_event_emitted && current_time >= 30.0 {
                         if let Ok(percent_pos) = guard.get_property::<i64>("percent-pos") {
                             if percent_pos >= complete_percent_i64 {
-                                let completion_event = CompletionEvent { is_completed: true };
-                                let _ = app_handle_clone.emit("video-completed", completion_event);
+                                let _ = app_handle_clone.emit("video-completed", ());
                                 completed_event_emitted = true;
                             }
                         }

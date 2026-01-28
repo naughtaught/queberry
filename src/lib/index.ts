@@ -43,6 +43,9 @@ export { getRatingColor } from './functions/ui/getRatingColor.ts'
 // Functions/User
 export { updateLocalMediaStates } from './functions/user/updateLocalMediaStates.ts'
 
+// Functions/Api
+export { invokeFunction } from './functions/api/invokeFunction.ts'
+
 // Stores
 export { handleError } from './stores/errorHandling'
 export {
@@ -54,6 +57,7 @@ export {
     speakerLayoutsWithCenter,
     defaultSessionSettings,
     sessionSettings,
+    keyboardShortcuts,
 } from './stores/video'
 export { settings, user } from './stores/user'
 export { appState } from './stores/app'

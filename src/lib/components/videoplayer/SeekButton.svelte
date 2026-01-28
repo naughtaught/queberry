@@ -1,6 +1,5 @@
 <script lang="ts">
-    import { invoke } from '@tauri-apps/api/core'
-    import { handleError, videoState, type Api } from '$lib'
+    import { invokeFunction, videoState } from '$lib'
 
     const { direction } = $props()
 
@@ -10,21 +9,10 @@
 
     const seek = async (): Promise<void> => {
         if ($videoState.currentTime < 1) return
-        try {
-            const response: Api.ApiResponse = await invoke('seek', {
-                seekAmount,
-            })
-            if (response.error) {
-                handleError(response.error!)
-            }
-        } catch (error) {
-            const errorDetail: Api.ErrorDetail = {
-                code: 500,
-                message: error instanceof Error ? error.message : String(error),
-                stack: error instanceof Error ? error.stack : undefined,
-            }
-            handleError(errorDetail)
-        }
+
+        await invokeFunction('seek', {
+            value: seekAmount,
+        })
     }
 </script>
 

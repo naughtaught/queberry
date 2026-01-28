@@ -1,28 +1,5 @@
-use serde::Serialize;
-
-#[derive(Serialize)]
-pub struct LoadVideoData {
-    pub message: String,
-    pub url: String,
-}
-
-#[derive(Serialize)]
-pub struct TogglePlayData {
-    pub message: String,
-    pub paused: bool,
-}
-
-#[derive(Serialize)]
-pub struct SeekData {
-    pub message: String,
-    pub seek_amount: i8,
-}
-
-#[derive(Serialize)]
-pub struct SetTime {
-    pub message: String,
-    pub time: f64,
-}
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 #[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -68,28 +45,9 @@ pub struct VideoState {
     pub is_paused: bool,
 }
 
-#[derive(Serialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct CompletionEvent {
-    pub is_completed: bool,
-}
-
-#[derive(Serialize)]
-pub struct SetVolume {
-    pub message: String,
-    pub volume: f64,
-}
-
-#[derive(Serialize)]
-pub struct SetAudioChannel {
-    pub message: String,
-    pub channel: String,
-}
-
 #[derive(Serialize)]
 pub struct SubtitleTrackResponse {
-    pub message: String,
-    pub current_subtitle_track: Option<SubtitleTrackInfo>,
+    pub value: Option<SubtitleTrackInfo>,
 }
 
 #[derive(Serialize, Clone)]
@@ -107,11 +65,17 @@ pub struct AudioTrackInfo {
 
 #[derive(Serialize)]
 pub struct AudioTrackResponse {
-    pub message: String,
-    pub current_audio_track: Option<AudioTrackInfo>,
+    pub value: Option<AudioTrackInfo>,
 }
 
 #[derive(Serialize)]
-pub struct MessageResponse {
-    pub message: String,
+pub struct VideoCommandResponse {
+    pub value: Value,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")] // Optional: matches JS naming convention
+pub struct LoadVideoRequest {
+    pub url: String,
+    pub user_id: i32,
 }

@@ -1,23 +1,13 @@
 <script lang="ts">
-    import { invoke } from '@tauri-apps/api/core'
-    import { handleError, type Api } from '$lib'
+    import { handleError, invokeFunction } from '$lib'
 
     const { change, label, emit } = $props()
 
     const emitEvent = async (value: boolean): Promise<void> => {
-        try {
-            const response: Api.ApiResponse = await invoke(emit, {
-                value,
-            })
-            if (!response.success) handleError(response.error!)
-        } catch (error) {
-            const errorDetail: Api.ErrorDetail = {
-                code: 500,
-                message: error instanceof Error ? error.message : String(error),
-                stack: error instanceof Error ? error.stack : undefined,
-            }
-            handleError(errorDetail)
-        }
+        const response = await invokeFunction(emit, {
+            value,
+        })
+        if (!response.success) handleError(response.error!)
     }
 </script>
 

@@ -1,25 +1,11 @@
 <script lang="ts">
-    import { invoke } from '@tauri-apps/api/core'
-    import { handleError, videoState, type Api } from '$lib'
+    import { invokeFunction, videoState } from '$lib'
 
     const togglePlay = async (): Promise<void> => {
-        try {
-            const response: Api.ApiResponse = await invoke('toggle_play', {
-                paused: $videoState.isPaused,
-            })
-            if (response.success) {
-                $videoState.isPaused = response.data!.paused
-            } else {
-                handleError(response.error!)
-            }
-        } catch (error) {
-            const errorDetail: Api.ErrorDetail = {
-                code: 500,
-                message: error instanceof Error ? error.message : String(error),
-                stack: error instanceof Error ? error.stack : undefined,
-            }
-            handleError(errorDetail)
-        }
+        const response = await invokeFunction('toggle_play', {
+            value: $videoState.isPaused,
+        })
+        if (response.success) $videoState.isPaused = response.data.value
     }
 </script>
 

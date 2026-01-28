@@ -1,16 +1,13 @@
 use std::sync::Arc;
 
-use crate::db::settings::SettingsManager;
 use crate::errors::ApiResponse;
 use crate::state::AppState;
 use crate::video_player::audio::AudioManager;
 use crate::video_player::player::MpvPlayer;
 use crate::video_player::subtitles::SubtitleManager;
-use crate::video_player::types::{
-    AudioTrackResponse, LoadVideoData, MessageResponse, SeekData, SetAudioChannel, SetTime,
-    SetVolume, SubtitleTrackResponse, TogglePlayData,
-};
+use crate::video_player::types::{LoadVideoRequest, SubtitleTrackResponse, VideoCommandResponse};
 use crate::AppError;
+use crate::{db::settings::SettingsManager, video_player::types::AudioTrackResponse};
 use tauri::{command, AppHandle, State, WebviewWindow};
 
 #[command]
@@ -19,9 +16,10 @@ pub fn load_video(
     app: AppHandle,
     state: State<'_, AppState>,
     window: WebviewWindow,
-    url: String,
-    user_id: i32,
-) -> ApiResponse<LoadVideoData> {
+    value: LoadVideoRequest,
+) -> ApiResponse<VideoCommandResponse> {
+    let LoadVideoRequest { url, user_id } = value;
+
     let mut player_guard = match state.video_player.lock() {
         Ok(guard) => guard,
         Err(e) => {
@@ -58,14 +56,13 @@ pub fn load_video(
         }
     }
 
-    ApiResponse::ok(LoadVideoData {
-        message: "Video loaded successfully".to_string(),
-        url: url.clone(),
+    ApiResponse::ok(VideoCommandResponse {
+        value: serde_json::Value::String(url.clone()),
     })
 }
 
 #[command]
-pub fn toggle_play(state: State<'_, AppState>, paused: bool) -> ApiResponse<TogglePlayData> {
+pub fn toggle_play(state: State<'_, AppState>, value: bool) -> ApiResponse<VideoCommandResponse> {
     let player_guard = match state.video_player.lock() {
         Ok(guard) => guard,
         Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
@@ -76,18 +73,17 @@ pub fn toggle_play(state: State<'_, AppState>, paused: bool) -> ApiResponse<Togg
         None => return ApiResponse::error(404, "No player available".to_string()),
     };
 
-    if let Err(e) = player.toggle_play(paused) {
+    if let Err(e) = player.toggle_play(value) {
         return ApiResponse::error(500, format!("Failed to toggle play: {}", e));
     }
 
-    ApiResponse::ok(TogglePlayData {
-        message: "Play state toggled successfully".to_string(),
-        paused: !paused,
+    ApiResponse::ok(VideoCommandResponse {
+        value: serde_json::Value::Bool(!value),
     })
 }
 
 #[command]
-pub fn seek(state: State<'_, AppState>, seek_amount: i8) -> ApiResponse<SeekData> {
+pub fn seek(state: State<'_, AppState>, value: i8) -> ApiResponse<VideoCommandResponse> {
     let player_guard = match state.video_player.lock() {
         Ok(guard) => guard,
         Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
@@ -98,18 +94,17 @@ pub fn seek(state: State<'_, AppState>, seek_amount: i8) -> ApiResponse<SeekData
         None => return ApiResponse::error(404, "No player available".to_string()),
     };
 
-    if let Err(e) = player.seek(seek_amount) {
+    if let Err(e) = player.seek(value) {
         return ApiResponse::error(500, format!("Failed to seek: {}", e));
     }
 
-    ApiResponse::ok(SeekData {
-        message: "Time adjusted successfully".to_string(),
-        seek_amount,
+    ApiResponse::ok(VideoCommandResponse {
+        value: value.into(),
     })
 }
 
 #[command]
-pub fn set_time(state: State<'_, AppState>, time: f64) -> ApiResponse<SetTime> {
+pub fn set_time(state: State<'_, AppState>, value: f64) -> ApiResponse<VideoCommandResponse> {
     let player_guard = match state.video_player.lock() {
         Ok(guard) => guard,
         Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
@@ -120,18 +115,17 @@ pub fn set_time(state: State<'_, AppState>, time: f64) -> ApiResponse<SetTime> {
         None => return ApiResponse::error(404, "No player available".to_string()),
     };
 
-    if let Err(e) = player.set_time(time) {
+    if let Err(e) = player.set_time(value) {
         return ApiResponse::error(500, format!("Failed to set time: {}", e));
     }
 
-    ApiResponse::ok(SetTime {
-        message: "Time adjusted successfully".to_string(),
-        time,
+    ApiResponse::ok(VideoCommandResponse {
+        value: value.into(),
     })
 }
 
 #[command]
-pub fn set_volume(state: State<'_, AppState>, volume: f64) -> ApiResponse<SetVolume> {
+pub fn set_volume(state: State<'_, AppState>, value: f64) -> ApiResponse<VideoCommandResponse> {
     let player_guard = match state.video_player.lock() {
         Ok(guard) => guard,
         Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
@@ -142,18 +136,17 @@ pub fn set_volume(state: State<'_, AppState>, volume: f64) -> ApiResponse<SetVol
         None => return ApiResponse::error(404, "No player available".to_string()),
     };
 
-    if let Err(e) = player.set_volume(volume) {
+    if let Err(e) = player.set_volume(value) {
         return ApiResponse::error(500, format!("Failed to set volume: {}", e));
     }
 
-    ApiResponse::ok(SetVolume {
-        message: "Volume adjusted successfully".to_string(),
-        volume,
+    ApiResponse::ok(VideoCommandResponse {
+        value: value.into(),
     })
 }
 
 #[command]
-pub fn close_video_player(state: State<'_, AppState>) -> ApiResponse<MessageResponse> {
+pub fn close_video_player(state: State<'_, AppState>) -> ApiResponse<VideoCommandResponse> {
     let player_guard = match state.video_player.lock() {
         Ok(guard) => guard,
         Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
@@ -168,16 +161,16 @@ pub fn close_video_player(state: State<'_, AppState>) -> ApiResponse<MessageResp
         return ApiResponse::error(500, format!("Failed to close video player: {}", e));
     }
 
-    ApiResponse::ok(MessageResponse {
-        message: "Video player closed successfully".to_string(),
+    ApiResponse::ok(VideoCommandResponse {
+        value: serde_json::Value::Bool(true),
     })
 }
 
 #[command]
 pub fn set_audio_channel(
     state: State<'_, AppState>,
-    channel: String,
-) -> ApiResponse<SetAudioChannel> {
+    value: String,
+) -> ApiResponse<VideoCommandResponse> {
     let player_guard = match state.video_player.lock() {
         Ok(guard) => guard,
         Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
@@ -188,20 +181,19 @@ pub fn set_audio_channel(
         None => return ApiResponse::error(404, "No player available".to_string()),
     };
 
-    if let Err(e) = player.set_audio_channel(&channel) {
+    if let Err(e) = player.set_audio_channel(&value) {
         return ApiResponse::error(500, format!("Failed to set audio channel: {}", e));
     }
 
-    ApiResponse::ok(SetAudioChannel {
-        message: "Video player audio channel changed successfully".to_string(),
-        channel,
+    ApiResponse::ok(VideoCommandResponse {
+        value: serde_json::Value::String(value),
     })
 }
 
 #[command]
 pub fn set_subtitle_track(
     state: State<'_, AppState>,
-    subtitle_track_id: i64,
+    value: i64,
 ) -> ApiResponse<SubtitleTrackResponse> {
     let player_guard = match state.video_player.lock() {
         Ok(guard) => guard,
@@ -213,13 +205,12 @@ pub fn set_subtitle_track(
         None => return ApiResponse::error(404, "No player available".to_string()),
     };
 
-    match player.set_subtitle_track(subtitle_track_id) {
+    match player.set_subtitle_track(value) {
         Ok(_) => {
             let subtitle_manager = SubtitleManager::new(Arc::clone(&player.mpv));
             match subtitle_manager.get_current_subtitle_track() {
                 Ok(current_subtitle_track) => ApiResponse::ok(SubtitleTrackResponse {
-                    message: "Subtitle set successfully".to_string(),
-                    current_subtitle_track,
+                    value: current_subtitle_track,
                 }),
                 Err(e) => ApiResponse::error(500, format!("Failed to get current subtitle: {}", e)),
             }
@@ -229,10 +220,7 @@ pub fn set_subtitle_track(
 }
 
 #[command]
-pub fn set_audio_track(
-    state: State<'_, AppState>,
-    audio_track_id: i64,
-) -> ApiResponse<AudioTrackResponse> {
+pub fn set_audio_track(state: State<'_, AppState>, value: i64) -> ApiResponse<AudioTrackResponse> {
     let player_guard = match state.video_player.lock() {
         Ok(guard) => guard,
         Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
@@ -243,13 +231,12 @@ pub fn set_audio_track(
         None => return ApiResponse::error(404, "No player available".to_string()),
     };
 
-    match player.set_audio_track(audio_track_id) {
+    match player.set_audio_track(value) {
         Ok(_) => {
             let audio_manager = AudioManager::new(Arc::clone(&player.mpv));
             match audio_manager.get_current_audio_track() {
                 Ok(current_audio_track) => ApiResponse::ok(AudioTrackResponse {
-                    message: "Audio track set successfully".to_string(),
-                    current_audio_track,
+                    value: current_audio_track,
                 }),
                 Err(e) => ApiResponse::error(500, format!("Failed to get current subtitle: {}", e)),
             }
@@ -259,7 +246,7 @@ pub fn set_audio_track(
 }
 
 #[command]
-pub fn av_sync_adjust(state: State<'_, AppState>, value: f64) -> ApiResponse<MessageResponse> {
+pub fn av_sync_adjust(state: State<'_, AppState>, value: f64) -> ApiResponse<VideoCommandResponse> {
     let player_guard = match state.video_player.lock() {
         Ok(guard) => guard,
         Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
@@ -274,13 +261,16 @@ pub fn av_sync_adjust(state: State<'_, AppState>, value: f64) -> ApiResponse<Mes
         return ApiResponse::error(500, format!("Failed to set av adjustment: {}", e));
     }
 
-    ApiResponse::ok(MessageResponse {
-        message: "Video player audio video sync changed successfully".to_string(),
+    ApiResponse::ok(VideoCommandResponse {
+        value: value.into(),
     })
 }
 
 #[command]
-pub fn center_speaker_level(state: State<'_, AppState>, value: i8) -> ApiResponse<MessageResponse> {
+pub fn center_speaker_level(
+    state: State<'_, AppState>,
+    value: i8,
+) -> ApiResponse<VideoCommandResponse> {
     let player_guard = match state.video_player.lock() {
         Ok(guard) => guard,
         Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
@@ -298,7 +288,7 @@ pub fn center_speaker_level(state: State<'_, AppState>, value: i8) -> ApiRespons
         );
     }
 
-    ApiResponse::ok(MessageResponse {
-        message: "Video player center speaker adjustment changed successfully".to_string(),
+    ApiResponse::ok(VideoCommandResponse {
+        value: value.into(),
     })
 }

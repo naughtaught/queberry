@@ -1,6 +1,5 @@
 <script lang="ts">
-    import { invoke } from '@tauri-apps/api/core'
-    import { handleError, settings, videoMetadata, videoState, type Api } from '$lib'
+    import { invokeFunction, settings, videoMetadata, videoState } from '$lib'
 
     const cacheTime = $derived($videoState.cacheTime)
     const thumbWidth = 8
@@ -39,23 +38,11 @@
     }
 
     const handlePointerUp = async (time: number): Promise<void> => {
-        try {
-            const response: Api.ApiResponse = await invoke('set_time', {
-                time,
-            })
-            if (response.success) {
-                $videoState.currentTime = response.data.time
-            } else {
-                handleError(response.error!)
-            }
-        } catch (error) {
-            const errorDetail: Api.ErrorDetail = {
-                code: 500,
-                message: error instanceof Error ? error.message : String(error),
-                stack: error instanceof Error ? error.stack : undefined,
-            }
-            handleError(errorDetail)
-        }
+        const response = await invokeFunction('set_time', {
+            value: time,
+        })
+        if (response.success) $videoState.currentTime = response.data.value
+
         isDragging = false
     }
 
