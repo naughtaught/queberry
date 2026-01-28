@@ -7,8 +7,8 @@ use crate::video_player::audio::AudioManager;
 use crate::video_player::player::MpvPlayer;
 use crate::video_player::subtitles::SubtitleManager;
 use crate::video_player::types::{
-    AudioTrackResponse, CloseVideoPlayer, LoadVideoData, SeekData, SetAudioChannel,
-    SetAudioVideoAdjust, SetTime, SetVolume, SubtitleTrackResponse, TogglePlayData,
+    AudioTrackResponse, LoadVideoData, MessageResponse, SeekData, SetAudioChannel, SetTime,
+    SetVolume, SubtitleTrackResponse, TogglePlayData,
 };
 use crate::AppError;
 use tauri::{command, AppHandle, State, WebviewWindow};
@@ -153,7 +153,7 @@ pub fn set_volume(state: State<'_, AppState>, volume: f64) -> ApiResponse<SetVol
 }
 
 #[command]
-pub fn close_video_player(state: State<'_, AppState>) -> ApiResponse<CloseVideoPlayer> {
+pub fn close_video_player(state: State<'_, AppState>) -> ApiResponse<MessageResponse> {
     let player_guard = match state.video_player.lock() {
         Ok(guard) => guard,
         Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
@@ -168,7 +168,7 @@ pub fn close_video_player(state: State<'_, AppState>) -> ApiResponse<CloseVideoP
         return ApiResponse::error(500, format!("Failed to close video player: {}", e));
     }
 
-    ApiResponse::ok(CloseVideoPlayer {
+    ApiResponse::ok(MessageResponse {
         message: "Video player closed successfully".to_string(),
     })
 }
@@ -259,7 +259,7 @@ pub fn set_audio_track(
 }
 
 #[command]
-pub fn av_sync_adjust(state: State<'_, AppState>, value: f64) -> ApiResponse<SetAudioVideoAdjust> {
+pub fn av_sync_adjust(state: State<'_, AppState>, value: f64) -> ApiResponse<MessageResponse> {
     let player_guard = match state.video_player.lock() {
         Ok(guard) => guard,
         Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
@@ -274,7 +274,31 @@ pub fn av_sync_adjust(state: State<'_, AppState>, value: f64) -> ApiResponse<Set
         return ApiResponse::error(500, format!("Failed to set av adjustment: {}", e));
     }
 
-    ApiResponse::ok(SetAudioVideoAdjust {
+    ApiResponse::ok(MessageResponse {
         message: "Video player audio video sync changed successfully".to_string(),
+    })
+}
+
+#[command]
+pub fn center_speaker_level(state: State<'_, AppState>, value: i8) -> ApiResponse<MessageResponse> {
+    let player_guard = match state.video_player.lock() {
+        Ok(guard) => guard,
+        Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
+    };
+
+    let player = match player_guard.as_ref() {
+        Some(player) => player,
+        None => return ApiResponse::error(404, "No player available".to_string()),
+    };
+
+    if let Err(e) = player.center_speaker_level(value) {
+        return ApiResponse::error(
+            500,
+            format!("Failed to set center speaker adjustment: {}", e),
+        );
+    }
+
+    ApiResponse::ok(MessageResponse {
+        message: "Video player center speaker adjustment changed successfully".to_string(),
     })
 }

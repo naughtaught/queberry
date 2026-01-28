@@ -12,6 +12,8 @@
         VideoHeader,
         defaultVideoMetadata,
         defaultVideoState,
+        sessionSettings,
+        defaultSessionSettings,
         type Api,
     } from '$lib'
 
@@ -85,6 +87,7 @@
 
         $videoMetadata = $defaultVideoMetadata
         $videoState = $defaultVideoState
+        $sessionSettings = $defaultSessionSettings
     })
 </script>
 

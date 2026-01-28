@@ -1,15 +1,15 @@
 <script lang="ts">
     import { invoke } from '@tauri-apps/api/core'
-    import { handleError, Slider, videoMetadata, type Api } from '$lib'
+    import { handleError, sessionSettings, Slider, speakerLayoutsWithCenter, videoMetadata, type Api } from '$lib'
 
     let { bottom, left, currentModal = $bindable() } = $props()
 
     // let shaderMenuOpen = $state(false)
 
-    const adjustAudioVideoSync = async (): Promise<void> => {
+    const func = async (emit: string, value: number): Promise<void> => {
         try {
-            const response: Api.ApiResponse = await invoke('av_sync_adjust', {
-                value: $videoMetadata.avSync,
+            const response: Api.ApiResponse = await invoke(emit, {
+                value,
             })
             if (!response.success) handleError(response.error!)
         } catch (error) {
@@ -21,6 +21,38 @@
             handleError(errorDetail)
         }
     }
+
+    // const adjustAudioVideoSync = async (): Promise<void> => {
+    //     try {
+    //         const response: Api.ApiResponse = await invoke('av_sync_adjust', {
+    //             value: $videoMetadata.avSync,
+    //         })
+    //         if (!response.success) handleError(response.error!)
+    //     } catch (error) {
+    //         const errorDetail: Api.ErrorDetail = {
+    //             code: 500,
+    //             message: error instanceof Error ? error.message : String(error),
+    //             stack: error instanceof Error ? error.stack : undefined,
+    //         }
+    //         handleError(errorDetail)
+    //     }
+    // }
+
+    // const adjustCenterSpeakerVolume = async (): Promise<void> => {
+    //     try {
+    //         const response: Api.ApiResponse = await invoke('center_speaker_volume', {
+    //             value: $sessionSettings.centerSpeakerLevel,
+    //         })
+    //         if (!response.success) handleError(response.error!)
+    //     } catch (error) {
+    //         const errorDetail: Api.ErrorDetail = {
+    //             code: 500,
+    //             message: error instanceof Error ? error.message : String(error),
+    //             stack: error instanceof Error ? error.stack : undefined,
+    //         }
+    //         handleError(errorDetail)
+    //     }
+    // }
 </script>
 
 <div
@@ -34,19 +66,31 @@
                 max={10}
                 step={0.1}
                 bind:value={$videoMetadata.avSync}
-                func={adjustAudioVideoSync}
+                func={() => {
+                    func('av_sync_adjust', $videoMetadata.avSync)
+                }}
                 label=""
                 zeroPoint={true} />
         </label>
     </div>
-    <!-- {#if speakerLayoutsWithCenter.includes($videoState.speakerConfiguration)}
-            <div class="flex items-center justify-center gap-3">
-                <CenterSpeakerLevelButton change="decrement" />
-                <p class="min-w-32.5 text-center text-xs">Center Speaker Volume</p>
-                <CenterSpeakerLevelButton change="increment" />
-            </div>
-        {/if}
-        {#if $videoState.currentSubtitleTrack.id && $videoState.currentSubtitleTrack.id > 0}
+    {#if speakerLayoutsWithCenter.includes($videoMetadata.audioChannel)}
+        <div class="flex items-center justify-center gap-3">
+            <label class="text-center text-xs"
+                >Center Speaker Level
+                <Slider
+                    min={-20}
+                    max={20}
+                    step={1}
+                    bind:value={$sessionSettings.centerSpeakerLevel}
+                    func={() => {
+                        func('center_speaker_level', $sessionSettings.centerSpeakerLevel)
+                    }}
+                    label=""
+                    zeroPoint={true} />
+            </label>
+        </div>
+    {/if}
+    <!-- {#if $videoState.currentSubtitleTrack.id && $videoState.currentSubtitleTrack.id > 0}
             <div class="flex items-center justify-center gap-3">
                     <OffsetAdjustButton change={false} label="Decrease Audio Offset" emit="av-sync-adjust" />
         <p class="min-w-32.5 text-center text-xs">Audio Offset</p>
@@ -61,8 +105,8 @@
                 <p class="min-w-32.5 text-center text-xs">Subitle Size</p>
                 <SubtitleSizeButton change="increment" />
             </div>
-        {/if}
-        {#if $videoState.availableShaders.length > 1}
+        {/if} -->
+    <!-- {#if $videoState.availableShaders.length > 1}
             <button
                 class="fill-white
         text-xs hover:cursor-pointer"

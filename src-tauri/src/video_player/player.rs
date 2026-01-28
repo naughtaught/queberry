@@ -189,4 +189,13 @@ impl MpvPlayer {
 
         audio::av_sync_adjust(&mpv, value)
     }
+
+    pub fn center_speaker_level(&self, value: i8) -> Result<()> {
+        let mpv = self
+            .mpv
+            .lock()
+            .map_err(|e| AppError::Runtime(format!("Failed to lock MPV instance: {}", e)))?;
+
+        audio::center_speaker_level(&mpv, value)
+    }
 }

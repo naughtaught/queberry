@@ -39,3 +39,11 @@ export const audioChannelOptions = readable([
     { value: '7.1', name: '7.1 Surround' },
     { value: 'auto', name: 'Auto (Original)' },
 ])
+
+export const speakerLayoutsWithCenter = ['3.0', '3.1', '5.0', '5.1', '6.0', '6.1', '7.1']
+
+export const defaultSessionSettings = readable({
+    centerSpeakerLevel: 0,
+})
+
+export const sessionSettings = writable(get(defaultSessionSettings))

@@ -314,3 +314,12 @@ pub fn av_sync_adjust(mpv: &Mpv, value: f64) -> Result<()> {
 
     Ok(())
 }
+
+pub fn center_speaker_level(mpv: &Mpv, value: i8) -> Result<()> {
+    let filter_cmd = format!("no-osd af set @pan c2={:.1}*c2", value);
+
+    mpv.command("run", &[&filter_cmd])
+        .map_err(|e| AppError::Runtime(format!("Could not update center speaker level: {}", e)))?;
+
+    Ok(())
+}

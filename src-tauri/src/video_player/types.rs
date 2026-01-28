@@ -81,11 +81,6 @@ pub struct SetVolume {
 }
 
 #[derive(Serialize)]
-pub struct CloseVideoPlayer {
-    pub message: String,
-}
-
-#[derive(Serialize)]
 pub struct SetAudioChannel {
     pub message: String,
     pub channel: String,
@@ -117,6 +112,6 @@ pub struct AudioTrackResponse {
 }
 
 #[derive(Serialize)]
-pub struct SetAudioVideoAdjust {
+pub struct MessageResponse {
     pub message: String,
 }

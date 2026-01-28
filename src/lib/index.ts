@@ -45,6 +45,15 @@ export { updateLocalMediaStates } from './functions/user/updateLocalMediaStates.
 
 // Stores
 export { handleError } from './stores/errorHandling'
-export { videoMetadata, videoState, defaultVideoMetadata, defaultVideoState, audioChannelOptions } from './stores/video'
+export {
+    videoMetadata,
+    videoState,
+    defaultVideoMetadata,
+    defaultVideoState,
+    audioChannelOptions,
+    speakerLayoutsWithCenter,
+    defaultSessionSettings,
+    sessionSettings,
+} from './stores/video'
 export { settings, user } from './stores/user'
 export { appState } from './stores/app'
