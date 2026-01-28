@@ -1,16 +1,15 @@
 <script lang="ts">
     import { invoke } from '@tauri-apps/api/core'
-    import { handleError, Slider, type Api } from '$lib'
+    import { handleError, Slider, videoMetadata, type Api } from '$lib'
 
     let { bottom, left, currentModal = $bindable() } = $props()
-    let avAdjustValue = $state(0)
 
     // let shaderMenuOpen = $state(false)
 
     const adjustAudioVideoSync = async (): Promise<void> => {
         try {
             const response: Api.ApiResponse = await invoke('av_sync_adjust', {
-                value: avAdjustValue,
+                value: $videoMetadata.avSync,
             })
             if (!response.success) handleError(response.error!)
         } catch (error) {
@@ -34,7 +33,7 @@
                 min={-10}
                 max={10}
                 step={0.1}
-                bind:value={avAdjustValue}
+                bind:value={$videoMetadata.avSync}
                 func={adjustAudioVideoSync}
                 label=""
                 zeroPoint={true} />

@@ -110,6 +110,7 @@ impl MpvEventHandler {
 
         let duration = Self::get_duration(&mpv)?;
         let audio_channel = Self::get_audio_channel(&mpv)?;
+        let av_sync = Self::get_audio_delay(&mpv)?;
 
         // TODO pass video langauge
         let video_language = "th";
@@ -159,6 +160,7 @@ impl MpvEventHandler {
             current_subtitle_track,
             audio_tracks,
             current_audio_track,
+            av_sync,
         })
     }
 
@@ -180,5 +182,15 @@ impl MpvEventHandler {
         mpv_guard
             .get_property("audio-channels")
             .map_err(|e| format!("Failed to get duration property: {}", e))
+    }
+
+    fn get_audio_delay(mpv: &Arc<Mutex<Mpv>>) -> Result<f64, String> {
+        let mpv_guard = mpv
+            .lock()
+            .map_err(|e| format!("Failed to lock MPV mutex: {}", e))?;
+
+        mpv_guard
+            .get_property("audio-delay")
+            .map_err(|e| format!("Failed to get av sync property: {}", e))
     }
 }
