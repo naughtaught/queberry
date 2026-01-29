@@ -1,26 +1,21 @@
 <script lang="ts">
-    import { invokeFunction, sessionSettings, Slider } from '$lib'
+    import { sessionSettings, setVideoVolume, Slider } from '$lib'
 
     let { previousVolume = $bindable() } = $props()
 
-    const setVolume = async (): Promise<void> => {
-        const response = await invokeFunction('set_volume', { value: $sessionSettings.volume })
-        if (response.success) {
-            $sessionSettings.volume = response.data.value
-            previousVolume = $sessionSettings.volume
-        } else {
-            $sessionSettings.volume = previousVolume
-        }
+    const setVolume = async (
+        newVolume: number = $sessionSettings.volume,
+        currentVolume: number = previousVolume,
+        previous: number = previousVolume,
+    ): Promise<void> => {
+        const { newValue, previousValue } = await setVideoVolume(newVolume, currentVolume, previous)
+
+        $sessionSettings.volume = newValue
+        previousVolume = previousValue
     }
 
     const toggleMute = (): void => {
-        if ($sessionSettings.volume > 0) {
-            previousVolume = $sessionSettings.volume
-            $sessionSettings.volume = 0
-        } else {
-            $sessionSettings.volume = previousVolume
-        }
-        setVolume()
+        setVolume($sessionSettings.volume === 0 ? previousVolume : 0, $sessionSettings.volume, previousVolume)
     }
 
     // TODO ADD ANOTHER INDICATOR LEVEL @ 25 AND 75

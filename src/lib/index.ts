@@ -33,6 +33,7 @@ export { default as VideoSettingsButton } from './components/videoplayer/VideoSe
 export { default as VideoMenuButton } from './components/videoplayer/VideoMenuButton.svelte'
 export { default as OffsetAdjustButton } from './components/videoplayer/OffsetAdjustButton.svelte'
 export { default as VideoSettingsModal } from './components/videoplayer/VideoSettingsModal.svelte'
+export { default as VideoOverlay } from './components/videoplayer/VideoOverlay.svelte'
 
 // Functions/UI
 export { toggleFullscreen } from './functions/ui/toggleFullscreen.ts'
@@ -46,6 +47,9 @@ export { updateLocalMediaStates } from './functions/user/updateLocalMediaStates.
 // Functions/Api
 export { invokeFunction } from './functions/api/invokeFunction.ts'
 
+// Functions/Video
+export { setVideoVolume } from './functions/video/setVideoVolume.ts'
+
 // Stores
 export { handleError } from './stores/errorHandling'
 export {
@@ -58,6 +62,7 @@ export {
     defaultSessionSettings,
     sessionSettings,
     keyboardShortcuts,
+    seekAmount,
 } from './stores/video'
 export { settings, user } from './stores/user'
 export { appState } from './stores/app'

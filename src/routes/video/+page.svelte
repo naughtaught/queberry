@@ -15,6 +15,9 @@
         toggleFullscreen,
         invokeFunction,
         keyboardShortcuts,
+        seekAmount,
+        setVideoVolume,
+        VideoOverlay,
         type Api,
     } from '$lib'
 
@@ -24,7 +27,7 @@
     let hideTimeout: ReturnType<typeof setTimeout>
     let showCursor = $state(true)
     let currentModal = $state(null)
-    let previousVolume = $derived($sessionSettings.volume)
+    let previousVolume = $state(0)
 
     const setupListeners = async (): Promise<() => void> => {
         const unlisteners: UnlistenFn[] = []
@@ -116,8 +119,6 @@
         if (document.activeElement !== document.body || isHoveringControls) return
         const shortcut = $keyboardShortcuts.find((x) => x.key === e.code)
 
-        console.log(e.code)
-
         if (!shortcut) return
         e.preventDefault()
 
@@ -129,15 +130,19 @@
         if (shortcut.id === 'fullscreen') toggleFullscreen()
 
         if (shortcut.id === 'mute') {
-            const response = await invokeFunction('set_volume', {
-                value: $sessionSettings.volume === 0 ? previousVolume : 0,
-            })
-            if (response.success) {
-                previousVolume = response.data.value
-            } else {
-                $sessionSettings.volume = previousVolume
-            }
+            const { newValue, previousValue } = await setVideoVolume(
+                $sessionSettings.volume === 0 ? previousVolume : 0,
+                $sessionSettings.volume,
+                previousVolume,
+            )
+
+            $sessionSettings.volume = newValue
+            previousVolume = previousValue
         }
+
+        if (shortcut.id === 'forward') await invokeFunction('seek', { value: $seekAmount })
+
+        if (shortcut.id === 'rewind') await invokeFunction('seek', { value: -Math.abs($seekAmount) })
 
         // TODO
     }
@@ -156,6 +161,31 @@
     }
 </script>
 
+<svelte:window
+    oncontextmenu={async (e) => {
+        e.preventDefault()
+        if (isHoveringControls) return
+        const response = await invokeFunction('toggle_play', { value: $videoState.isPaused })
+        if (response.success) $videoState.isPaused = response.data.value
+    }}
+    onwheel={async (e) => {
+        if (isHoveringControls) return
+        const delta = Math.sign(e.deltaY)
+        if (delta < 0 && $sessionSettings.volume < 100) {
+            $sessionSettings.volume += 1
+        } else if (delta > 0 && $sessionSettings.volume > 0) {
+            $sessionSettings.volume -= 1
+        }
+        const { newValue, previousValue } = await setVideoVolume(
+            $sessionSettings.volume,
+            previousVolume,
+            previousVolume,
+        )
+
+        $sessionSettings.volume = newValue
+        previousVolume = previousValue
+    }} />
+
 <div class="relative h-full w-full {backgroundColor} {showCursor ? '' : 'cursor-none'}" id="app-container">
     <div class="group pointer-events-none absolute inset-0 z-20 h-full w-full">
         <div
@@ -168,6 +198,10 @@
                 <VideoHeader />
             </div>
         </div>
+        <div class="font-outline absolute top-10 left-10 text-5xl text-white">
+            <VideoOverlay />
+        </div>
+
         <div
             class="pointer-events-auto absolute bottom-0 left-0 w-full"
             role="toolbar"

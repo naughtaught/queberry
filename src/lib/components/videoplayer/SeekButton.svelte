@@ -1,17 +1,16 @@
 <script lang="ts">
-    import { invokeFunction, videoState } from '$lib'
+    import { invokeFunction, seekAmount, videoState } from '$lib'
 
     const { direction } = $props()
 
     const label = $derived(direction === 'forward' ? 'Forward' : 'Back')
-    const seekAmount = $derived(direction === 'forward' ? 30 : -30)
     const svgClass = $derived(direction === 'forward' ? '-scale-x-100 transform' : '')
 
     const seek = async (): Promise<void> => {
-        if ($videoState.currentTime < 1) return
+        const value = direction === 'forward' ? $seekAmount : -Math.abs($seekAmount)
 
         await invokeFunction('seek', {
-            value: seekAmount,
+            value,
         })
     }
 </script>
