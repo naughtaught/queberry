@@ -1,17 +1,17 @@
 <script lang="ts">
     import { CollectionButton, HideButton, UserRating } from '$lib'
+    import MenuIcon from 'virtual:icons/material-symbols/menu'
 
     let isModal = $state(false)
 </script>
 
 <button
     aria-label="Video Menu Button"
-    class="flex items-center hover:cursor-pointer"
+    class="flex items-center"
     onclick={() => {
         isModal = !isModal
     }}>
-    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"
-        ><path d="M120-240v-80h720v80H120Zm0-200v-80h720v80H120Zm0-200v-80h720v80H120Z" /></svg>
+    <MenuIcon class="text-2xl text-white transition-colors hover:text-neutral-400" />
 </button>
 
 {#if isModal}
@@ -21,9 +21,9 @@
         <UserRating textColor="text-white" baseOpacity={60} />
         <div class="mt-4 flex justify-between">
             <!-- TODO PASS ITEM -->
-            <CollectionButton label="Collection" />
+            <CollectionButton label="Collection" textColor="text-white" />
             <!-- TODO PASS ITEM -->
-            <HideButton label="Hide" />
+            <HideButton label="Hide" textColor="text-white" />
         </div>
     </div>
 {/if}

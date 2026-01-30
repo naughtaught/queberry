@@ -1,4 +1,5 @@
 import type { ApiResponse, ErrorDetail } from '$lib/types/api'
+import 'unplugin-icons/types/svelte'
 
 declare global {
     namespace App {

@@ -9,7 +9,7 @@
     --color-contrastColor: #be4d25;
     --color-tetradicColor1: #9925be;
     --color-tetradicColor2: #49be25;
-    --color-complementary: #6c25be;
+    --color-complementaryColor: #6c25be;
 
     --color-textColor: #ffffff;
     --color-detailsPageTextColor: #ffffff;
@@ -52,6 +52,9 @@
     --color-gray-300: #d1d5db;
     --color-gray-600: #4b5563;
     --color-gray-800: #1f2937;
+    --color-red-400: #f87171;
+    --color-red-500: #ef4444;
+    --color-purple-700: #7c3aed;
 
     /* TODO download fonts */
     --font-primary: 'Outfit', ui-sans-serif, system-ui, sans-serif;
@@ -91,15 +94,20 @@ input,
 button,
 select,
 span {
-    @apply font-secondary text-textColor text-shadow-sm/10 text-shadow-black/30;
-}
-
-svg {
-    @apply drop-shadow-md;
+    @apply font-secondary text-textColor text-shadow-sm/10 text-shadow-black/30 hover:cursor-pointer;
 }
 
 @layer utilities {
     .textShadow {
         @apply text-shadow-sm/30 text-shadow-black/30;
+    }
+
+    .font-outline {
+        text-shadow:
+            1px 1px 0 #000,
+            -1px -1px 0 #000,
+            0.1px -1px 0 #000,
+            -1px 1px 0 #000,
+            1px 1px 0 #000;
     }
 }

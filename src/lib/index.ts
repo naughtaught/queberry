@@ -8,13 +8,11 @@ export { supabase } from './components/db/supabaseClient.ts'
 // Components/Header
 export { default as Header } from './components/Header/Header.svelte'
 export { default as HeaderLink } from './components/Header/HeaderLink.svelte'
-export { default as HeaderButton } from './components/Header/HeaderButton.svelte'
 
 // Components/Inputs
 export { default as Slider } from './components/inputs/Slider.svelte'
 export { default as UserRating } from './components/inputs/UserRating.svelte'
 export { default as UserRatingButton } from './components/inputs/UserRatingButton.svelte'
-export { default as MediaStateBaseButton } from './components/inputs/MediaStateBaseButton.svelte'
 export { default as HideButton } from './components/inputs/HideButton.svelte'
 export { default as CollectionButton } from './components/inputs/CollectionButton.svelte'
 
@@ -31,7 +29,6 @@ export { default as SubtitleTrackButton } from './components/videoplayer/Subtitl
 export { default as AudioTrackButton } from './components/videoplayer/AudioTrackButton.svelte'
 export { default as VideoSettingsButton } from './components/videoplayer/VideoSettingsButton.svelte'
 export { default as VideoMenuButton } from './components/videoplayer/VideoMenuButton.svelte'
-export { default as OffsetAdjustButton } from './components/videoplayer/OffsetAdjustButton.svelte'
 export { default as VideoSettingsModal } from './components/videoplayer/VideoSettingsModal.svelte'
 export { default as VideoOverlay } from './components/videoplayer/VideoOverlay.svelte'
 
@@ -49,6 +46,7 @@ export { invokeFunction } from './functions/api/invokeFunction.ts'
 
 // Functions/Video
 export { setVideoVolume } from './functions/video/setVideoVolume.ts'
+export { loadVideo } from './functions/video/loadVideo.ts'
 
 // Stores
 export { handleError } from './stores/errorHandling'

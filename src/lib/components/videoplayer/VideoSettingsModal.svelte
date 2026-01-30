@@ -62,7 +62,7 @@
     <!-- {#if $videoState.availableShaders.length > 1}
             <button
                 class="fill-white
-        text-xs hover:cursor-pointer"
+        text-xs "
                 onclick={() => {
                     shaderMenuOpen = true
                 }}>Select Shader</button>

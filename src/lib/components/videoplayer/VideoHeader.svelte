@@ -1,17 +1,13 @@
 <script lang="ts">
+    import FullscreenIcon from 'virtual:icons/material-symbols/fullscreen'
+    import ExitFullscreenIcon from 'virtual:icons/material-symbols/fullscreen-exit'
+    import MinimizeIcon from 'virtual:icons/material-symbols/minimize'
+    import CloseIcon from 'virtual:icons/material-symbols/close'
     import { onDestroy, onMount } from 'svelte'
     import { goto } from '$app/navigation'
     import { resolve } from '$app/paths'
     import { page } from '$app/state'
-    import {
-        HeaderButton,
-        videoMetadata,
-        appState,
-        toggleFullscreen,
-        minimizeApp,
-        VideoMenuButton,
-        invokeFunction,
-    } from '$lib'
+    import { videoMetadata, appState, toggleFullscreen, minimizeApp, VideoMenuButton, invokeFunction } from '$lib'
 
     let now = $state(new Date())
     let interval: ReturnType<typeof setInterval>
@@ -47,23 +43,17 @@
             {localUserTime}
         </p>
         <button onclick={minimizeApp} data-action="minimize">
-            <HeaderButton name="minimizeApp" path="M240-120v-80h480v80H240Z" />
+            <MinimizeIcon class="text-white transition-colors hover:text-neutral-400" />
         </button>
         <button onclick={toggleFullscreen}>
             {#if $appState.isFullscreen}
-                <HeaderButton
-                    name="fullscreenOff"
-                    path="M240-120v-120H120v-80h200v200h-80Zm400 0v-200h200v80H720v120h-80ZM120-640v-80h120v-120h80v200H120Zm520 0v-200h80v120h120v80H640Z" />
+                <ExitFullscreenIcon class="text-white transition-colors hover:text-neutral-400" />
             {:else}
-                <HeaderButton
-                    name="fullscreenOn"
-                    path="M144-144v-192h72v120h120v72H144Zm480 0v-72h120v-120h72v192H624ZM144-624v-192h192v72H216v120h-72Zm600 0v-120H624v-72h192v192h-72Z" />
+                <FullscreenIcon class="text-white transition-colors hover:text-neutral-400" />
             {/if}
         </button>
         <button onclick={closeVideoPlayer} data-action="close">
-            <HeaderButton
-                name="closeVideoPlayer"
-                path="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
+            <CloseIcon class="text-white transition-colors hover:text-neutral-400" />
         </button>
     </div>
 </div>

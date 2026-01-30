@@ -71,7 +71,7 @@
             {#each displayTracks as track (track.value)}
                 <button
                     type="button"
-                    class="flex w-full flex-col items-start gap-y-1 rounded-md px-1 py-1 transition-colors duration-200 hover:cursor-pointer hover:bg-gray-800"
+                    class="flex w-full flex-col items-start gap-y-1 rounded-md px-1 py-1 transition-colors duration-200 hover:bg-gray-800"
                     onclick={() => func(track.value)}
                     aria-label={`Select ${track.label}`}>
                     <div class="flex w-full items-center gap-x-1">

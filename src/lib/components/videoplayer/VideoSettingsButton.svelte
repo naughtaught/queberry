@@ -1,5 +1,6 @@
 <script lang="ts">
     import { VideoSettingsModal } from '$lib'
+    import SettingsIcon from 'virtual:icons/material-symbols-light/settings'
 
     let { currentModal = $bindable() } = $props()
 </script>
@@ -10,13 +11,8 @@
 
 <button
     aria-label="Video Settings"
-    class="fill-white hover:cursor-pointer"
     onclick={() => {
         currentModal = currentModal === 'Settings' ? null : 'Settings'
     }}>
-    <svg width="18px" height="18px" viewBox="0 -960 960 960">
-        <path
-            d="m403-96-22-114q-23-9-44.5-21T296-259l-110 37-77-133 87-76q-2-12-3-24t-1-25q0-13 1-25t3-24l-87-76 77-133 110 37q19-16 40.5-28t44.5-21l22-114h154l22 114q23 9 44.5 21t40.5 28l110-37 77 133-87 76q2 12 3 24t1 25q0 13-1 25t-3 24l87 76-77 133-110-37q-19 16-40.5 28T579-210L557-96H403Zm77-240q60 0 102-42t42-102q0-60-42-102t-102-42q-60 0-102 42t-42 102q0 60 42 102t102 42Z">
-        </path>
-    </svg>
+    <SettingsIcon class="text-white transition-colors hover:text-neutral-400" />
 </button>

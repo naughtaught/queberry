@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { MediaStateBaseButton } from '$lib'
+    import CollectionIcon from 'virtual:icons/material-symbols/bookmark-add'
 
-    let { item = $bindable(), label, text = '', hasBackground = false } = $props()
+    let { item = $bindable(), label, text = '', textColor = 'text-textColor' } = $props()
 
     // TODO
     const setState = (event: Event): void => {
@@ -37,11 +37,13 @@
     }
 </script>
 
-<MediaStateBaseButton
-    path="M240-144v-600q0-30 21-51t51-21h336q30 0 51 21t21 51v600l-240-96-240 96Z"
-    {label}
-    {text}
-    {hasBackground}
-    func={(event: Event) => {
+<!-- TODO fill when state is true -->
+<button
+    onclick={(event: Event) => {
         setState(event)
-    }} />
+    }}
+    class="group flex items-center rounded"
+    aria-label={label}>
+    <CollectionIcon class="{textColor} text-2xl transition-colors hover:text-purple-700" />
+    {text}
+</button>

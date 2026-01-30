@@ -1,5 +1,6 @@
 <script lang="ts">
     import { videoMetadata, SelectModal, invokeFunction } from '$lib'
+    import SubtitlesIcon from 'virtual:icons/mdi/subtitles'
 
     let { currentModal = $bindable() } = $props()
 
@@ -7,7 +8,6 @@
         const response = await invokeFunction('set_subtitle_track', {
             value: trackId,
         })
-        console.log(response)
         if (response.success) $videoMetadata.currentSubtitleTrack = response.data.value
     }
 </script>
@@ -21,12 +21,11 @@
             setSubtitleTrack(trackId)
         }}
         bottom="bottom-16"
-        left="left-21" />
+        left="left-23" />
 {/if}
 
 <button
     aria-label="Subtitle Track"
-    class={$videoMetadata.subtitleTracks?.length >= 1 ? 'fill-white hover:cursor-pointer' : 'fill-neutral-700'}
     onclick={() => {
         if ($videoMetadata.subtitleTracks?.length >= 1) {
             if (currentModal === 'Subtitles') {
@@ -36,10 +35,8 @@
             }
         }
     }}>
-    <svg width="18px" height="18px" viewBox="0 0 16 16">
-        <path
-            fill-rule="evenodd"
-            clip-rule="evenodd"
-            d="M0 2H16V14H0V2ZM2 6C2 4.89543 2.89543 4 4 4H7V6H4V10H7V12H4C2.89543 12 2 11.1046 2 10V6ZM11 4C9.89543 4 9 4.89543 9 6V10C9 11.1046 9.89543 12 11 12H14V10H11V6H14V4H11Z" />
-    </svg>
+    <SubtitlesIcon
+        class={$videoMetadata.subtitleTracks?.length >= 1
+            ? 'text-white transition-colors  hover:text-neutral-400'
+            : 'text-neutral-700'} />
 </button>

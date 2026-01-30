@@ -28,6 +28,14 @@
     let showCursor = $state(true)
     let currentModal = $state(null)
     let previousVolume = $state(0)
+    let icon: string | number = $state('')
+
+    const setIcon = (value: string | number): void => {
+        icon = value
+        setTimeout(() => {
+            icon = ''
+        }, 500)
+    }
 
     const setupListeners = async (): Promise<() => void> => {
         const unlisteners: UnlistenFn[] = []
@@ -60,6 +68,7 @@
 
     onMount(async () => {
         document.body.setAttribute('data-page', 'video')
+        backgroundColor = 'bg-transparent'
 
         window.addEventListener('mousemove', resetCursorTimeout)
         resetCursorTimeout()
@@ -67,24 +76,6 @@
         window.addEventListener('dblclick', handleDoubleClick)
 
         destroyListeners = await setupListeners()
-
-        // 'D:/Media/Movies/The Raid (2012)',
-        // 'https://dn710604.ca.archive.org/0/items/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4',
-
-        const response = await invokeFunction('load_video', {
-            value: {
-                // Add the 'value' wrapper!
-                url: 'D:/Media/Movies/The Raid (2012)',
-                userId: 1,
-            },
-        })
-
-        if (response.success) {
-            backgroundColor = 'bg-transparent'
-        } else {
-            // TODO redirect
-            goto(resolve('/', {}))
-        }
     })
 
     onDestroy(() => {
@@ -124,7 +115,12 @@
 
         if (shortcut.id === 'pause') {
             const response = await invokeFunction('toggle_play', { value: $videoState.isPaused })
-            if (response.success) $videoState.isPaused = response.data.value
+            if (response.success) {
+                $videoState.isPaused = response.data.value
+                const playState = $videoState.isPaused ? 'paused' : 'playing'
+
+                setIcon(playState)
+            }
         }
 
         if (shortcut.id === 'fullscreen') toggleFullscreen()
@@ -138,11 +134,21 @@
 
             $sessionSettings.volume = newValue
             previousVolume = previousValue
+
+            const currentVolume = $sessionSettings.volume === 0 ? 'muted' : $sessionSettings.volume
+
+            setIcon(currentVolume)
         }
 
-        if (shortcut.id === 'forward') await invokeFunction('seek', { value: $seekAmount })
+        if (shortcut.id === 'forward') {
+            const response = await invokeFunction('seek', { value: $seekAmount })
+            if (response.success) setIcon('forward')
+        }
 
-        if (shortcut.id === 'rewind') await invokeFunction('seek', { value: -Math.abs($seekAmount) })
+        if (shortcut.id === 'rewind') {
+            const response = await invokeFunction('seek', { value: -Math.abs($seekAmount) })
+            if (response.success) setIcon('rewind')
+        }
 
         // TODO
     }
@@ -166,7 +172,13 @@
         e.preventDefault()
         if (isHoveringControls) return
         const response = await invokeFunction('toggle_play', { value: $videoState.isPaused })
-        if (response.success) $videoState.isPaused = response.data.value
+        if (response.success) {
+            $videoState.isPaused = response.data.value
+
+            const playState = $videoState.isPaused ? 'paused' : 'playing'
+
+            setIcon(playState)
+        }
     }}
     onwheel={async (e) => {
         if (isHoveringControls) return
@@ -184,6 +196,10 @@
 
         $sessionSettings.volume = newValue
         previousVolume = previousValue
+
+        const currentVolume = $sessionSettings.volume === 0 ? 'muted' : $sessionSettings.volume
+
+        setIcon(currentVolume)
     }} />
 
 <div class="relative h-full w-full {backgroundColor} {showCursor ? '' : 'cursor-none'}" id="app-container">
@@ -198,8 +214,8 @@
                 <VideoHeader />
             </div>
         </div>
-        <div class="font-outline absolute top-10 left-10 text-5xl text-white">
-            <VideoOverlay />
+        <div class=" absolute top-5 right-5">
+            <VideoOverlay {icon} />
         </div>
 
         <div

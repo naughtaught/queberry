@@ -21,7 +21,7 @@
 
 <button
     type="button"
-    class="h-full flex-1 cursor-pointer border-0 bg-transparent px-0"
+    class="h-full flex-1 border-0 bg-transparent px-0"
     onmouseenter={() => onHover(index)}
     onclick={(e) => {
         e.preventDefault()
