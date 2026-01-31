@@ -162,11 +162,14 @@
     }
 
     const handleKeydown = async (e: KeyboardEvent): Promise<void> => {
+        e.preventDefault()
         if (document.activeElement !== document.body || isHoveringControls) return
-        const shortcut = $keyboardShortcuts.find((x) => x.key === e.code)
+
+        const shortcut = $keyboardShortcuts.find((s) => s.code === e.code && (!s.shiftKey || s.shiftKey === e.shiftKey))
 
         if (!shortcut) return
-        e.preventDefault()
+
+        console.log(shortcut)
 
         switch (shortcut.id) {
             case 'pause': {
@@ -244,6 +247,11 @@
                 const currentVolume = $sessionSettings.volume === 0 ? 'muted' : $sessionSettings.volume
 
                 setIcon(currentVolume)
+                break
+            }
+            case 'testModifiers': {
+                // TODO
+                console.log('test modifiers')
                 break
             }
             case 'cycleAudioTracks': {

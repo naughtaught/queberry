@@ -52,20 +52,90 @@ export const defaultSessionSettings = writable({
 export const sessionSettings = writable(get(defaultSessionSettings))
 
 export const defaultKeyboardShortcuts = readable([
-    { id: 'pause', name: 'Play/Pause', key: 'Space' },
-    { id: 'fullscreen', name: 'Toggle Fullscreen', key: 'KeyF' },
-    { id: 'mute', name: 'Mute/Unmute', key: 'KeyM' },
-    { id: 'forward', name: 'Forward 30s', key: 'ArrowRight' },
-    { id: 'rewind', name: 'Rewind 30s', key: 'ArrowLeft' },
-    { id: 'playlistNext', name: 'Next Playlist Item', key: 'ArrowUp' },
-    { id: 'playlistPrevious', name: 'Previous Playlist Item', key: 'ArrowDown' },
-    { id: 'close', name: 'Exit Video', key: 'Escape' },
-    { id: 'volumeUp', name: 'Volume Up', key: 'Equal' },
-    { id: 'volumeDown', name: 'Volume Down', key: 'Minus' },
-    { id: 'cycleAudioTracks', name: 'Cycle Audio Tracks', key: 'KeyA' },
-    { id: 'cycleSubtitleTracks', name: 'Cycle Subtitle Tracks', key: 'KeyS' },
-    { id: 'decreasePlaybackSpeed', name: 'Decrease Playback Speed', key: 'Comma' },
-    { id: 'increasePlaybackSpeed', name: 'Increase Playback Speed', key: 'Period' },
+    {
+        id: 'pause',
+        name: 'Play/Pause',
+        code: 'Space',
+        shiftKey: false,
+    },
+    {
+        id: 'fullscreen',
+        name: 'Toggle Fullscreen',
+        code: 'KeyF',
+        shiftKey: false,
+    },
+    {
+        id: 'mute',
+        name: 'Mute/Unmute',
+        code: 'KeyM',
+        shiftKey: false,
+    },
+    {
+        id: 'forward',
+        name: 'Forward 30s',
+        code: 'ArrowRight',
+        shiftKey: false,
+    },
+    {
+        id: 'rewind',
+        name: 'Rewind 30s',
+        code: 'ArrowLeft',
+        shiftKey: false,
+    },
+    {
+        id: 'playlistNext',
+        name: 'Next Playlist Item',
+        code: 'ArrowUp',
+        shiftKey: false,
+    },
+    {
+        id: 'playlistPrevious',
+        name: 'Previous Playlist Item',
+        code: 'ArrowDown',
+        shiftKey: false,
+    },
+    {
+        id: 'close',
+        name: 'Exit Video',
+        code: 'Escape',
+        shiftKey: false,
+    },
+    {
+        id: 'volumeUp',
+        name: 'Volume Up',
+        code: 'Equal',
+        shiftKey: false,
+    },
+    {
+        id: 'volumeDown',
+        name: 'Volume Down',
+        code: 'Minus',
+        shiftKey: false,
+    },
+    {
+        id: 'cycleAudioTracks',
+        name: 'Cycle Audio Tracks',
+        code: 'KeyA',
+        shiftKey: false,
+    },
+    {
+        id: 'cycleSubtitleTracks',
+        name: 'Cycle Subtitle Tracks',
+        code: 'KeyS',
+        shiftKey: false,
+    },
+    {
+        id: 'decreasePlaybackSpeed',
+        name: 'Decrease Playback Speed',
+        code: 'Comma',
+        shiftKey: false,
+    },
+    {
+        id: 'increasePlaybackSpeed',
+        name: 'Increase Playback Speed',
+        code: 'Period',
+        shiftKey: false,
+    },
 ])
 
 export const keyboardShortcuts = writable(get(defaultKeyboardShortcuts))
