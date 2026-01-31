@@ -1,7 +1,7 @@
 use crate::db::types::UserSettings;
 use crate::errors::{AppError, Result};
 use crate::video_player::audio::{self, AudioManager};
-use crate::video_player::subtitles::SubtitleManager;
+use crate::video_player::subtitles::{self, SubtitleManager};
 use crate::video_player::{config::MpvConfig, events::MpvEventHandler, tracker::PlayerTracker};
 use libmpv2::Mpv;
 use std::sync::{Arc, Mutex};
@@ -197,5 +197,14 @@ impl MpvPlayer {
             .map_err(|e| AppError::Runtime(format!("Failed to lock MPV instance: {}", e)))?;
 
         audio::center_speaker_level(&mpv, value)
+    }
+
+    pub fn set_subtitle_margin(&self, value: i64) -> Result<()> {
+        let mpv = self
+            .mpv
+            .lock()
+            .map_err(|e| AppError::Runtime(format!("Failed to lock MPV instance: {}", e)))?;
+
+        subtitles::set_subtitle_margin(&mpv, value)
     }
 }

@@ -32,6 +32,7 @@ pub struct Metadata {
     pub audio_tracks: Vec<AudioTrackInfo>,
     pub current_audio_track: Option<AudioTrackInfo>,
     pub av_sync: f64,
+    pub subtitle_margin: i64,
 }
 
 #[derive(Serialize, Clone)]

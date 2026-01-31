@@ -21,6 +21,8 @@
         type Api,
     } from '$lib'
 
+    const SUBTITLE_SHIFT_POSITION = 94
+
     let backgroundColor = $state('bg-black')
     let destroyListeners: (() => void) | undefined
     let isHoveringControls = $state(false)
@@ -29,6 +31,7 @@
     let currentModal = $state(null)
     let previousVolume = $state(0)
     let icon: string | number = $state('')
+    let currentSubtitleMargin = $derived($videoMetadata.subtitleMargin)
 
     const setIcon = (value: string | number): void => {
         icon = value
@@ -66,6 +69,22 @@
         }
     }
 
+    $effect((): void => {
+        if (!$videoMetadata) return
+        if ($videoMetadata.subtitleMargin === undefined || $videoMetadata.currentSubtitleTrack?.id === 0) return
+        if (isHoveringControls && currentSubtitleMargin >= SUBTITLE_SHIFT_POSITION) return
+        if (!isHoveringControls && currentSubtitleMargin < SUBTITLE_SHIFT_POSITION) return
+
+        shiftSubtitiles()
+    })
+
+    const shiftSubtitiles = async (): Promise<void> => {
+        const shiftAmount = isHoveringControls ? SUBTITLE_SHIFT_POSITION : $videoMetadata.subtitleMargin
+        const resp = await invokeFunction('set_subtitle_margin', { value: shiftAmount })
+
+        if (resp.success) currentSubtitleMargin = resp.data.value
+    }
+
     onMount(async () => {
         document.body.setAttribute('data-page', 'video')
         backgroundColor = 'bg-transparent'
@@ -75,6 +94,7 @@
         window.addEventListener('dblclick', handleMouseEvent)
         window.addEventListener('wheel', handleMouseEvent)
         window.addEventListener('contextmenu', handleMouseEvent)
+        window.addEventListener('focus', shiftSubtitiles)
 
         resetCursorTimeout()
 
@@ -91,6 +111,7 @@
         window.removeEventListener('dblclick', handleMouseEvent)
         window.removeEventListener('wheel', handleMouseEvent)
         window.removeEventListener('contextmenu', handleMouseEvent)
+        window.removeEventListener('focus', shiftSubtitiles)
 
         $videoMetadata = $defaultVideoMetadata
         $videoState = $defaultVideoState
@@ -168,8 +189,6 @@
         const shortcut = $keyboardShortcuts.find((s) => s.code === e.code && (!s.shiftKey || s.shiftKey === e.shiftKey))
 
         if (!shortcut) return
-
-        console.log(shortcut)
 
         switch (shortcut.id) {
             case 'pause': {

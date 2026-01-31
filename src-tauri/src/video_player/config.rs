@@ -1,6 +1,6 @@
 use crate::db::types::UserSettings;
 use crate::errors::{AppError, Result};
-use crate::video_player::audio;
+use crate::video_player::{audio, subtitles};
 use libmpv2::Mpv;
 use std::collections::HashMap;
 
@@ -29,12 +29,17 @@ impl MpvConfig {
                 mpv.set_property("volume", settings.volume as i64)
                     .map_err(|e| AppError::Runtime(format!("Failed to set volume: {}", e)))?;
             }
-            if !settings.audio_channels.is_empty() {
-                audio::set_audio_channel(mpv, &settings.audio_channels)?;
+            if !settings.audio_channel.is_empty() {
+                audio::set_audio_channel(mpv, &settings.audio_channel)?;
+            }
+            if settings.subtitle_margin >= 0 {
+                subtitles::set_subtitle_margin(mpv, settings.subtitle_margin)?;
             }
         }
         Ok(())
     }
+
+    // TODO if sub-pos is in apply_optional_defaults set sqlite sub-pos value to that value
 
     pub fn set_window_id(&self, mpv: &Mpv, window_id: i64) -> Result<()> {
         #[cfg(target_os = "linux")]
@@ -75,6 +80,7 @@ impl MpvConfig {
     }
 
     fn get_optional_defaults(&self) -> HashMap<&'static str, &'static str> {
+        // TODO get mpv.conv settings
         [
             // Video quality
             ("profile", "high-quality"),

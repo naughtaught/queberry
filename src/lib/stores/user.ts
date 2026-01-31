@@ -14,6 +14,7 @@ const defaultSettings = readable<Api.UserSettings>({
     preferredAudioLanguage: 'Source',
     preferredSubtitleLanguage: 'en',
     subtitleDisplay: 'Auto',
+    subtitleMargin: 34,
     audioChannels: '2.0',
     defaultResolver: 'torbox',
     fileSizeLimit: 20,

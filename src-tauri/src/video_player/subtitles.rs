@@ -267,3 +267,11 @@ impl SubtitleManager {
         self.set_subtitle_track(track_id)
     }
 }
+
+pub fn set_subtitle_margin(mpv: &Mpv, value: i64) -> Result<()> {
+    mpv.set_property("sub-margin-y", value).map_err(|e| {
+        AppError::Runtime(format!("Failed to set subtitle position {}: {}", value, e))
+    })?;
+
+    Ok(())
+}
