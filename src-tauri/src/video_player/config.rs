@@ -32,9 +32,6 @@ impl MpvConfig {
             if !settings.audio_channel.is_empty() {
                 audio::set_audio_channel(mpv, &settings.audio_channel)?;
             }
-            if settings.subtitle_margin >= 0 {
-                subtitles::set_subtitle_margin(mpv, settings.subtitle_margin)?;
-            }
         }
         Ok(())
     }
