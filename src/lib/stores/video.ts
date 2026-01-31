@@ -57,8 +57,15 @@ export const defaultKeyboardShortcuts = readable([
     { id: 'mute', name: 'Mute/Unmute', key: 'KeyM' },
     { id: 'forward', name: 'Forward 30s', key: 'ArrowRight' },
     { id: 'rewind', name: 'Rewind 30s', key: 'ArrowLeft' },
-    // TODO ArrowUp next track
-    // TODO ArrowDown previous track
+    { id: 'playlistNext', name: 'Next Playlist Item', key: 'ArrowUp' },
+    { id: 'playlistPrevious', name: 'Previous Playlist Item', key: 'ArrowDown' },
+    { id: 'close', name: 'Exit Video', key: 'Escape' },
+    { id: 'volumeUp', name: 'Volume Up', key: 'Equal' },
+    { id: 'volumeDown', name: 'Volume Down', key: 'Minus' },
+    { id: 'cycleAudioTracks', name: 'Cycle Audio Tracks', key: 'KeyA' },
+    { id: 'cycleSubtitleTracks', name: 'Cycle Subtitle Tracks', key: 'KeyS' },
+    { id: 'decreasePlaybackSpeed', name: 'Decrease Playback Speed', key: 'Comma' },
+    { id: 'increasePlaybackSpeed', name: 'Increase Playback Speed', key: 'Period' },
 ])
 
 export const keyboardShortcuts = writable(get(defaultKeyboardShortcuts))
