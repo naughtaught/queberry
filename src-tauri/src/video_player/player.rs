@@ -35,6 +35,12 @@ impl MpvPlayer {
             ))
         })?;
 
+        mpv.observe_property("playlist-count", libmpv2::Format::Int64, 0)
+            .map_err(|e| AppError::Runtime(format!("Failed to observe playlist-count: {}", e)))?;
+
+        mpv.observe_property("playlist-pos", libmpv2::Format::Int64, 0)
+            .map_err(|e| AppError::Runtime(format!("Failed to observe playlist-pos: {}", e)))?;
+
         let window_id = crate::video_player::platform::get_window_handle_id(&window)
             .ok_or_else(|| AppError::Runtime("Window handle not available".to_string()))?;
 
@@ -143,8 +149,6 @@ impl MpvPlayer {
     pub fn shutdown(&self) -> Result<()> {
         self.tracker.stop();
 
-        std::thread::sleep(std::time::Duration::from_millis(100));
-
         {
             let mpv = self
                 .mpv
@@ -206,5 +210,41 @@ impl MpvPlayer {
             .map_err(|e| AppError::Runtime(format!("Failed to lock MPV instance: {}", e)))?;
 
         subtitles::set_subtitle_margin(&mpv, value)
+    }
+
+    pub fn add_playlist_item(&self, file: String) -> Result<()> {
+        let mpv = self
+            .mpv
+            .lock()
+            .map_err(|e| AppError::Runtime(format!("Failed to lock MPV instance: {}", e)))?;
+
+        mpv.command("loadfile", &[&file, "insert-next"])
+            .map_err(|e| AppError::Runtime(format!("Failed to load file '{}': {}", file, e)))?;
+
+        Ok(())
+    }
+
+    pub fn next_playlist_item(&self) -> Result<()> {
+        let mpv = self
+            .mpv
+            .lock()
+            .map_err(|e| AppError::Runtime(format!("Failed to lock MPV instance: {}", e)))?;
+
+        mpv.command("playlist-next", &[])
+            .map_err(|e| AppError::Runtime(format!("Failed to play playlist item : {}", e)))?;
+
+        Ok(())
+    }
+
+    pub fn previous_playlist_item(&self) -> Result<()> {
+        let mpv = self
+            .mpv
+            .lock()
+            .map_err(|e| AppError::Runtime(format!("Failed to lock MPV instance: {}", e)))?;
+
+        mpv.command("playlist-prev", &[])
+            .map_err(|e| AppError::Runtime(format!("Failed to play playlist item : {}", e)))?;
+
+        Ok(())
     }
 }

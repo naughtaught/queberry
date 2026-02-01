@@ -2,8 +2,9 @@ import { goto } from '$app/navigation'
 import { handleError, invokeFunction } from '$lib'
 import { resolve } from '$app/paths'
 
-export const loadVideo = async () => {
+export const loadVideo = async (): Promise<void> => {
     // 'D:/Media/Movies/The Raid (2012)',
+    // 'D:/Media/Movies/(500) Days of Summer (2009)'
     // 'https://dn710604.ca.archive.org/0/items/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4',
 
     const resp = await invokeFunction('load_video', {

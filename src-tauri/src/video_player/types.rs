@@ -33,6 +33,8 @@ pub struct Metadata {
     pub current_audio_track: Option<AudioTrackInfo>,
     pub av_sync: f64,
     pub subtitle_margin: i64,
+    pub playlist_position: i64,
+    pub playlist_count: i64,
 }
 
 #[derive(Serialize, Clone)]
@@ -79,4 +81,10 @@ pub struct VideoCommandResponse {
 pub struct LoadVideoRequest {
     pub url: String,
     pub user_id: i32,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")] // Optional: matches JS naming convention
+pub struct AddPlaylistItemRequest {
+    pub url: String,
 }

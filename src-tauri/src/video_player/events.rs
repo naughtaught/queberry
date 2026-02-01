@@ -13,12 +13,15 @@ pub struct MpvEventHandler {
     mpv: Arc<Mutex<Mpv>>,
     app_handle: AppHandle,
     player: Option<Arc<Mutex<MpvPlayer>>>,
+    current_metadata: Arc<Mutex<Option<Metadata>>>,
 }
 
+#[derive(Debug)]
 enum EventType {
     FileLoaded,
     EndFile,
     Shutdown,
+    PropertyChange(String),
 }
 
 impl MpvEventHandler {
@@ -27,6 +30,7 @@ impl MpvEventHandler {
             mpv,
             app_handle,
             player: None,
+            current_metadata: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -38,6 +42,7 @@ impl MpvEventHandler {
         let mpv_clone = Arc::clone(&self.mpv);
         let app_handle_clone = self.app_handle.clone();
         let player_clone = self.player.clone();
+        let current_metadata_clone = Arc::clone(&self.current_metadata);
 
         thread::spawn(move || {
             loop {
@@ -54,6 +59,9 @@ impl MpvEventHandler {
                         Some(Ok(Event::EndFile(reason))) => Some((EventType::EndFile, reason)),
                         Some(Ok(Event::FileLoaded)) => Some((EventType::FileLoaded, 0)),
                         Some(Ok(Event::Shutdown)) => Some((EventType::Shutdown, 0)),
+                        Some(Ok(Event::PropertyChange { name, .. })) => {
+                            Some((EventType::PropertyChange(name.to_string()), 0))
+                        }
                         Some(Ok(event)) => {
                             log::debug!("MPV Event: {:?}", event);
                             None
@@ -72,25 +80,55 @@ impl MpvEventHandler {
                             if let Ok(metadata) =
                                 Self::get_metadata(Arc::clone(&mpv_clone), player_clone.clone())
                             {
+                                {
+                                    let mut metadata_guard = current_metadata_clone.lock().unwrap();
+                                    *metadata_guard = Some(metadata.clone());
+                                }
                                 if let Err(e) = app_handle_clone.emit("video-metadata", metadata) {
                                     log::error!("Failed to emit video-metadata event: {}", e);
                                 }
                             }
                         }
                         EventType::EndFile => {
-                            // TODO add if not next playlist item
-                            if reason == 0 {
-                                if let Some(ref player) = player_clone {
-                                    if let Ok(p) = player.lock() {
-                                        if let Err(e) = p.shutdown() {
-                                            log::error!("Failed to shutdown player: {}", e);
-                                        }
+                            let _ = Self::handle_end_of_file(
+                                Arc::clone(&mpv_clone),
+                                player_clone.clone(),
+                                reason,
+                            );
+                        }
+                        EventType::PropertyChange(property_name) => {
+                            println!("Property Changed: {}", property_name);
+
+                            if property_name == "playlist-count" || property_name == "playlist-pos"
+                            {
+                                let mut metadata_guard = current_metadata_clone.lock().unwrap();
+
+                                if let Some(ref mut metadata) = *metadata_guard {
+                                    if let Ok(count) = Self::get_playlist_count(&mpv_clone) {
+                                        metadata.playlist_count = count;
+                                    }
+                                    if let Ok(position) = Self::get_playlist_position(&mpv_clone) {
+                                        metadata.playlist_position = position;
+                                    }
+
+                                    if let Err(e) =
+                                        app_handle_clone.emit("video-metadata", metadata.clone())
+                                    {
+                                        log::error!("Failed to emit video-metadata event: {}", e);
+                                    }
+                                } else if let Ok(metadata) =
+                                    Self::get_metadata(Arc::clone(&mpv_clone), player_clone.clone())
+                                {
+                                    *metadata_guard = Some(metadata.clone());
+                                    if let Err(e) =
+                                        app_handle_clone.emit("video-metadata", metadata)
+                                    {
+                                        log::error!("Failed to emit video-metadata event: {}", e);
                                     }
                                 }
                             }
                         }
                         EventType::Shutdown => {
-                            // TODO
                             break;
                         }
                     }
@@ -112,6 +150,8 @@ impl MpvEventHandler {
         let audio_channel = Self::get_audio_channel(&mpv)?;
         let av_sync = Self::get_audio_delay(&mpv)?;
         let subtitle_margin = Self::get_subtitle_margin(&mpv)?;
+        let playlist_count = Self::get_playlist_count(&mpv)?;
+        let playlist_position = Self::get_playlist_position(&mpv)?;
 
         // TODO pass video langauge
         let video_language = "th";
@@ -163,6 +203,8 @@ impl MpvEventHandler {
             current_audio_track,
             av_sync,
             subtitle_margin,
+            playlist_position,
+            playlist_count,
         })
     }
 
@@ -204,5 +246,47 @@ impl MpvEventHandler {
         mpv_guard
             .get_property("sub-margin-y")
             .map_err(|e| format!("Failed to get av sync property: {}", e))
+    }
+
+    fn get_playlist_position(mpv: &Arc<Mutex<Mpv>>) -> Result<i64, String> {
+        let mpv_guard = mpv
+            .lock()
+            .map_err(|e| format!("Failed to lock MPV mutex: {}", e))?;
+
+        mpv_guard
+            .get_property("playlist-pos")
+            .map_err(|e| format!("Failed to get playlist position: {}", e))
+    }
+
+    fn get_playlist_count(mpv: &Arc<Mutex<Mpv>>) -> Result<i64, String> {
+        let mpv_guard = mpv
+            .lock()
+            .map_err(|e| format!("Failed to lock MPV mutex: {}", e))?;
+
+        mpv_guard
+            .get_property("playlist-count")
+            .map_err(|e| format!("Failed to get playlist count: {}", e))
+    }
+
+    fn handle_end_of_file(
+        mpv: Arc<Mutex<Mpv>>,
+        player: Option<Arc<Mutex<MpvPlayer>>>,
+        reason: u32,
+    ) -> Result<(), String> {
+        let playlist_position = Self::get_playlist_position(&mpv);
+
+        if reason == 0 && playlist_position == Ok(-1) {
+            if let Some(player_arc) = player {
+                let player_guard = player_arc
+                    .lock()
+                    .map_err(|e| format!("Failed to lock player mutex: {}", e))?;
+
+                player_guard
+                    .shutdown()
+                    .map_err(|e| format!("Failed to shutdown player: {}", e))?;
+            }
+        }
+
+        Ok(())
     }
 }

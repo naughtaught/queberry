@@ -19,7 +19,10 @@
         setVideoVolume,
         VideoOverlay,
         type Api,
+        addPlaylistItem,
     } from '$lib'
+
+    $inspect($videoMetadata)
 
     const SUBTITLE_SHIFT_POSITION = 94
 
@@ -50,6 +53,7 @@
 
         const completeUnlisten = await listen<{ isCompleted: boolean }>('video-completed', (_event) => {
             // TODO
+            addPlaylistItem()
         })
         unlisteners.push(completeUnlisten)
 

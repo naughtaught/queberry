@@ -1,6 +1,6 @@
 use crate::db::types::UserSettings;
 use crate::errors::{AppError, Result};
-use crate::video_player::{audio, subtitles};
+use crate::video_player::audio;
 use libmpv2::Mpv;
 use std::collections::HashMap;
 
@@ -19,6 +19,7 @@ impl MpvConfig {
     pub fn apply_to_mpv(&self, mpv: &Mpv) -> Result<()> {
         self.apply_user_settings(mpv)?;
         self.apply_optional_defaults(mpv)?;
+        // TODO get mpv.conv settings
         self.apply_hardcoded_params(mpv)?;
         Ok(())
     }
@@ -35,8 +36,6 @@ impl MpvConfig {
         }
         Ok(())
     }
-
-    // TODO if sub-pos is in apply_optional_defaults set sqlite sub-pos value to that value
 
     pub fn set_window_id(&self, mpv: &Mpv, window_id: i64) -> Result<()> {
         #[cfg(target_os = "linux")]
@@ -77,7 +76,6 @@ impl MpvConfig {
     }
 
     fn get_optional_defaults(&self) -> HashMap<&'static str, &'static str> {
-        // TODO get mpv.conv settings
         [
             // Video quality
             ("profile", "high-quality"),

@@ -5,7 +5,9 @@ use crate::state::AppState;
 use crate::video_player::audio::AudioManager;
 use crate::video_player::player::MpvPlayer;
 use crate::video_player::subtitles::SubtitleManager;
-use crate::video_player::types::{LoadVideoRequest, SubtitleTrackResponse, VideoCommandResponse};
+use crate::video_player::types::{
+    AddPlaylistItemRequest, LoadVideoRequest, SubtitleTrackResponse, VideoCommandResponse,
+};
 use crate::AppError;
 use crate::{db::settings::SettingsManager, video_player::types::AudioTrackResponse};
 use tauri::{command, AppHandle, State, WebviewWindow};
@@ -314,5 +316,75 @@ pub fn set_subtitle_margin(
 
     ApiResponse::ok(VideoCommandResponse {
         value: value.into(),
+    })
+}
+
+#[command]
+pub fn add_playlist_item(
+    state: State<'_, AppState>,
+    value: AddPlaylistItemRequest,
+) -> ApiResponse<VideoCommandResponse> {
+    let AddPlaylistItemRequest { url } = value;
+
+    let player_guard = match state.video_player.lock() {
+        Ok(guard) => guard,
+        Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
+    };
+
+    if let Some(player) = player_guard.as_ref() {
+        match player.add_playlist_item(url.clone()) {
+            Ok(_) => (),
+            Err(e) => {
+                return ApiResponse::error(500, format!("Failed to add playlist item: {}", e));
+            }
+        }
+    } else {
+        return ApiResponse::error(404, "No player available".to_string());
+    }
+
+    ApiResponse::ok(VideoCommandResponse {
+        value: serde_json::Value::String(url.clone()),
+    })
+}
+
+#[command]
+pub fn next_playlist_item(state: State<'_, AppState>) -> ApiResponse<VideoCommandResponse> {
+    let player_guard = match state.video_player.lock() {
+        Ok(guard) => guard,
+        Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
+    };
+
+    let player = match player_guard.as_ref() {
+        Some(player) => player,
+        None => return ApiResponse::error(404, "No player available".to_string()),
+    };
+
+    if let Err(e) = player.next_playlist_item() {
+        return ApiResponse::error(500, format!("Failed to play next playlist item: {}", e));
+    }
+
+    ApiResponse::ok(VideoCommandResponse {
+        value: serde_json::Value::Null,
+    })
+}
+
+#[command]
+pub fn previous_playlist_item(state: State<'_, AppState>) -> ApiResponse<VideoCommandResponse> {
+    let player_guard = match state.video_player.lock() {
+        Ok(guard) => guard,
+        Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
+    };
+
+    let player = match player_guard.as_ref() {
+        Some(player) => player,
+        None => return ApiResponse::error(404, "No player available".to_string()),
+    };
+
+    if let Err(e) = player.previous_playlist_item() {
+        return ApiResponse::error(500, format!("Failed to play previous playlist item: {}", e));
+    }
+
+    ApiResponse::ok(VideoCommandResponse {
+        value: serde_json::Value::Null,
     })
 }

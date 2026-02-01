@@ -8,6 +8,8 @@
         SubtitleTrackButton,
         AudioTrackButton,
         VideoSettingsButton,
+        NextPlaylistItemButton,
+        PreviousPlaylistItemButton,
     } from '$lib'
 
     let { currentModal = $bindable(), previousVolume = $bindable() } = $props()
@@ -24,10 +26,16 @@
             <SubtitleTrackButton bind:currentModal />
             <AudioChannels bind:currentModal />
         </div>
-        <div class="flex w-2/4 items-center justify-center gap-6">
-            <SeekButton direction="back" />
+        <div class="flex w-2/4 items-center justify-center gap-4">
+            <div>
+                <PreviousPlaylistItemButton />
+                <SeekButton direction="back" />
+            </div>
             <PlayButton />
-            <SeekButton direction="forward" />
+            <div>
+                <SeekButton direction="forward" />
+                <NextPlaylistItemButton />
+            </div>
         </div>
         <div class="flex w-1/4 items-center justify-end gap-2">
             <Volume bind:previousVolume />

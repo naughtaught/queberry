@@ -31,6 +31,8 @@ export { default as VideoSettingsButton } from './components/videoplayer/VideoSe
 export { default as VideoMenuButton } from './components/videoplayer/VideoMenuButton.svelte'
 export { default as VideoSettingsModal } from './components/videoplayer/VideoSettingsModal.svelte'
 export { default as VideoOverlay } from './components/videoplayer/VideoOverlay.svelte'
+export { default as NextPlaylistItemButton } from './components/videoplayer/NextPlaylistItemButton.svelte'
+export { default as PreviousPlaylistItemButton } from './components/videoplayer/PreviousPlaylistItemButton.svelte'
 
 // Functions/UI
 export { toggleFullscreen } from './functions/ui/toggleFullscreen.ts'
@@ -47,6 +49,7 @@ export { invokeFunction } from './functions/api/invokeFunction.ts'
 // Functions/Video
 export { setVideoVolume } from './functions/video/setVideoVolume.ts'
 export { loadVideo } from './functions/video/loadVideo.ts'
+export { addPlaylistItem } from './functions/video/addPlaylistItem.ts'
 
 // Stores
 export { handleError } from './stores/errorHandling'
