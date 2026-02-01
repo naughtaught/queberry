@@ -97,8 +97,6 @@ impl MpvEventHandler {
                             );
                         }
                         EventType::PropertyChange(property_name) => {
-                            println!("Property Changed: {}", property_name);
-
                             if property_name == "playlist-count" || property_name == "playlist-pos"
                             {
                                 let mut metadata_guard = current_metadata_clone.lock().unwrap();
