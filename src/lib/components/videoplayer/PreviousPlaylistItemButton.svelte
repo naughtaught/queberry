@@ -5,9 +5,7 @@
     const hasPreviousPlaylistItem = $derived($videoMetadata.playlistPosition > 0)
 
     const gotoNextPlaylistItem = async (): Promise<void> => {
-        const response = await invokeFunction('previous_playlist_item', {})
-
-        if (response.success) console.log(response)
+        await invokeFunction('previous_playlist_item', {})
     }
 </script>
 

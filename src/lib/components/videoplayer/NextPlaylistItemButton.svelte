@@ -5,9 +5,7 @@
     const hasNextPlaylistItem = $derived($videoMetadata.playlistPosition < $videoMetadata.playlistCount - 1)
 
     const gotoNextPlaylistItem = async (): Promise<void> => {
-        const response = await invokeFunction('next_playlist_item', {})
-
-        if (response.success) console.log(response)
+        await invokeFunction('next_playlist_item', {})
     }
 </script>
 

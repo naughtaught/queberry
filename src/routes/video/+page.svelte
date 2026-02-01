@@ -22,8 +22,6 @@
         addPlaylistItem,
     } from '$lib'
 
-    $inspect($videoMetadata)
-
     const SUBTITLE_SHIFT_POSITION = 94
 
     let backgroundColor = $state('bg-black')
