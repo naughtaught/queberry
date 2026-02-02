@@ -8,7 +8,8 @@ use std::sync::{Arc, Mutex};
 pub struct AppState {
     pub plugin_manager: Arc<Mutex<PluginManager>>,
     pub video_player: Arc<Mutex<Option<MpvPlayer>>>,
-    database: Option<Arc<Database>>,
+    // TODO remove? needed?
+    _database: Option<Arc<Database>>,
     settings_manager: Option<SettingsManager>,
 }
 
@@ -22,7 +23,7 @@ impl AppState {
         Self {
             plugin_manager: Arc::new(Mutex::new(plugin_manager)),
             video_player: Arc::new(Mutex::new(None)),
-            database: database_arc,
+            _database: database_arc,
             settings_manager,
         }
     }

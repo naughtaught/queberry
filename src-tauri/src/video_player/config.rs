@@ -16,15 +16,7 @@ impl MpvConfig {
         }
     }
 
-    pub fn apply_to_mpv(&self, mpv: &Mpv) -> Result<()> {
-        self.apply_user_settings(mpv)?;
-        self.apply_optional_defaults(mpv)?;
-        // TODO get mpv.conv settings
-        self.apply_hardcoded_params(mpv)?;
-        Ok(())
-    }
-
-    fn apply_user_settings(&self, mpv: &Mpv) -> Result<()> {
+    pub fn apply_user_settings(&self, mpv: &Mpv) -> Result<()> {
         if let Some(settings) = &self.settings {
             if settings.volume >= 0 && settings.volume <= 100 {
                 mpv.set_property("volume", settings.volume as i64)
@@ -136,34 +128,23 @@ impl MpvConfig {
         .collect()
     }
 
-    fn apply_optional_defaults(&self, mpv: &Mpv) -> Result<()> {
+    fn apply_optional_defaults(&self, initializer: &libmpv2::MpvInitializer) -> Result<()> {
         let defaults = self.get_optional_defaults();
-
-        for (key, value) in defaults {
-            if let Err(e) = mpv.set_property(key, value) {
-                log::warn!("Failed to set optional property {}: {}", key, e);
+        for (key, value) in &defaults {
+            if let Err(e) = initializer.set_option(key, *value) {
+                println!("Warning: Failed to set default {}: {}", key, e);
             }
         }
 
         Ok(())
     }
 
-    fn apply_hardcoded_params(&self, mpv: &Mpv) -> Result<()> {
-        let params = self.get_hardcoded_params();
-
-        let mut errors = Vec::new();
-
-        for (key, value) in params {
-            if let Err(e) = mpv.set_property(key, value) {
-                errors.push(format!("Failed to set property '{}': {}", key, e));
+    fn apply_hardcoded_params(&self, initializer: &libmpv2::MpvInitializer) -> Result<()> {
+        let forced = self.get_hardcoded_params();
+        for (key, value) in &forced {
+            if let Err(e) = initializer.set_option(key, *value) {
+                println!("Warning: Failed to set forced {}: {}", key, e);
             }
-        }
-
-        if !errors.is_empty() {
-            return Err(AppError::Runtime(format!(
-                "Multiple property setting errors: {}",
-                errors.join("; ")
-            )));
         }
 
         Ok(())
@@ -186,5 +167,42 @@ impl MpvConfig {
         .iter()
         .cloned()
         .collect()
+    }
+
+    fn load_mpv_conf(&self, initializer: &libmpv2::MpvInitializer) {
+        use crate::video_player::platform::get_mpv_conf_path;
+        if let Some(conf_path) = get_mpv_conf_path() {
+            if let Some(path_str) = conf_path.to_str() {
+                if conf_path.exists() {
+                    let abs_path = if conf_path.is_absolute() {
+                        path_str.to_string()
+                    } else {
+                        match conf_path.canonicalize() {
+                            Ok(abs) => abs.to_str().unwrap_or(path_str).to_string(),
+                            Err(_) => path_str.to_string(),
+                        }
+                    };
+
+                    if let Err(e) = initializer.load_config(&abs_path) {
+                        println!("Warning: Failed to load config: {}", e);
+                    }
+                } else {
+                    println!("mpv.conf NOT FOUND at {:?}", conf_path);
+                }
+            }
+        }
+    }
+
+    pub fn apply_during_initialization(
+        &self,
+        initializer: &libmpv2::MpvInitializer,
+    ) -> Result<(), libmpv2::Error> {
+        let _ = self.apply_optional_defaults(initializer);
+
+        self.load_mpv_conf(initializer);
+
+        let _ = self.apply_hardcoded_params(initializer);
+
+        Ok(())
     }
 }

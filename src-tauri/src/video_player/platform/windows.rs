@@ -1,28 +1,23 @@
+use std::{env, fs, path::PathBuf};
+
 use raw_window_handle::{HasWindowHandle, RawWindowHandle};
 use tauri::WebviewWindow;
+
+fn is_development_mode() -> bool {
+    cfg!(debug_assertions)
+}
 
 pub fn init() {
     use std::env;
     use std::path::PathBuf;
 
-    log::info!("Performing Windows-specific MPV setup");
+    let path_str = "lib/windows";
+    let path = PathBuf::from(path_str);
+    let dll_path = path.join("libmpv-2.dll");
 
-    let possible_paths = vec![
-        PathBuf::from("lib/windows"),
-        PathBuf::from("../lib/windows"),
-        PathBuf::from("../../lib/windows"),
-    ];
-
-    for path in possible_paths {
-        let dll_path = path.join("libmpv-2.dll");
-        if dll_path.exists() {
-            if let Some(path_str) = path.to_str() {
-                log::info!("Found MPV DLL at: {}", path_str);
-                let current_path = env::var("PATH").unwrap_or_default();
-                env::set_var("PATH", format!("{};{}", current_path, path_str));
-                break;
-            }
-        }
+    if dll_path.exists() {
+        let current_path = env::var("PATH").unwrap_or_default();
+        env::set_var("PATH", format!("{};{}", current_path, path_str));
     }
 }
 
@@ -41,4 +36,35 @@ pub fn get_window_handle_id(window: &WebviewWindow) -> Option<i64> {
                 None
             }
         })
+}
+
+pub fn get_mpv_dir() -> Result<PathBuf, String> {
+    if is_development_mode() {
+        env::current_dir()
+            .map_err(|e| format!("Failed to get current directory: {}", e))?
+            .join("../mpv")
+            .canonicalize()
+            .map_err(|e| format!("Failed to canonicalize mpv path: {}", e))
+    } else {
+        let exe_path =
+            env::current_exe().map_err(|e| format!("Failed to get executable path: {}", e))?;
+
+        let parent = exe_path
+            .parent()
+            .ok_or("Failed to get executable directory")?;
+
+        let mpv_dir = parent.join("mpv");
+
+        fs::create_dir_all(&mpv_dir)
+            .map_err(|e| format!("Failed to create mpv directory: {}", e))?;
+
+        Ok(mpv_dir)
+    }
+}
+
+pub fn get_mpv_conf_path() -> Result<PathBuf, String> {
+    let mpv_dir = get_mpv_dir()?;
+    let conf_path = mpv_dir.join("mpv.conf");
+
+    Ok(conf_path)
 }

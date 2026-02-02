@@ -28,12 +28,16 @@ impl MpvPlayer {
         #[cfg(target_os = "macos")]
         crate::video_player::platform::macos::init();
 
-        let mpv = Mpv::new().map_err(|e| {
-            AppError::Runtime(format!(
-                "Failed to create mpv instance: {}. Please ensure libmpv is in your system PATH",
-                e
-            ))
-        })?;
+        let config = MpvConfig::new(settings);
+
+        let mpv =
+            Mpv::with_initializer(|initializer| config.apply_during_initialization(&initializer))
+                .map_err(|e| {
+                AppError::Runtime(format!(
+            "Failed to create mpv instance: {}. Please ensure libmpv is in your system PATH",
+            e
+        ))
+            })?;
 
         mpv.observe_property("playlist-count", libmpv2::Format::Int64, 0)
             .map_err(|e| AppError::Runtime(format!("Failed to observe playlist-count: {}", e)))?;
@@ -44,9 +48,8 @@ impl MpvPlayer {
         let window_id = crate::video_player::platform::get_window_handle_id(&window)
             .ok_or_else(|| AppError::Runtime("Window handle not available".to_string()))?;
 
-        let config = MpvConfig::new(settings);
         config.set_window_id(&mpv, window_id)?;
-        config.apply_to_mpv(&mpv)?;
+        config.apply_user_settings(&mpv)?;
 
         let mpv = Arc::new(Mutex::new(mpv));
 
