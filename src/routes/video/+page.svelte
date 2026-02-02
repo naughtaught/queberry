@@ -57,6 +57,7 @@
 
         const metadataUnlisten = await listen<Api.Metadata>('video-metadata', (event) => {
             $videoMetadata = { ...event.payload }
+            backgroundColor = 'bg-transparent'
         })
         unlisteners.push(metadataUnlisten)
 
@@ -89,7 +90,6 @@
 
     onMount(async () => {
         document.body.setAttribute('data-page', 'video')
-        backgroundColor = 'bg-transparent'
 
         window.addEventListener('mousemove', resetCursorTimeout)
         window.addEventListener('keydown', handleKeydown)
