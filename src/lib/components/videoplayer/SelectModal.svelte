@@ -85,7 +85,7 @@
                     </div>
 
                     {#if track.metadata}
-                        <div class="ml-5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-400">
+                        <div class="ml-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-400">
                             {#if track.metadata.codec}
                                 <span class="rounded bg-gray-800 px-1.5 py-0.5 font-mono">
                                     {track.metadata.codec}

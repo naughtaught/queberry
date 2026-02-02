@@ -36,7 +36,7 @@
         }
     }}>
     <AudioTracksIcon
-        class={$videoMetadata.audioTracks?.length >= 1
+        class={$videoMetadata.audioTracks?.length > 1
             ? 'text-white transition-colors  hover:text-neutral-400'
             : 'text-neutral-700'} />
 </button>
