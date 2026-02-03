@@ -388,3 +388,24 @@ pub fn previous_playlist_item(state: State<'_, AppState>) -> ApiResponse<VideoCo
         value: serde_json::Value::Null,
     })
 }
+
+#[command]
+pub fn toggle_shader(state: State<'_, AppState>, value: &str) -> ApiResponse<VideoCommandResponse> {
+    let player_guard = match state.video_player.lock() {
+        Ok(guard) => guard,
+        Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
+    };
+
+    let player = match player_guard.as_ref() {
+        Some(player) => player,
+        None => return ApiResponse::error(404, "No player available".to_string()),
+    };
+
+    if let Err(e) = player.toggle_shader(value) {
+        return ApiResponse::error(500, format!("Failed to toggle shader: {}", e));
+    }
+
+    ApiResponse::ok(VideoCommandResponse {
+        value: value.into(),
+    })
+}

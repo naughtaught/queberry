@@ -68,3 +68,15 @@ pub fn get_mpv_conf_path() -> Result<PathBuf, String> {
 
     Ok(conf_path)
 }
+
+pub fn get_shaders_dir() -> Result<PathBuf, String> {
+    let mpv_dir = get_mpv_dir()?;
+    let shaders_dir = mpv_dir.join("shaders");
+
+    if !shaders_dir.exists() {
+        fs::create_dir_all(&shaders_dir)
+            .map_err(|e| format!("Failed to create shaders directory: {}", e))?;
+    }
+
+    Ok(shaders_dir)
+}

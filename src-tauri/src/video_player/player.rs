@@ -1,7 +1,9 @@
 use crate::db::types::UserSettings;
 use crate::errors::{AppError, Result};
 use crate::video_player::audio::{self, AudioManager};
+use crate::video_player::shaders;
 use crate::video_player::subtitles::{self, SubtitleManager};
+use crate::video_player::types::ShaderInfo;
 use crate::video_player::{config::MpvConfig, events::MpvEventHandler, tracker::PlayerTracker};
 use libmpv2::Mpv;
 use std::sync::{Arc, Mutex};
@@ -44,6 +46,9 @@ impl MpvPlayer {
 
         mpv.observe_property("playlist-pos", libmpv2::Format::Int64, 0)
             .map_err(|e| AppError::Runtime(format!("Failed to observe playlist-pos: {}", e)))?;
+
+        mpv.observe_property("glsl-shaders", libmpv2::Format::String, 0)
+            .map_err(|e| AppError::Runtime(format!("Failed to observe glsl-shaders: {}", e)))?;
 
         let window_id = crate::video_player::platform::get_window_handle_id(&window)
             .ok_or_else(|| AppError::Runtime("Window handle not available".to_string()))?;
@@ -247,6 +252,21 @@ impl MpvPlayer {
 
         mpv.command("playlist-prev", &[])
             .map_err(|e| AppError::Runtime(format!("Failed to play playlist item : {}", e)))?;
+
+        Ok(())
+    }
+
+    pub fn get_available_shaders(&self) -> Result<Vec<ShaderInfo>, String> {
+        crate::video_player::shaders::get_all_shaders()
+    }
+
+    pub fn toggle_shader(&self, value: &str) -> Result<()> {
+        let mpv = self
+            .mpv
+            .lock()
+            .map_err(|e| AppError::Runtime(format!("Failed to lock MPV instance: {}", e)))?;
+
+        shaders::toggle_shader(&mpv, value)?;
 
         Ok(())
     }

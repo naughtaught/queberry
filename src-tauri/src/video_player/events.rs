@@ -109,6 +109,10 @@ impl MpvEventHandler {
                                         metadata.playlist_position = position;
                                     }
 
+                                    if let Ok(active) = Self::get_active_shaders(&mpv_clone) {
+                                        metadata.active_shaders = active;
+                                    }
+
                                     if let Err(e) =
                                         app_handle_clone.emit("video-metadata", metadata.clone())
                                     {
@@ -122,6 +126,23 @@ impl MpvEventHandler {
                                         app_handle_clone.emit("video-metadata", metadata)
                                     {
                                         log::error!("Failed to emit video-metadata event: {}", e);
+                                    }
+                                }
+                            }
+
+                            if property_name == "glsl-shaders" {
+                                let mut metadata_guard = current_metadata_clone.lock().unwrap();
+                                if let Some(ref mut metadata) = *metadata_guard {
+                                    if let Ok(active) = Self::get_active_shaders(&mpv_clone) {
+                                        metadata.active_shaders = active;
+                                        if let Err(e) = app_handle_clone
+                                            .emit("video-metadata", metadata.clone())
+                                        {
+                                            log::error!(
+                                                "Failed to emit video-metadata event: {}",
+                                                e
+                                            );
+                                        }
                                     }
                                 }
                             }
@@ -150,6 +171,32 @@ impl MpvEventHandler {
         let subtitle_margin = Self::get_subtitle_margin(&mpv)?;
         let playlist_count = Self::get_playlist_count(&mpv)?;
         let playlist_position = Self::get_playlist_position(&mpv)?;
+
+        let (available_shaders, active_shaders) = if let Some(player_arc) = &player {
+            match player_arc.lock() {
+                Ok(player_guard) => {
+                    // Get available shaders from the player
+                    let available = player_guard.get_available_shaders().unwrap_or_else(|e| {
+                        log::warn!("Failed to get available shaders: {}", e);
+                        Vec::new()
+                    });
+
+                    // Get currently active shaders from mpv
+                    let active = Self::get_active_shaders(&mpv).unwrap_or_else(|e| {
+                        log::warn!("Failed to get active shaders: {}", e);
+                        Vec::new()
+                    });
+
+                    (available, active)
+                }
+                Err(e) => {
+                    log::warn!("Failed to lock player for shaders: {}", e);
+                    (Vec::new(), Vec::new())
+                }
+            }
+        } else {
+            (Vec::new(), Vec::new())
+        };
 
         // TODO pass video langauge
         let video_language = "th";
@@ -203,7 +250,36 @@ impl MpvEventHandler {
             subtitle_margin,
             playlist_position,
             playlist_count,
+            available_shaders,
+            active_shaders,
         })
+    }
+
+    fn get_active_shaders(mpv: &Arc<Mutex<Mpv>>) -> Result<Vec<String>, String> {
+        let mpv_guard = mpv
+            .lock()
+            .map_err(|e| format!("Failed to lock MPV mutex: {}", e))?;
+
+        let shaders_str: String = mpv_guard
+            .get_property("glsl-shaders")
+            .map_err(|e| format!("Failed to get shaders property: {}", e))?;
+
+        if shaders_str.is_empty() {
+            Ok(Vec::new())
+        } else {
+            Ok(shaders_str
+                .split(';')
+                .map(|s| s.trim())
+                .filter(|s| !s.is_empty())
+                .map(|full_path| {
+                    std::path::Path::new(full_path)
+                        .file_name()
+                        .and_then(|name| name.to_str())
+                        .map(|name| name.to_string())
+                        .unwrap_or_else(|| full_path.to_string())
+                })
+                .collect())
+        }
     }
 
     fn get_duration(mpv: &Arc<Mutex<Mpv>>) -> Result<f64, String> {

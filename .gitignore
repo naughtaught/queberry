@@ -52,6 +52,9 @@ src-tauri/lib/
 src-tauri/db/
 src-tauri/src/db/migrations
 
+# MPV
+/mpv
+
 # Data
 /src/lib/components/data
 

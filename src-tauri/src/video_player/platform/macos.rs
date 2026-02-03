@@ -12,3 +12,7 @@ pub fn get_window_handle_id(window: &WebviewWindow) -> Option<i64> {
 pub fn get_mpv_conf() -> Result<PathBuf, String> {
     // TODO
 }
+
+pub fn get_shaders_dir() -> Result<PathBuf, String> {
+    // TODO
+}

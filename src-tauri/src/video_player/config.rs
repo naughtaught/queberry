@@ -1,6 +1,7 @@
 use crate::db::types::UserSettings;
 use crate::errors::{AppError, Result};
 use crate::video_player::audio;
+use crate::video_player::shaders::get_all_shaders;
 use libmpv2::Mpv;
 use std::collections::HashMap;
 
@@ -202,6 +203,15 @@ impl MpvConfig {
         self.load_mpv_conf(initializer);
 
         let _ = self.apply_hardcoded_params(initializer);
+
+        if let Ok(shaders) = get_all_shaders() {
+            println!("Found {} shaders:", shaders.len());
+            for shader in &shaders {
+                println!("  • {} ({})", shader.name, shader.filename);
+            }
+        } else {
+            println!("Failed to get shaders");
+        }
 
         Ok(())
     }

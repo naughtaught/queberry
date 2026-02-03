@@ -35,6 +35,8 @@ pub struct Metadata {
     pub subtitle_margin: i64,
     pub playlist_position: i64,
     pub playlist_count: i64,
+    pub available_shaders: Vec<ShaderInfo>,
+    pub active_shaders: Vec<String>,
 }
 
 #[derive(Serialize, Clone)]
@@ -87,4 +89,11 @@ pub struct LoadVideoRequest {
 #[serde(rename_all = "camelCase")] // Optional: matches JS naming convention
 pub struct AddPlaylistItemRequest {
     pub url: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct ShaderInfo {
+    pub name: String,
+    pub filename: String,
+    pub path: String,
 }
