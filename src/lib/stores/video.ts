@@ -52,6 +52,7 @@ export const speakerLayoutsWithCenter = ['3.0', '3.1', '5.0', '5.1', '6.0', '6.1
 export const defaultSessionSettings = writable({
     centerSpeakerLevel: 0,
     volume: 30,
+    subtitleScaling: 1,
 })
 
 export const sessionSettings = writable(get(defaultSessionSettings))

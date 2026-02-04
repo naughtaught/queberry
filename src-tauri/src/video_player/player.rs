@@ -171,6 +171,7 @@ impl MpvPlayer {
 
         let _ = self.app_handle.emit("video-shutdown", ());
 
+
         Ok(())
     }
 
@@ -218,6 +219,15 @@ impl MpvPlayer {
             .map_err(|e| AppError::Runtime(format!("Failed to lock MPV instance: {}", e)))?;
 
         subtitles::set_subtitle_margin(&mpv, value)
+    }
+
+    pub fn set_subtitle_scaling(&self, value: f64) -> Result<()> {
+        let mpv = self
+            .mpv
+            .lock()
+            .map_err(|e| AppError::Runtime(format!("Failed to lock MPV instance: {}", e)))?;
+
+        subtitles::set_subtitle_scaling(&mpv, value)
     }
 
     pub fn add_playlist_item(&self, file: String) -> Result<()> {

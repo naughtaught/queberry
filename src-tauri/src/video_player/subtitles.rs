@@ -275,3 +275,10 @@ pub fn set_subtitle_margin(mpv: &Mpv, value: i64) -> Result<()> {
 
     Ok(())
 }
+
+pub fn set_subtitle_scaling(mpv: &Mpv, value: f64) -> Result<()> {
+    mpv.set_property("sub-scale", value)
+        .map_err(|e| AppError::Runtime(format!("Failed to scale subtitles {}: {}", value, e)))?;
+
+    Ok(())
+}

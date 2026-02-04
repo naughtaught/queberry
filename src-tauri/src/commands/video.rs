@@ -409,3 +409,27 @@ pub fn toggle_shader(state: State<'_, AppState>, value: &str) -> ApiResponse<Vid
         value: value.into(),
     })
 }
+
+#[command]
+pub fn set_subtitle_scaling(
+    state: State<'_, AppState>,
+    value: f64,
+) -> ApiResponse<VideoCommandResponse> {
+    let player_guard = match state.video_player.lock() {
+        Ok(guard) => guard,
+        Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
+    };
+
+    let player = match player_guard.as_ref() {
+        Some(player) => player,
+        None => return ApiResponse::error(404, "No player available".to_string()),
+    };
+
+    if let Err(e) = player.set_subtitle_scaling(value) {
+        return ApiResponse::error(500, format!("Failed to scale subtitles: {}", e));
+    }
+
+    ApiResponse::ok(VideoCommandResponse {
+        value: value.into(),
+    })
+}

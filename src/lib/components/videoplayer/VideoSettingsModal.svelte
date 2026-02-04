@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { invokeFunction, sessionSettings, Slider, speakerLayoutsWithCenter, videoMetadata, type Api } from '$lib'
+    import { invokeFunction, sessionSettings, Slider, speakerLayoutsWithCenter, videoMetadata } from '$lib'
     import ArrowRightIcon from 'virtual:icons/material-symbols/arrow-right'
     import ArrowLeftIcon from 'virtual:icons/material-symbols/arrow-left'
 
@@ -7,13 +7,13 @@
 
     let isShaderMenuOpen = $state(false)
 
-    const emitFunc = async (emit: string, value: number): Promise<void> => {
+    const emitFunc = async (emit: string, value: number | string): Promise<void> => {
         await invokeFunction(emit, { value })
     }
 
-    const toggleShader = async (shader: Api.Shader): Promise<void> => {
-        await invokeFunction('toggle_shader', { value: shader.path })
-    }
+    // TODO subtitle position
+    // TODO subtitle size
+    // TODO subtitle sync
 </script>
 
 <div
@@ -51,6 +51,23 @@
                 </label>
             </div>
         {/if}
+        {#if $videoMetadata.currentSubtitleTrack}
+            <div class="flex items-center justify-center gap-3">
+                <label class="w-full text-center text-xs"
+                    >Subtitle Scaling
+                    <Slider
+                        min={0.1}
+                        max={2}
+                        step={0.1}
+                        bind:value={$sessionSettings.subtitleScaling}
+                        func={() => {
+                            emitFunc('set_subtitle_scaling', $sessionSettings.subtitleScaling)
+                        }}
+                        label=""
+                        zeroPoint={false} />
+                </label>
+            </div>
+        {/if}
         {#if $videoMetadata.availableShaders.length >= 1}
             <button
                 class="float-right mt-5 flex w-full items-center justify-end text-right text-xs text-white transition-colors hover:text-neutral-400"
@@ -69,7 +86,9 @@
         <div class="ml-5 flex flex-col">
             {#each $videoMetadata.availableShaders as shader (shader.filename)}
                 <button
-                    onclick={() => toggleShader(shader)}
+                    onclick={() => {
+                        emitFunc('toggle_shader', shader.path)
+                    }}
                     type="button"
                     class="flex w-full flex-col items-start gap-y-1 rounded-md px-1 py-1 transition-colors duration-200 hover:bg-gray-800">
                     <div class="flex w-full items-center gap-x-1">
