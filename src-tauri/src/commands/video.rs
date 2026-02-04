@@ -39,24 +39,21 @@ pub fn load_video(
         Err(e) => return ApiResponse::err(e),
     };
 
-    if player_guard.is_none() {
-        let player = match MpvPlayer::new(window, app, &settings) {
-            Ok(player) => player,
-            Err(e) => {
-                return ApiResponse::error(500, format!("Failed to create player: {}", e));
-            }
-        };
-        *player_guard = Some(player);
-    }
-
-    if let Some(player) = player_guard.as_ref() {
-        match player.load_file(url.clone()) {
-            Ok(_) => (),
-            Err(e) => {
-                return ApiResponse::error(500, format!("Failed to load video: {}", e));
-            }
+    let player = match MpvPlayer::new(window, app, &settings) {
+        Ok(player) => player,
+        Err(e) => {
+            return ApiResponse::error(500, format!("Failed to create player: {}", e));
         }
-    }
+    };
+
+    match player.load_file(url.clone()) {
+        Ok(_) => (),
+        Err(e) => {
+            return ApiResponse::error(500, format!("Failed to load video: {}", e));
+        }
+    };
+
+    *player_guard = Some(player);
 
     ApiResponse::ok(VideoCommandResponse {
         value: serde_json::Value::String(url.clone()),

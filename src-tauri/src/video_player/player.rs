@@ -163,14 +163,11 @@ impl MpvPlayer {
                 .lock()
                 .map_err(|e| AppError::Runtime(format!("Failed to lock MPV instance: {}", e)))?;
 
-            mpv.command("stop", &[])
-                .map_err(|e| AppError::Runtime(format!("Failed to clear playlist: {}", e)))?;
-            mpv.command("playlist-clear", &[])
+            mpv.command("quit", &[])
                 .map_err(|e| AppError::Runtime(format!("Failed to clear playlist: {}", e)))?;
         }
 
         let _ = self.app_handle.emit("video-shutdown", ());
-
 
         Ok(())
     }
