@@ -1,8 +1,8 @@
 <script lang="ts">
-    import { invokeFunction, videoMetadata } from '$lib'
+    import { invokeFunction, videoProperties } from '$lib'
     import NextIcon from 'virtual:icons/material-symbols/skip-next'
 
-    const hasNextPlaylistItem = $derived($videoMetadata.playlistPosition < $videoMetadata.playlistCount - 1)
+    const hasNextPlaylistItem = $derived($videoProperties.playlistPosition < $videoProperties.playlistCount - 1)
 
     const gotoNextPlaylistItem = async (): Promise<void> => {
         await invokeFunction('next_playlist_item', {})

@@ -23,8 +23,7 @@ pub enum CaptionType {
 
 #[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct Metadata {
-    pub title: String,
+pub struct VideoProperties {
     pub duration: f64,
     pub audio_channel: String,
     pub subtitle_tracks: Vec<SubtitleTrackInfo>,

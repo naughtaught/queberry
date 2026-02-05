@@ -7,13 +7,13 @@ use tauri::{AppHandle, Emitter};
 use crate::video_player::audio::AudioManager;
 use crate::video_player::player::MpvPlayer;
 use crate::video_player::subtitles::SubtitleManager;
-use crate::video_player::types::Metadata;
+use crate::video_player::types::VideoProperties;
 
 pub struct MpvEventHandler {
     mpv: Arc<Mutex<Mpv>>,
     app_handle: AppHandle,
     player: Option<Arc<Mutex<MpvPlayer>>>,
-    current_metadata: Arc<Mutex<Option<Metadata>>>,
+    current_video_properties: Arc<Mutex<Option<VideoProperties>>>,
 }
 
 #[derive(Debug)]
@@ -30,7 +30,7 @@ impl MpvEventHandler {
             mpv,
             app_handle,
             player: None,
-            current_metadata: Arc::new(Mutex::new(None)),
+            current_video_properties: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -42,7 +42,7 @@ impl MpvEventHandler {
         let mpv_clone = Arc::clone(&self.mpv);
         let app_handle_clone = self.app_handle.clone();
         let player_clone = self.player.clone();
-        let current_metadata_clone = Arc::clone(&self.current_metadata);
+        let current_video_properties_clone = Arc::clone(&self.current_video_properties);
 
         thread::spawn(move || {
             loop {
@@ -77,15 +77,19 @@ impl MpvEventHandler {
                 if let Some((event_type, reason)) = event_data {
                     match event_type {
                         EventType::FileLoaded => {
-                            if let Ok(metadata) =
-                                Self::get_metadata(Arc::clone(&mpv_clone), player_clone.clone())
-                            {
+                            if let Ok(video_properties) = Self::get_video_properties(
+                                Arc::clone(&mpv_clone),
+                                player_clone.clone(),
+                            ) {
                                 {
-                                    let mut metadata_guard = current_metadata_clone.lock().unwrap();
-                                    *metadata_guard = Some(metadata.clone());
+                                    let mut video_properties_guard =
+                                        current_video_properties_clone.lock().unwrap();
+                                    *video_properties_guard = Some(video_properties.clone());
                                 }
-                                if let Err(e) = app_handle_clone.emit("video-metadata", metadata) {
-                                    log::error!("Failed to emit video-metadata event: {}", e);
+                                if let Err(e) =
+                                    app_handle_clone.emit("video-properties", video_properties)
+                                {
+                                    log::error!("Failed to emit video-properties event: {}", e);
                                 }
                             }
                         }
@@ -99,47 +103,50 @@ impl MpvEventHandler {
                         EventType::PropertyChange(property_name) => {
                             if property_name == "playlist-count" || property_name == "playlist-pos"
                             {
-                                let mut metadata_guard = current_metadata_clone.lock().unwrap();
+                                let mut video_properties_guard =
+                                    current_video_properties_clone.lock().unwrap();
 
-                                if let Some(ref mut metadata) = *metadata_guard {
+                                if let Some(ref mut video_properties) = *video_properties_guard {
                                     if let Ok(count) = Self::get_playlist_count(&mpv_clone) {
-                                        metadata.playlist_count = count;
+                                        video_properties.playlist_count = count;
                                     }
                                     if let Ok(position) = Self::get_playlist_position(&mpv_clone) {
-                                        metadata.playlist_position = position;
+                                        video_properties.playlist_position = position;
                                     }
 
                                     if let Ok(active) = Self::get_active_shaders(&mpv_clone) {
-                                        metadata.active_shaders = active;
+                                        video_properties.active_shaders = active;
                                     }
 
-                                    if let Err(e) =
-                                        app_handle_clone.emit("video-metadata", metadata.clone())
+                                    if let Err(e) = app_handle_clone
+                                        .emit("video-properties", video_properties.clone())
                                     {
-                                        log::error!("Failed to emit video-metadata event: {}", e);
+                                        log::error!("Failed to emit video_properties event: {}", e);
                                     }
-                                } else if let Ok(metadata) =
-                                    Self::get_metadata(Arc::clone(&mpv_clone), player_clone.clone())
-                                {
-                                    *metadata_guard = Some(metadata.clone());
+                                } else if let Ok(video_properties) = Self::get_video_properties(
+                                    Arc::clone(&mpv_clone),
+                                    player_clone.clone(),
+                                ) {
+                                    *video_properties_guard = Some(video_properties.clone());
                                     if let Err(e) =
-                                        app_handle_clone.emit("video-metadata", metadata)
+                                        app_handle_clone.emit("video-properties", video_properties)
                                     {
-                                        log::error!("Failed to emit video-metadata event: {}", e);
+                                        log::error!("Failed to emit video_properties event: {}", e);
                                     }
                                 }
                             }
 
                             if property_name == "glsl-shaders" {
-                                let mut metadata_guard = current_metadata_clone.lock().unwrap();
-                                if let Some(ref mut metadata) = *metadata_guard {
+                                let mut video_properties_guard =
+                                    current_video_properties_clone.lock().unwrap();
+                                if let Some(ref mut video_properties) = *video_properties_guard {
                                     if let Ok(active) = Self::get_active_shaders(&mpv_clone) {
-                                        metadata.active_shaders = active;
+                                        video_properties.active_shaders = active;
                                         if let Err(e) = app_handle_clone
-                                            .emit("video-metadata", metadata.clone())
+                                            .emit("video-properties", video_properties.clone())
                                         {
                                             log::error!(
-                                                "Failed to emit video-metadata event: {}",
+                                                "Failed to emit video_properties event: {}",
                                                 e
                                             );
                                         }
@@ -158,13 +165,10 @@ impl MpvEventHandler {
         });
     }
 
-    fn get_metadata(
+    fn get_video_properties(
         mpv: Arc<Mutex<Mpv>>,
         player: Option<Arc<Mutex<MpvPlayer>>>,
-    ) -> Result<Metadata, String> {
-        // TODO Title
-        let title = "Test Title".to_string();
-
+    ) -> Result<VideoProperties, String> {
         let duration = Self::get_duration(&mpv)?;
         let audio_channel = Self::get_audio_channel(&mpv)?;
         let av_sync = Self::get_audio_delay(&mpv)?;
@@ -238,8 +242,7 @@ impl MpvEventHandler {
             .get_current_subtitle_track()
             .map_err(|e| format!("Failed to get current subtitle: {}", e))?;
 
-        Ok(Metadata {
-            title,
+        Ok(VideoProperties {
             duration,
             audio_channel,
             subtitle_tracks,

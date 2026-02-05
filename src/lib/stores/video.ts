@@ -1,10 +1,10 @@
 import { get, readable, writable } from 'svelte/store'
 import { type Api } from '$lib'
+import type { Video } from '$lib/types/video'
 
 export const seekAmount = readable(30)
 
-export const defaultVideoMetadata = readable<Api.Metadata>({
-    title: '',
+export const defaultVideoProperties = readable<Api.VideoProperties>({
     duration: 0,
     audioChannel: '5.1',
     subtitleTracks: [],
@@ -19,7 +19,7 @@ export const defaultVideoMetadata = readable<Api.Metadata>({
     activeShaders: [],
 })
 
-export const videoMetadata = writable<Api.Metadata>(get(defaultVideoMetadata))
+export const videoProperties = writable<Api.VideoProperties>(get(defaultVideoProperties))
 
 export const defaultVideoState = readable<Api.VideoState>({
     currentTime: 0,
@@ -145,3 +145,10 @@ export const defaultKeyboardShortcuts = readable([
 ])
 
 export const keyboardShortcuts = writable(get(defaultKeyboardShortcuts))
+
+export const defaultVideoMetadata = readable<Video.Metadata>({
+    title: null,
+    type: null,
+})
+
+export const videoMetadata = writable<Video.Metadata>(get(defaultVideoMetadata))

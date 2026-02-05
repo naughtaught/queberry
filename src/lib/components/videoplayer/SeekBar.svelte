@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { invokeFunction, settings, videoMetadata, videoState } from '$lib'
+    import { invokeFunction, settings, videoProperties, videoState } from '$lib'
 
     const cacheTime = $derived($videoState.cacheTime)
     const thumbWidth = 8
@@ -12,16 +12,16 @@
 
     const displayCurrent = $derived.by(() => {
         if (displayDurationMode === 'Time Remaining') {
-            const remaining = $videoMetadata.duration - $videoState.currentTime
+            const remaining = $videoProperties.duration - $videoState.currentTime
             return `-${formatTime(remaining)}`
         }
         return formatTime($videoState.currentTime)
     })
-    const displayDuration = $derived.by(() => formatTime($videoMetadata.duration))
+    const displayDuration = $derived.by(() => formatTime($videoProperties.duration))
     const displayValue = $derived.by(() => formatTime(sliderValue))
     const cachedEndPosition = $derived.by(() => {
         const cacheTimeNum = Number(cacheTime) || 0
-        return Math.min(cacheTimeNum, $videoMetadata.duration)
+        return Math.min(cacheTimeNum, $videoProperties.duration)
     })
 
     const formatTime = (seconds: number): string => {
@@ -70,7 +70,7 @@
         const effectiveWidth = sliderWidth - thumbWidth
         const effectiveStart = thumbWidth / 2
 
-        const percentage = (val - min) / ($videoMetadata.duration - min)
+        const percentage = (val - min) / ($videoProperties.duration - min)
 
         const adjustedPosition = effectiveStart + percentage * effectiveWidth
 
@@ -83,9 +83,9 @@
         let playedPercent = 0
         let cachedEndPercent = 0
 
-        if ($videoMetadata.duration && $videoMetadata.duration > 0) {
-            playedPercent = ($videoState.currentTime / $videoMetadata.duration) * 100
-            cachedEndPercent = (cachedEndPosition / $videoMetadata.duration) * 100
+        if ($videoProperties.duration && $videoProperties.duration > 0) {
+            playedPercent = ($videoState.currentTime / $videoProperties.duration) * 100
+            cachedEndPercent = (cachedEndPosition / $videoProperties.duration) * 100
         }
 
         playedPercent = Math.max(0, Math.min(100, playedPercent))
@@ -109,7 +109,7 @@
             <input
                 type="range"
                 {min}
-                max={$videoMetadata.duration}
+                max={$videoProperties.duration}
                 step="0.01"
                 bind:value={sliderValue}
                 bind:this={sliderElement}

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { invokeFunction, sessionSettings, Slider, speakerLayoutsWithCenter, videoMetadata } from '$lib'
+    import { invokeFunction, sessionSettings, Slider, speakerLayoutsWithCenter, videoProperties } from '$lib'
     import ArrowRightIcon from 'virtual:icons/material-symbols/arrow-right'
     import ArrowLeftIcon from 'virtual:icons/material-symbols/arrow-left'
 
@@ -26,15 +26,15 @@
                     min={-10}
                     max={10}
                     step={0.1}
-                    bind:value={$videoMetadata.avSync}
+                    bind:value={$videoProperties.avSync}
                     func={() => {
-                        emitFunc('av_sync_adjust', $videoMetadata.avSync)
+                        emitFunc('av_sync_adjust', $videoProperties.avSync)
                     }}
                     label=""
                     zeroPoint={true} />
             </label>
         </div>
-        {#if speakerLayoutsWithCenter.includes($videoMetadata.audioChannel)}
+        {#if speakerLayoutsWithCenter.includes($videoProperties.audioChannel)}
             <div class="flex items-center justify-center gap-3">
                 <label class="w-full text-center text-xs"
                     >Center Speaker Level
@@ -51,7 +51,7 @@
                 </label>
             </div>
         {/if}
-        {#if $videoMetadata.currentSubtitleTrack}
+        {#if $videoProperties.currentSubtitleTrack}
             <div class="flex items-center justify-center gap-3">
                 <label class="w-full text-center text-xs"
                     >Subtitle Scaling
@@ -68,7 +68,7 @@
                 </label>
             </div>
         {/if}
-        {#if $videoMetadata.availableShaders.length >= 1}
+        {#if $videoProperties.availableShaders.length >= 1}
             <button
                 class="float-right mt-5 flex w-full items-center justify-end text-right text-xs text-white transition-colors hover:text-neutral-400"
                 onclick={() => {
@@ -84,7 +84,7 @@
 
     {#if isShaderMenuOpen}
         <div class="ml-5 flex flex-col">
-            {#each $videoMetadata.availableShaders as shader (shader.filename)}
+            {#each $videoProperties.availableShaders as shader (shader.filename)}
                 <button
                     onclick={() => {
                         emitFunc('toggle_shader', shader.path)
@@ -93,7 +93,7 @@
                     class="flex w-full flex-col items-start gap-y-1 rounded-md px-1 py-1 transition-colors duration-200 hover:bg-gray-800">
                     <div class="flex w-full items-center gap-x-1">
                         <span
-                            class="flex h-3 w-3 shrink-0 items-center justify-center rounded-full border-2 {$videoMetadata.activeShaders.some(
+                            class="flex h-3 w-3 shrink-0 items-center justify-center rounded-full border-2 {$videoProperties.activeShaders.some(
                                 (x) => x === shader.filename,
                             )
                                 ? 'border-primaryColor bg-primaryColor'

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { audioChannelOptions, videoMetadata, SelectModal, invokeFunction } from '$lib'
+    import { audioChannelOptions, videoProperties, SelectModal, invokeFunction } from '$lib'
     import AudioChannelsIcon from 'virtual:icons/mdi/surround-sound'
 
     let { currentModal = $bindable() } = $props()
@@ -8,7 +8,7 @@
         const response = await invokeFunction('set_audio_channel', {
             value: channel,
         })
-        if (response.success) $videoMetadata.audioChannel = response.data.value
+        if (response.success) $videoProperties.audioChannel = response.data.value
     }
 </script>
 
@@ -16,7 +16,7 @@
     <SelectModal
         bind:currentModal
         tracks={$audioChannelOptions}
-        currentTrack={$videoMetadata.audioChannel}
+        currentTrack={$videoProperties.audioChannel}
         bottom="bottom-16"
         left="left-32"
         func={(track: string) => {

@@ -54,9 +54,9 @@ export { addPlaylistItem } from './functions/video/addPlaylistItem.ts'
 // Stores
 export { handleError } from './stores/errorHandling'
 export {
-    videoMetadata,
+    videoProperties,
     videoState,
-    defaultVideoMetadata,
+    defaultVideoProperties,
     defaultVideoState,
     audioChannelOptions,
     speakerLayoutsWithCenter,
@@ -64,6 +64,8 @@ export {
     sessionSettings,
     keyboardShortcuts,
     seekAmount,
+    videoMetadata,
+    defaultVideoMetadata,
 } from './stores/video'
 export { settings, user } from './stores/user'
 export { appState } from './stores/app'

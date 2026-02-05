@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { videoMetadata, SelectModal, invokeFunction } from '$lib'
+    import { videoProperties, SelectModal, invokeFunction } from '$lib'
     import AudioTracksIcon from 'virtual:icons/fa6-solid/language'
 
     let { currentModal = $bindable() } = $props()
@@ -8,15 +8,15 @@
         const response = await invokeFunction('set_audio_track', {
             value: trackId,
         })
-        if (response.success) $videoMetadata.currentAudioTrack = response.data.value
+        if (response.success) $videoProperties.currentAudioTrack = response.data.value
     }
 </script>
 
 {#if currentModal === 'Audio'}
     <SelectModal
         bind:currentModal
-        tracks={$videoMetadata.audioTracks}
-        currentTrack={$videoMetadata.currentAudioTrack}
+        tracks={$videoProperties.audioTracks}
+        currentTrack={$videoProperties.currentAudioTrack}
         func={(trackId: number) => {
             setAudioTrack(trackId)
         }}
@@ -27,7 +27,7 @@
 <button
     aria-label="Audio Track"
     onclick={() => {
-        if ($videoMetadata.audioTracks?.length > 1) {
+        if ($videoProperties.audioTracks?.length > 1) {
             if (currentModal === 'Audio') {
                 currentModal = null
             } else {
@@ -36,7 +36,7 @@
         }
     }}>
     <AudioTracksIcon
-        class={$videoMetadata.audioTracks?.length > 1
+        class={$videoProperties.audioTracks?.length > 1
             ? 'text-white transition-colors  hover:text-neutral-400'
             : 'text-neutral-700'} />
 </button>

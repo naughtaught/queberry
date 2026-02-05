@@ -1,8 +1,8 @@
 <script lang="ts">
-    import { invokeFunction, videoMetadata } from '$lib'
+    import { invokeFunction, videoProperties } from '$lib'
     import PreviousIcon from 'virtual:icons/material-symbols/skip-previous'
 
-    const hasPreviousPlaylistItem = $derived($videoMetadata.playlistPosition > 0)
+    const hasPreviousPlaylistItem = $derived($videoProperties.playlistPosition > 0)
 
     const gotoNextPlaylistItem = async (): Promise<void> => {
         await invokeFunction('previous_playlist_item', {})

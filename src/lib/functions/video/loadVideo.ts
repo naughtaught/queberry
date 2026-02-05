@@ -1,5 +1,5 @@
 import { goto } from '$app/navigation'
-import { handleError, invokeFunction } from '$lib'
+import { handleError, invokeFunction, videoMetadata } from '$lib'
 import { resolve } from '$app/paths'
 
 export const loadVideo = async (): Promise<void> => {
@@ -14,6 +14,16 @@ export const loadVideo = async (): Promise<void> => {
         },
     })
 
-    if (resp.success) goto(resolve('/video', { bg: 'transparent' }))
-    if (resp.error) handleError(resp.error)
+    if (resp.error) {
+        handleError(resp.error)
+        return
+    }
+
+    if (resp.success) {
+        goto(resolve('/video', { bg: 'transparent' }))
+        videoMetadata.set({
+            title: 'D:/Media/Movies/The Raid (2012)',
+            type: 'movie',
+        })
+    }
 }
