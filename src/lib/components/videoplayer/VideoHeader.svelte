@@ -7,7 +7,15 @@
     import { goto } from '$app/navigation'
     import { resolve } from '$app/paths'
     import { page } from '$app/state'
-    import { videoMetadata, appState, toggleFullscreen, minimizeApp, VideoMenuButton, invokeFunction } from '$lib'
+    import {
+        videoMetadata,
+        appState,
+        toggleFullscreen,
+        minimizeApp,
+        VideoMenuButton,
+        invokeFunction,
+        handleError,
+    } from '$lib'
 
     let now = $state(new Date())
     let interval: ReturnType<typeof setInterval>
@@ -25,10 +33,16 @@
     })
 
     const closeVideoPlayer = async (): Promise<void> => {
-        const response = await invokeFunction('close_video_player', {})
-        if (response.success) {
+        try {
+            const resp = await invokeFunction('close_video_player', {})
+            if (resp.error) throw resp.error
+
             // TODO Navigation from here
             goto(resolve('/', {}))
+        } catch (error) {
+            handleError(error, {
+                context: 'closing the video failed',
+            })
         }
     }
 </script>
@@ -37,7 +51,7 @@
     class="fixed top-0 left-0 flex h-7 w-full items-center justify-between bg-black px-2"
     data-tauri-drag-region="true">
     <button><VideoMenuButton /></button>
-    <p class="text-xs">{$videoMetadata.title}</p>
+    <p class="text-xs">{$videoMetadata.title} | {$videoMetadata.file}</p>
     <div class="flex items-center gap-4">
         <p class="text-xs {page.url.pathname.includes('details') ? 'text-detailsPageTextColor' : 'text-textColor'}">
             {localUserTime}

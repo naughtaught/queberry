@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { invokeFunction, settings, videoProperties, videoState } from '$lib'
+    import { handleError, invokeFunction, settings, videoProperties, videoState } from '$lib'
 
     const cacheTime = $derived($videoState.cacheTime)
     const thumbWidth = 8
@@ -38,12 +38,19 @@
     }
 
     const handlePointerUp = async (time: number): Promise<void> => {
-        const response = await invokeFunction('set_time', {
-            value: time,
-        })
-        if (response.success) $videoState.currentTime = response.data.value
+        try {
+            const resp = await invokeFunction('set_time', {
+                value: time,
+            })
+            if (resp.error) throw resp.error
 
-        isDragging = false
+            $videoState.currentTime = resp.data.value
+            isDragging = false
+        } catch (error) {
+            handleError(error, {
+                context: 'setting the video time failed',
+            })
+        }
     }
 
     const handleInput = (e: Event): void => {

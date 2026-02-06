@@ -1,13 +1,20 @@
 <script lang="ts">
-    import { invokeFunction, videoState } from '$lib'
+    import { handleError, invokeFunction, videoState } from '$lib'
     import PauseIcon from 'virtual:icons/material-symbols/pause'
     import PlayIcon from 'virtual:icons/material-symbols/play-arrow'
 
     const togglePlay = async (): Promise<void> => {
-        const response = await invokeFunction('toggle_play', {
-            value: $videoState.isPaused,
-        })
-        if (response.success) $videoState.isPaused = response.data.value
+        try {
+            const response = await invokeFunction('toggle_play', {
+                value: $videoState.isPaused,
+            })
+            if (response.error) throw response.error
+            $videoState.isPaused = response.data.value
+        } catch (error) {
+            handleError(error, {
+                context: 'toggling play state failed',
+            })
+        }
     }
 </script>
 

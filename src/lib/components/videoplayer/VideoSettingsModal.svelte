@@ -1,5 +1,12 @@
 <script lang="ts">
-    import { invokeFunction, sessionSettings, Slider, speakerLayoutsWithCenter, videoProperties } from '$lib'
+    import {
+        handleError,
+        invokeFunction,
+        sessionSettings,
+        Slider,
+        speakerLayoutsWithCenter,
+        videoProperties,
+    } from '$lib'
     import ArrowRightIcon from 'virtual:icons/material-symbols/arrow-right'
     import ArrowLeftIcon from 'virtual:icons/material-symbols/arrow-left'
 
@@ -8,7 +15,14 @@
     let isShaderMenuOpen = $state(false)
 
     const emitFunc = async (emit: string, value: number | string): Promise<void> => {
-        await invokeFunction(emit, { value })
+        try {
+            const resp = await invokeFunction(emit, { value })
+            if (resp.error) throw resp.error
+        } catch (error) {
+            handleError(error, {
+                context: `invoking ${emit} failed`,
+            })
+        }
     }
 
     // TODO subtitle position

@@ -1,15 +1,12 @@
 import { exit } from '@tauri-apps/plugin-process'
-import { handleError, type Api } from '$lib'
+import { handleError } from '$lib'
 
 export const closeApp = async (): Promise<void> => {
     try {
         await exit(0)
     } catch (error) {
-        const errorDetail: Api.ErrorDetail = {
-            code: 500,
-            message: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined,
-        }
-        handleError(errorDetail)
+        handleError(error, {
+            context: 'close app failed',
+        })
     }
 }

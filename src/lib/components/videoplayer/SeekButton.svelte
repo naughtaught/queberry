@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { invokeFunction, seekAmount } from '$lib'
+    import { handleError, invokeFunction, seekAmount } from '$lib'
     import SeekIcon from 'virtual:icons/material-symbols/fast-forward'
 
     const { direction } = $props()
@@ -10,9 +10,17 @@
     const seek = async (): Promise<void> => {
         const value = direction === 'forward' ? $seekAmount : -Math.abs($seekAmount)
 
-        await invokeFunction('seek', {
-            value,
-        })
+        try {
+            const resp = await invokeFunction('seek', {
+                value,
+            })
+
+            if (resp.error) throw resp.error
+        } catch (error) {
+            handleError(error, {
+                context: `seeking ${label} failed`,
+            })
+        }
     }
 </script>
 

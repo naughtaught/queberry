@@ -1,20 +1,27 @@
-import { invokeFunction } from '$lib'
+import { handleError, invokeFunction } from '$lib'
 
 export const setVideoVolume = async (
     targetVolume: number,
     currentVolume: number,
     previousVolume: number,
 ): Promise<{ newValue: number; previousValue: number }> => {
-    const response = await invokeFunction('set_volume', { value: targetVolume })
-    if (response.success) {
+    try {
+        const resp = await invokeFunction('set_volume', { value: targetVolume })
+
+        if (resp.error) throw resp.error
+
         return {
-            newValue: response.data.value,
+            newValue: resp.data.value,
             previousValue: currentVolume,
         }
-    }
+    } catch (error) {
+        handleError(error, {
+            context: 'setting the video volume failed',
+        })
 
-    return {
-        newValue: currentVolume,
-        previousValue: previousVolume,
+        return {
+            newValue: currentVolume,
+            previousValue: previousVolume,
+        }
     }
 }

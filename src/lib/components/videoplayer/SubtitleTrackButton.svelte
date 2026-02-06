@@ -1,14 +1,22 @@
 <script lang="ts">
-    import { videoProperties, SelectModal, invokeFunction } from '$lib'
+    import { videoProperties, SelectModal, invokeFunction, handleError } from '$lib'
     import SubtitlesIcon from 'virtual:icons/mdi/subtitles'
 
     let { currentModal = $bindable() } = $props()
 
     const setSubtitleTrack = async (trackId: number): Promise<void> => {
-        const response = await invokeFunction('set_subtitle_track', {
-            value: trackId,
-        })
-        if (response.success) $videoProperties.currentSubtitleTrack = response.data.value
+        try {
+            const resp = await invokeFunction('set_subtitle_track', {
+                value: trackId,
+            })
+            if (resp.error) throw resp.error
+
+            $videoProperties.currentSubtitleTrack = resp.data.value
+        } catch (error) {
+            handleError(error, {
+                context: 'setting the subtitle track failed',
+            })
+        }
     }
 </script>
 

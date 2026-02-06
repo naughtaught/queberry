@@ -50,6 +50,7 @@ export { invokeFunction } from './functions/api/invokeFunction.ts'
 export { setVideoVolume } from './functions/video/setVideoVolume.ts'
 export { loadVideo } from './functions/video/loadVideo.ts'
 export { addPlaylistItem } from './functions/video/addPlaylistItem.ts'
+export { navigatePlaylist } from './functions/video/navigatePlaylist.ts'
 
 // Stores
 export { handleError } from './stores/errorHandling'

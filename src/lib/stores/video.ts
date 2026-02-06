@@ -148,7 +148,12 @@ export const keyboardShortcuts = writable(get(defaultKeyboardShortcuts))
 
 export const defaultVideoMetadata = readable<Video.Metadata>({
     title: null,
+    file: null,
     type: null,
+    seasonNumber: null,
+    episodeNumber: null,
+    playlistIndex: 0,
+    playlist: [],
 })
 
 export const videoMetadata = writable<Video.Metadata>(get(defaultVideoMetadata))

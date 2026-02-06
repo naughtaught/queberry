@@ -18,10 +18,12 @@
         seekAmount,
         setVideoVolume,
         VideoOverlay,
-        type Api,
         addPlaylistItem,
         videoMetadata,
         defaultVideoMetadata,
+        navigatePlaylist,
+        handleError,
+        type Api,
     } from '$lib'
 
     const SUBTITLE_SHIFT_POSITION = 94
@@ -85,9 +87,17 @@
 
     const shiftSubtitiles = async (): Promise<void> => {
         const shiftAmount = isHoveringControls ? SUBTITLE_SHIFT_POSITION : $videoProperties.subtitleMargin
-        const resp = await invokeFunction('set_subtitle_margin', { value: shiftAmount })
+        try {
+            const resp = await invokeFunction('set_subtitle_margin', { value: shiftAmount })
 
-        if (resp.success) currentSubtitleMargin = resp.data.value
+            if (resp.error) throw resp.error
+
+            currentSubtitleMargin = resp.data.value
+        } catch (error) {
+            handleError(error, {
+                context: 'shifting the subtitles failed',
+            })
+        }
     }
 
     onMount(async () => {
@@ -126,15 +136,11 @@
     const handleControlsMouseEnter = (): void => {
         isHoveringControls = true
         showCursor = true
-        // TODO check if subtitles position is above the control bar and if so don't emit
-        // EventsEmit('ToggleSubtitleShift', true)
         clearTimeout(hideTimeout)
     }
 
     const handleControlsMouseLeave = (): void => {
         isHoveringControls = false
-        // TODO check if subtitles position is above the control bar by default and if so don't emit
-        // EventsEmit('ToggleSubtitleShift', false)
         hideTimeout = setTimeout(() => {
             showCursor = false
         }, 2000)
@@ -151,13 +157,20 @@
 
         switch (type) {
             case 'contextmenu': {
-                const response = await invokeFunction('toggle_play', { value: $videoState.isPaused })
-                if (response.success) {
-                    $videoState.isPaused = response.data.value
+                try {
+                    const resp = await invokeFunction('toggle_play', { value: $videoState.isPaused })
+
+                    if (resp.error) throw resp.error
+
+                    $videoState.isPaused = resp.data.value
 
                     const playState = $videoState.isPaused ? 'paused' : 'playing'
 
                     setIcon(playState)
+                } catch (error) {
+                    handleError(error, {
+                        context: 'toggling the play state from mouse bindings failed',
+                    })
                 }
                 break
             }
@@ -167,6 +180,7 @@
                 } else if (deltaY > 0 && $sessionSettings.volume > 0) {
                     $sessionSettings.volume -= 1
                 }
+
                 const { newValue, previousValue } = await setVideoVolume(
                     $sessionSettings.volume,
                     previousVolume,
@@ -197,12 +211,18 @@
 
         switch (shortcut.id) {
             case 'pause': {
-                const response = await invokeFunction('toggle_play', { value: $videoState.isPaused })
-                if (response.success) {
-                    $videoState.isPaused = response.data.value
+                try {
+                    const resp = await invokeFunction('toggle_play', { value: $videoState.isPaused })
+                    if (resp.error) throw resp.error
+
+                    $videoState.isPaused = resp.data.value
                     const playState = $videoState.isPaused ? 'paused' : 'playing'
 
                     setIcon(playState)
+                } catch (error) {
+                    handleError(error, {
+                        context: 'toggling the play state from keybindings failed',
+                    })
                 }
                 break
             }
@@ -226,20 +246,43 @@
                 break
             }
             case 'forward': {
-                const response = await invokeFunction('seek', { value: $seekAmount })
-                if (response.success) setIcon('forward')
+                try {
+                    const resp = await invokeFunction('seek', { value: $seekAmount })
+                    if (resp.error) throw resp.error
+
+                    setIcon('forward')
+                } catch (error) {
+                    handleError(error, {
+                        context: `seeking forward from keybindings failed`,
+                    })
+                }
+
                 break
             }
             case 'rewind': {
-                const response = await invokeFunction('seek', { value: -Math.abs($seekAmount) })
-                if (response.success) setIcon('rewind')
+                try {
+                    const resp = await invokeFunction('seek', { value: -Math.abs($seekAmount) })
+                    if (resp.error) throw resp.error
+
+                    setIcon('rewind')
+                } catch (error) {
+                    handleError(error, {
+                        context: `seeking backward from keybindings failed`,
+                    })
+                }
+
                 break
             }
             case 'close': {
-                const response = await invokeFunction('close_video_player', {})
-                if (response.success) {
-                    // TODO Navigation from here
+                try {
+                    const resp = await invokeFunction('close_video_player', {})
+                    if (resp.error) throw resp.error
+
                     goto(resolve('/', {}))
+                } catch (error) {
+                    handleError(error, {
+                        context: `closing the video from keybindings failed`,
+                    })
                 }
                 break
             }
@@ -290,11 +333,13 @@
                 break
             }
             case 'playlistNext': {
-                // TODO
+                const hasNextPlaylistItem = $videoProperties.playlistPosition < $videoProperties.playlistCount - 1
+                if (hasNextPlaylistItem) await navigatePlaylist('next')
                 break
             }
             case 'playlistPrevious': {
-                // TODO
+                const hasPreviousPlaylistItem = $videoProperties.playlistPosition > 0
+                if (hasPreviousPlaylistItem) await navigatePlaylist('previous')
                 break
             }
         }

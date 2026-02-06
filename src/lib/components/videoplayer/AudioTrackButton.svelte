@@ -1,14 +1,22 @@
 <script lang="ts">
-    import { videoProperties, SelectModal, invokeFunction } from '$lib'
+    import { videoProperties, SelectModal, invokeFunction, handleError } from '$lib'
     import AudioTracksIcon from 'virtual:icons/fa6-solid/language'
 
     let { currentModal = $bindable() } = $props()
 
     const setAudioTrack = async (trackId: number): Promise<void> => {
-        const response = await invokeFunction('set_audio_track', {
-            value: trackId,
-        })
-        if (response.success) $videoProperties.currentAudioTrack = response.data.value
+        try {
+            const response = await invokeFunction('set_audio_track', {
+                value: trackId,
+            })
+            if (response.error) throw response.error
+
+            $videoProperties.currentAudioTrack = response.data.value
+        } catch (error) {
+            handleError(error, {
+                context: 'setting the audio track failed',
+            })
+        }
     }
 </script>
 

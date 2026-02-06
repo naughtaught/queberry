@@ -13,22 +13,20 @@ import { invoke } from '@tauri-apps/api/core'
 // TODO AUTH
 try {
     const userSettings: Api.ApiResponse = await invoke('get_user_settings', { userId: 1 })
+
+    if (userSettings.error) throw userSettings.error
+
     if (userSettings.success) {
         settings.set(userSettings.data)
         defaultSessionSettings.update((current) => ({
             ...current,
             volume: userSettings.data.volume,
         }))
-    } else if (userSettings.error) {
-        handleError(userSettings.error)
     }
 } catch (error) {
-    const errorDetail: Api.ErrorDetail = {
-        code: 500,
-        message: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-    }
-    handleError(errorDetail)
+    handleError(error, {
+        context: 'userSettings invocation failed',
+    })
 }
 
 // initializeTauri()

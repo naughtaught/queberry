@@ -1,14 +1,23 @@
 <script lang="ts">
-    import { audioChannelOptions, videoProperties, SelectModal, invokeFunction } from '$lib'
+    import { audioChannelOptions, videoProperties, SelectModal, invokeFunction, handleError } from '$lib'
     import AudioChannelsIcon from 'virtual:icons/mdi/surround-sound'
 
     let { currentModal = $bindable() } = $props()
 
     const setAudioChannels = async (channel: string): Promise<void> => {
-        const response = await invokeFunction('set_audio_channel', {
-            value: channel,
-        })
-        if (response.success) $videoProperties.audioChannel = response.data.value
+        try {
+            const response = await invokeFunction('set_audio_channel', {
+                value: channel,
+            })
+
+            if (response.error) throw response.error
+
+            $videoProperties.audioChannel = response.data.value
+        } catch (error) {
+            handleError(error, {
+                context: 'setting the audio channel failed',
+            })
+        }
     }
 </script>
 
