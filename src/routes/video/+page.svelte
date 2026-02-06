@@ -54,7 +54,7 @@
         unlisteners.push(timeUnlisten)
 
         const completeUnlisten = await listen<{ isCompleted: boolean }>('video-completed', (_event) => {
-            // TODO
+            // TODO mark complete function
             addPlaylistItem()
         })
         unlisteners.push(completeUnlisten)
@@ -317,19 +317,19 @@
                 break
             }
             case 'cycleAudioTracks': {
-                // TODO
+                // TODO cycleAudioTracks
                 break
             }
             case 'cycleSubtitleTracks': {
-                // TODO
+                // TODO cycleSubtitleTracks
                 break
             }
             case 'increasePlaybackSpeed': {
-                // TODO
+                // TODO increasePlaybackSpeed
                 break
             }
             case 'decreasePlaybackSpeed': {
-                // TODO
+                // TODO decreasePlaybackSpeed
                 break
             }
             case 'playlistNext': {

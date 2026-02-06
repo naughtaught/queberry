@@ -172,6 +172,7 @@ impl MpvEventHandler {
         let duration = Self::get_duration(&mpv)?;
         let audio_channel = Self::get_audio_channel(&mpv)?;
         let av_sync = Self::get_audio_delay(&mpv)?;
+        let subtitle_sync = Self::get_subtitle_delay(&mpv)?;
         let subtitle_margin = Self::get_subtitle_margin(&mpv)?;
         let playlist_count = Self::get_playlist_count(&mpv)?;
         let playlist_position = Self::get_playlist_position(&mpv)?;
@@ -250,6 +251,7 @@ impl MpvEventHandler {
             audio_tracks,
             current_audio_track,
             av_sync,
+            subtitle_sync,
             subtitle_margin,
             playlist_position,
             playlist_count,
@@ -312,6 +314,16 @@ impl MpvEventHandler {
 
         mpv_guard
             .get_property("audio-delay")
+            .map_err(|e| format!("Failed to get av sync property: {}", e))
+    }
+
+    fn get_subtitle_delay(mpv: &Arc<Mutex<Mpv>>) -> Result<f64, String> {
+        let mpv_guard = mpv
+            .lock()
+            .map_err(|e| format!("Failed to lock MPV mutex: {}", e))?;
+
+        mpv_guard
+            .get_property("sub-delay")
             .map_err(|e| format!("Failed to get av sync property: {}", e))
     }
 

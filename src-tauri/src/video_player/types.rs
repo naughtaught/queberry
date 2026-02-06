@@ -31,6 +31,7 @@ pub struct VideoProperties {
     pub audio_tracks: Vec<AudioTrackInfo>,
     pub current_audio_track: Option<AudioTrackInfo>,
     pub av_sync: f64,
+    pub subtitle_sync: f64,
     pub subtitle_margin: i64,
     pub playlist_position: i64,
     pub playlist_count: i64,

@@ -17,6 +17,7 @@ export const defaultVideoProperties = readable<Api.VideoProperties>({
     playlistCount: 1,
     availableShaders: [],
     activeShaders: [],
+    subtitleSync: 0,
 })
 
 export const videoProperties = writable<Api.VideoProperties>(get(defaultVideoProperties))

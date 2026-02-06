@@ -282,3 +282,18 @@ pub fn set_subtitle_scaling(mpv: &Mpv, value: f64) -> Result<()> {
 
     Ok(())
 }
+
+pub fn subtitle_sync_adjust(mpv: &Mpv, value: f64) -> Result<()> {
+    let current_time = mpv
+        .get_property::<f64>("time-pos")
+        .map_err(|e| AppError::Runtime(format!("Failed to get current time: {}", e)))?;
+
+    mpv.set_property("sub-delay", value).map_err(|e| {
+        AppError::Runtime(format!("Failed to adjust subtitles by {}: {}", value, e))
+    })?;
+
+    mpv.command("seek", &[&format!("{}", current_time), "absolute", "exact"])
+        .map_err(|e| AppError::Runtime(format!("Failed to seek: {}", e)))?;
+
+    Ok(())
+}

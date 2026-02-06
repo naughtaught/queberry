@@ -125,6 +125,10 @@ pub fn set_time(state: State<'_, AppState>, value: f64) -> ApiResponse<VideoComm
 
 #[command]
 pub fn set_volume(state: State<'_, AppState>, value: f64) -> ApiResponse<VideoCommandResponse> {
+    if !(0.0..=100.0).contains(&value) {
+        return ApiResponse::error(500, "Volume outside of bounds:".to_string());
+    };
+
     let player_guard = match state.video_player.lock() {
         Ok(guard) => guard,
         Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
@@ -424,6 +428,33 @@ pub fn set_subtitle_scaling(
 
     if let Err(e) = player.set_subtitle_scaling(value) {
         return ApiResponse::error(500, format!("Failed to scale subtitles: {}", e));
+    }
+
+    ApiResponse::ok(VideoCommandResponse {
+        value: value.into(),
+    })
+}
+
+#[command]
+pub fn subtitle_sync_adjust(
+    state: State<'_, AppState>,
+    value: f64,
+) -> ApiResponse<VideoCommandResponse> {
+    let player_guard = match state.video_player.lock() {
+        Ok(guard) => guard,
+        Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
+    };
+
+    let player = match player_guard.as_ref() {
+        Some(player) => player,
+        None => return ApiResponse::error(404, "No player available".to_string()),
+    };
+
+    if let Err(e) = player.subtitle_sync_adjust(value) {
+        return ApiResponse::error(
+            500,
+            format!("Failed to set subtitle sync adjustment: {}", e),
+        );
     }
 
     ApiResponse::ok(VideoCommandResponse {

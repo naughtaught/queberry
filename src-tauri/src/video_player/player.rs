@@ -277,4 +277,13 @@ impl MpvPlayer {
 
         Ok(())
     }
+
+    pub fn subtitle_sync_adjust(&self, value: f64) -> Result<()> {
+        let mpv = self
+            .mpv
+            .lock()
+            .map_err(|e| AppError::Runtime(format!("Failed to lock MPV instance: {}", e)))?;
+
+        subtitles::subtitle_sync_adjust(&mpv, value)
+    }
 }

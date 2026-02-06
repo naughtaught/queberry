@@ -6,6 +6,8 @@ export const setVideoVolume = async (
     previousVolume: number,
 ): Promise<{ newValue: number; previousValue: number }> => {
     try {
+        if (targetVolume > 100 || targetVolume < 0) throw 'Volume attempted to be set outside of bounds'
+
         const resp = await invokeFunction('set_volume', { value: targetVolume })
 
         if (resp.error) throw resp.error

@@ -72,6 +72,7 @@ pub fn run() {
             commands::video::set_audio_track,
             commands::video::set_subtitle_track,
             commands::video::av_sync_adjust,
+            commands::video::subtitle_sync_adjust,
             commands::video::center_speaker_level,
             commands::video::set_subtitle_margin,
             commands::video::set_subtitle_scaling,

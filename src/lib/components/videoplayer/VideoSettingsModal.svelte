@@ -26,8 +26,7 @@
     }
 
     // TODO subtitle position
-    // TODO subtitle size
-    // TODO subtitle sync
+    // TODO previous values for all emit functions and reset if fail invoke || use session settings?
 </script>
 
 <div
@@ -66,6 +65,21 @@
             </div>
         {/if}
         {#if $videoProperties.currentSubtitleTrack}
+            <div class="flex w-full min-w-48 items-center justify-center gap-3">
+                <label class="w-full text-center text-xs"
+                    >Subtitle Sync Adjust
+                    <Slider
+                        min={-10}
+                        max={10}
+                        step={0.1}
+                        bind:value={$videoProperties.subtitleSync}
+                        func={() => {
+                            emitFunc('subtitle_sync_adjust', $videoProperties.subtitleSync)
+                        }}
+                        label=""
+                        zeroPoint={true} />
+                </label>
+            </div>
             <div class="flex items-center justify-center gap-3">
                 <label class="w-full text-center text-xs"
                     >Subtitle Scaling
