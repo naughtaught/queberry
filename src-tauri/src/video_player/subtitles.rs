@@ -268,12 +268,17 @@ impl SubtitleManager {
     }
 }
 
-pub fn set_subtitle_margin(mpv: &Mpv, value: i64) -> Result<()> {
-    mpv.set_property("sub-margin-y", value).map_err(|e| {
+pub fn set_subtitle_pos(mpv: &Mpv, value: i64) -> Result<()> {
+    mpv.set_property("sub-pos", value).map_err(|e| {
         AppError::Runtime(format!("Failed to set subtitle position {}: {}", value, e))
     })?;
 
     Ok(())
+}
+
+pub fn get_subtitle_pos(mpv: &Mpv) -> Result<i64, String> {
+    mpv.get_property("sub-pos")
+        .map_err(|e| format!("Failed to get subtitle position: {}", e))
 }
 
 pub fn set_subtitle_scaling(mpv: &Mpv, value: f64) -> Result<()> {

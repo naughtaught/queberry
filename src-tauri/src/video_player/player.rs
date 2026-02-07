@@ -209,13 +209,13 @@ impl MpvPlayer {
         audio::center_speaker_level(&mpv, value)
     }
 
-    pub fn set_subtitle_margin(&self, value: i64) -> Result<()> {
+    pub fn set_subtitle_pos(&self, value: i64) -> Result<()> {
         let mpv = self
             .mpv
             .lock()
             .map_err(|e| AppError::Runtime(format!("Failed to lock MPV instance: {}", e)))?;
 
-        subtitles::set_subtitle_margin(&mpv, value)
+        subtitles::set_subtitle_pos(&mpv, value)
     }
 
     pub fn set_subtitle_scaling(&self, value: f64) -> Result<()> {
@@ -265,6 +265,15 @@ impl MpvPlayer {
 
     pub fn get_available_shaders(&self) -> Result<Vec<ShaderInfo>, String> {
         crate::video_player::shaders::get_all_shaders()
+    }
+
+    pub fn get_subtitle_pos(&self) -> Result<i64, String> {
+        let mpv = self
+            .mpv
+            .lock()
+            .map_err(|e| format!("Failed to lock MPV instance: {}", e))?;
+
+        subtitles::get_subtitle_pos(&mpv)
     }
 
     pub fn toggle_shader(&self, value: &str) -> Result<()> {

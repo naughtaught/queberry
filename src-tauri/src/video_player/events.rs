@@ -101,6 +101,23 @@ impl MpvEventHandler {
                             );
                         }
                         EventType::PropertyChange(property_name) => {
+                            if property_name == "glsl-shaders" {
+                                let mut video_properties_guard =
+                                    current_video_properties_clone.lock().unwrap();
+                                if let Some(ref mut video_properties) = *video_properties_guard {
+                                    if let Ok(active) = Self::get_active_shaders(&mpv_clone) {
+                                        video_properties.active_shaders = active;
+                                        if let Err(e) = app_handle_clone
+                                            .emit("video-properties", video_properties.clone())
+                                        {
+                                            log::error!(
+                                                "Failed to emit video_properties event: {}",
+                                                e
+                                            );
+                                        }
+                                    }
+                                }
+                            }
                             if property_name == "playlist-count" || property_name == "playlist-pos"
                             {
                                 let mut video_properties_guard =
@@ -135,24 +152,6 @@ impl MpvEventHandler {
                                     }
                                 }
                             }
-
-                            if property_name == "glsl-shaders" {
-                                let mut video_properties_guard =
-                                    current_video_properties_clone.lock().unwrap();
-                                if let Some(ref mut video_properties) = *video_properties_guard {
-                                    if let Ok(active) = Self::get_active_shaders(&mpv_clone) {
-                                        video_properties.active_shaders = active;
-                                        if let Err(e) = app_handle_clone
-                                            .emit("video-properties", video_properties.clone())
-                                        {
-                                            log::error!(
-                                                "Failed to emit video_properties event: {}",
-                                                e
-                                            );
-                                        }
-                                    }
-                                }
-                            }
                         }
                         EventType::Shutdown => {
                             break;
@@ -173,20 +172,17 @@ impl MpvEventHandler {
         let audio_channel = Self::get_audio_channel(&mpv)?;
         let av_sync = Self::get_audio_delay(&mpv)?;
         let subtitle_sync = Self::get_subtitle_delay(&mpv)?;
-        let subtitle_margin = Self::get_subtitle_margin(&mpv)?;
         let playlist_count = Self::get_playlist_count(&mpv)?;
         let playlist_position = Self::get_playlist_position(&mpv)?;
 
         let (available_shaders, active_shaders) = if let Some(player_arc) = &player {
             match player_arc.lock() {
                 Ok(player_guard) => {
-                    // Get available shaders from the player
                     let available = player_guard.get_available_shaders().unwrap_or_else(|e| {
                         log::warn!("Failed to get available shaders: {}", e);
                         Vec::new()
                     });
 
-                    // Get currently active shaders from mpv
                     let active = Self::get_active_shaders(&mpv).unwrap_or_else(|e| {
                         log::warn!("Failed to get active shaders: {}", e);
                         Vec::new()
@@ -252,7 +248,6 @@ impl MpvEventHandler {
             current_audio_track,
             av_sync,
             subtitle_sync,
-            subtitle_margin,
             playlist_position,
             playlist_count,
             available_shaders,
@@ -324,16 +319,6 @@ impl MpvEventHandler {
 
         mpv_guard
             .get_property("sub-delay")
-            .map_err(|e| format!("Failed to get av sync property: {}", e))
-    }
-
-    fn get_subtitle_margin(mpv: &Arc<Mutex<Mpv>>) -> Result<i64, String> {
-        let mpv_guard = mpv
-            .lock()
-            .map_err(|e| format!("Failed to lock MPV mutex: {}", e))?;
-
-        mpv_guard
-            .get_property("sub-margin-y")
             .map_err(|e| format!("Failed to get av sync property: {}", e))
     }
 

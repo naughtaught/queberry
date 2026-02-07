@@ -26,7 +26,7 @@
         type Api,
     } from '$lib'
 
-    const SUBTITLE_SHIFT_POSITION = 94
+    const SUBTITLE_SHIFT_POSITION = 84
 
     let backgroundColor = $state('bg-black')
     let destroyListeners: (() => void) | undefined
@@ -36,7 +36,7 @@
     let currentModal = $state(null)
     let previousVolume = $state(0)
     let icon: string | number = $state('')
-    let currentSubtitleMargin = $derived($videoProperties.subtitleMargin)
+    let currentSubtitlePos = $derived($sessionSettings.subtitlePos)
 
     const setIcon = (value: string | number): void => {
         icon = value
@@ -61,6 +61,7 @@
 
         const videoPropertiesUnlisten = await listen<Api.VideoProperties>('video-properties', (event) => {
             $videoProperties = { ...event.payload }
+
             backgroundColor = 'bg-transparent'
         })
         unlisteners.push(videoPropertiesUnlisten)
@@ -77,22 +78,23 @@
     }
 
     $effect((): void => {
-        if (!$videoProperties) return
-        if ($videoProperties.subtitleMargin === undefined || $videoProperties.currentSubtitleTrack?.id === 0) return
-        if (isHoveringControls && currentSubtitleMargin >= SUBTITLE_SHIFT_POSITION) return
-        if (!isHoveringControls && currentSubtitleMargin < SUBTITLE_SHIFT_POSITION) return
+        if (!$sessionSettings || !videoProperties || !currentSubtitlePos) return
+        if ($sessionSettings.subtitlePos === undefined || $videoProperties.currentSubtitleTrack?.id === 0) return
+
+        if (isHoveringControls && currentSubtitlePos < SUBTITLE_SHIFT_POSITION) return
+        if (!isHoveringControls && currentSubtitlePos === $sessionSettings.subtitlePos) return
 
         shiftSubtitiles()
     })
 
     const shiftSubtitiles = async (): Promise<void> => {
-        const shiftAmount = isHoveringControls ? SUBTITLE_SHIFT_POSITION : $videoProperties.subtitleMargin
+        const shiftPositionTo = isHoveringControls ? SUBTITLE_SHIFT_POSITION : $sessionSettings.subtitlePos
         try {
-            const resp = await invokeFunction('set_subtitle_margin', { value: shiftAmount })
+            const resp = await invokeFunction('set_subtitle_pos', { value: shiftPositionTo })
 
             if (resp.error) throw resp.error
 
-            currentSubtitleMargin = resp.data.value
+            currentSubtitlePos = resp.data.value
         } catch (error) {
             handleError(error, {
                 context: 'shifting the subtitles failed',
@@ -100,7 +102,24 @@
         }
     }
 
+    const getSubtitlePos = async (): Promise<void> => {
+        try {
+            const resp = await invokeFunction('get_subtitle_pos', {})
+
+            if (resp.error) throw resp.error
+
+            $sessionSettings.subtitlePos = resp.data.value
+        } catch (error) {
+            handleError(error, {
+                context: 'getting the subtitle position failed',
+            })
+        }
+    }
+
     onMount(async () => {
+        destroyListeners = await setupListeners()
+        getSubtitlePos()
+
         document.body.setAttribute('data-page', 'video')
 
         window.addEventListener('mousemove', resetCursorTimeout)
@@ -111,8 +130,6 @@
         window.addEventListener('focus', shiftSubtitiles)
 
         resetCursorTimeout()
-
-        destroyListeners = await setupListeners()
     })
 
     onDestroy(() => {

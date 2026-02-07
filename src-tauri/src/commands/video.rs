@@ -297,7 +297,7 @@ pub fn center_speaker_level(
 }
 
 #[command]
-pub fn set_subtitle_margin(
+pub fn set_subtitle_pos(
     state: State<'_, AppState>,
     value: i64,
 ) -> ApiResponse<VideoCommandResponse> {
@@ -311,13 +311,31 @@ pub fn set_subtitle_margin(
         None => return ApiResponse::error(404, "No player available".to_string()),
     };
 
-    if let Err(e) = player.set_subtitle_margin(value) {
+    if let Err(e) = player.set_subtitle_pos(value) {
         return ApiResponse::error(500, format!("Failed to shift subtitles: {}", e));
     }
 
     ApiResponse::ok(VideoCommandResponse {
         value: value.into(),
     })
+}
+
+#[command]
+pub fn get_subtitle_pos(state: State<'_, AppState>) -> ApiResponse<VideoCommandResponse> {
+    let player_guard = match state.video_player.lock() {
+        Ok(guard) => guard,
+        Err(e) => return ApiResponse::error(500, format!("Failed to lock video player: {}", e)),
+    };
+
+    let player = match player_guard.as_ref() {
+        Some(player) => player,
+        None => return ApiResponse::error(404, "No player available".to_string()),
+    };
+
+    match player.get_subtitle_pos() {
+        Ok(pos) => ApiResponse::ok(VideoCommandResponse { value: pos.into() }),
+        Err(e) => ApiResponse::error(500, format!("Failed to get subtitle position: {}", e)),
+    }
 }
 
 #[command]

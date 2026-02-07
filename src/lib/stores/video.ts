@@ -12,7 +12,6 @@ export const defaultVideoProperties = readable<Api.VideoProperties>({
     audioTracks: [],
     currentAudioTrack: null,
     avSync: 0,
-    subtitleMargin: 34,
     playlistPosition: 0,
     playlistCount: 1,
     availableShaders: [],
@@ -54,6 +53,7 @@ export const defaultSessionSettings = writable({
     centerSpeakerLevel: 0,
     volume: 30,
     subtitleScaling: 1,
+    subtitlePos: null
 })
 
 export const sessionSettings = writable(get(defaultSessionSettings))
