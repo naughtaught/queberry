@@ -312,7 +312,7 @@ pub fn set_subtitle_pos(
     };
 
     if let Err(e) = player.set_subtitle_pos(value) {
-        return ApiResponse::error(500, format!("Failed to shift subtitles: {}", e));
+        return ApiResponse::error(500, format!("Failed to set subtitles: {}", e));
     }
 
     ApiResponse::ok(VideoCommandResponse {

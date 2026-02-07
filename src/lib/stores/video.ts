@@ -1,6 +1,5 @@
 import { get, readable, writable } from 'svelte/store'
-import { type Api } from '$lib'
-import type { Video } from '$lib/types/video'
+import { type Api, type Video } from '$lib'
 
 export const seekAmount = readable(30)
 
@@ -49,14 +48,14 @@ export const audioChannelOptions = readable([
 
 export const speakerLayoutsWithCenter = ['3.0', '3.1', '5.0', '5.1', '6.0', '6.1', '7.1']
 
-export const defaultSessionSettings = writable({
+export const defaultSessionSettings = writable<Video.SessionSettings>({
     centerSpeakerLevel: 0,
     volume: 30,
     subtitleScaling: 1,
-    subtitlePos: null
+    subtitlePos: null,
 })
 
-export const sessionSettings = writable(get(defaultSessionSettings))
+export const sessionSettings = writable<Video.SessionSettings>(get(defaultSessionSettings))
 
 export const defaultKeyboardShortcuts = readable([
     {

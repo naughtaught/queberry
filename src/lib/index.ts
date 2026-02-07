@@ -1,6 +1,7 @@
 // Types
 export type { Api } from './types/api'
 export type { App } from './types/app'
+export type { Video } from './types/video'
 
 // Components/DB
 export { supabase } from './components/db/supabaseClient.ts'

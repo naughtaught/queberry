@@ -94,7 +94,12 @@ input,
 button,
 select,
 span {
-    @apply font-secondary text-textColor text-shadow-sm/10 text-shadow-black/30 hover:cursor-pointer;
+    @apply font-secondary text-textColor text-shadow-sm/10 text-shadow-black/30;
+}
+
+
+button {
+    @apply cursor-pointer;
 }
 
 @layer utilities {

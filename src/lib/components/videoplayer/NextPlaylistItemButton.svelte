@@ -13,5 +13,5 @@
     <NextIcon
         class="text-3xl {hasNextPlaylistItem
             ? 'text-white transition-colors hover:text-neutral-400'
-            : 'cursor-default text-neutral-700'}" />
+            : 'cursor-default! text-neutral-700'}" />
 </button>

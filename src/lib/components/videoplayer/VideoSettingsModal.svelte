@@ -6,22 +6,30 @@
         Slider,
         speakerLayoutsWithCenter,
         videoProperties,
+        type Api,
     } from '$lib'
     import ArrowRightIcon from 'virtual:icons/material-symbols/arrow-right'
     import ArrowLeftIcon from 'virtual:icons/material-symbols/arrow-left'
+    import MinusIcon from 'virtual:icons/ic/baseline-minus'
+    import PlusIcon from 'virtual:icons/ic/baseline-plus'
 
     let { bottom, left, currentModal = $bindable() } = $props()
 
     let isShaderMenuOpen = $state(false)
 
-    const emitFunc = async (emit: string, value: number | string): Promise<void> => {
+    const emitFunc = async (emit: string, value: number | string): Promise<Api.ApiResponse> => {
         try {
             const resp = await invokeFunction(emit, { value })
+
             if (resp.error) throw resp.error
+
+            return resp
         } catch (error) {
-            handleError(error, {
+            const resp = handleError(error, {
                 context: `invoking ${emit} failed`,
             })
+
+            return resp
         }
     }
 
@@ -94,6 +102,34 @@
                         label=""
                         zeroPoint={false} />
                 </label>
+            </div>
+            <div class="flex items-center justify-center gap-3">
+                <button
+                    disabled={!$sessionSettings?.subtitlePos || $sessionSettings?.subtitlePos >= 100}
+                    aria-label="Lower Subtitle Position"
+                    class="{$sessionSettings?.subtitlePos && $sessionSettings?.subtitlePos >= 100
+                        ? 'cursor-default! bg-gray-200 text-gray-800'
+                        : 'bg-gray-800 text-gray-300 transition-colors duration-200 hover:cursor-pointer hover:bg-gray-700'} flex items-center justify-center rounded-md px-3 py-1 text-sm"
+                    onclick={async () => {
+                        if (!$sessionSettings?.subtitlePos || $sessionSettings?.subtitlePos >= 100) return
+                        const result = await emitFunc('set_subtitle_pos', $sessionSettings?.subtitlePos + 1)
+                        if (result.data) $sessionSettings.subtitlePos = result.data.value
+                    }}>
+                    <MinusIcon />
+                </button>
+                <p class="text-sm">Adjust Subtitle Position</p>
+                <button
+                    aria-label="Raise Subtitle Position"
+                    class=" {$sessionSettings?.subtitlePos && $sessionSettings?.subtitlePos <= 1
+                        ? 'cursor-default! bg-gray-200 text-gray-800'
+                        : 'bg-gray-800 text-gray-300 transition-colors duration-200 hover:cursor-pointer hover:bg-gray-700'} flex items-center justify-center rounded-md px-3 py-1 text-sm"
+                    onclick={async () => {
+                        if (!$sessionSettings?.subtitlePos || $sessionSettings?.subtitlePos <= 1) return
+                        const result = await emitFunc('set_subtitle_pos', $sessionSettings?.subtitlePos - 1)
+                        if (result.data) $sessionSettings.subtitlePos = result.data.value
+                    }}>
+                    <PlusIcon />
+                </button>
             </div>
         {/if}
         {#if $videoProperties.availableShaders.length >= 1}
