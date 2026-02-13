@@ -5,7 +5,6 @@
     import CloseIcon from 'virtual:icons/material-symbols/close'
     import { onDestroy, onMount } from 'svelte'
     import { goto } from '$app/navigation'
-    import { resolve } from '$app/paths'
     import { page } from '$app/state'
     import {
         videoMetadata,
@@ -15,6 +14,7 @@
         VideoMenuButton,
         invokeFunction,
         handleError,
+        previousPage,
     } from '$lib'
 
     let now = $state(new Date())
@@ -37,8 +37,7 @@
             const resp = await invokeFunction('close_video_player', {})
             if (resp.error) throw resp.error
 
-            // TODO Navigation from here
-            goto(resolve('/', {}))
+            goto($previousPage)
         } catch (error) {
             handleError(error, {
                 context: 'closing the video failed',

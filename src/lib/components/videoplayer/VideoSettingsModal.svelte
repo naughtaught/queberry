@@ -33,7 +33,6 @@
         }
     }
 
-    // TODO subtitle position
     // TODO previous values for all emit functions and reset if fail invoke || use session settings?
 </script>
 

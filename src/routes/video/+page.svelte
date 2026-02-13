@@ -1,6 +1,5 @@
 <script lang="ts">
-    import { goto } from '$app/navigation'
-    import { resolve } from '$app/paths'
+    import { afterNavigate, goto } from '$app/navigation'
     import { listen, type UnlistenFn } from '@tauri-apps/api/event'
     import { onDestroy, onMount } from 'svelte'
     import {
@@ -24,6 +23,7 @@
         navigatePlaylist,
         handleError,
         type Api,
+        previousPage,
     } from '$lib'
 
     const SUBTITLE_SHIFT_POSITION = 84
@@ -67,8 +67,7 @@
         unlisteners.push(videoPropertiesUnlisten)
 
         const shutdownUnlisten = await listen('video-shutdown', (_event) => {
-            // TODO nav to previous page
-            goto(resolve('/', {}))
+            goto($previousPage)
         })
         unlisteners.push(shutdownUnlisten)
 
@@ -115,6 +114,17 @@
             })
         }
     }
+
+    afterNavigate((navigation) => {
+        if (!navigation.from || navigation.from.url.pathname === '/video') return
+
+        if (!navigation.from?.url) {
+            $previousPage = '/'
+            return
+        }
+
+        $previousPage = navigation.from.url.pathname + navigation.from.url.search
+    })
 
     onMount(async () => {
         destroyListeners = await setupListeners()
@@ -295,7 +305,7 @@
                     const resp = await invokeFunction('close_video_player', {})
                     if (resp.error) throw resp.error
 
-                    goto(resolve('/', {}))
+                    goto($previousPage)
                 } catch (error) {
                     handleError(error, {
                         context: `closing the video from keybindings failed`,

@@ -1,11 +1,10 @@
 import { handleError, invokeFunction, videoMetadata } from '$lib'
-import { resolve } from '$app/paths'
 import { goto } from '$app/navigation'
 import type { Video } from '$lib/types/video'
 import { updateVideoMetadata } from './updateVideoMetadata'
 import { get } from 'svelte/store'
 
-// TODO
+// TODO remove hardcoding and laod dynamically
 export const addPlaylistItem = async (): Promise<void> => {
     try {
         const resp = await invokeFunction('add_playlist_item', {
@@ -16,7 +15,7 @@ export const addPlaylistItem = async (): Promise<void> => {
 
         if (resp.error) throw resp.error
 
-        goto(resolve('/video', { bg: 'transparent' }))
+        goto('/video')
 
         const metadata = get(videoMetadata)
         const playlistItem: Video.PlaylistItem = {

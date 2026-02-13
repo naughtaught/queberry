@@ -70,4 +70,4 @@ export {
     defaultVideoMetadata,
 } from './stores/video'
 export { settings, user } from './stores/user'
-export { appState } from './stores/app'
+export { appState, scrollYPosition, previousPage } from './stores/app'

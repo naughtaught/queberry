@@ -6,3 +6,7 @@ const appStateDefault = readable<App.State>({
 })
 
 export const appState = writable<App.State>(get(appStateDefault))
+
+export const scrollYPosition = writable<number>()
+
+export const previousPage = writable<string>('/')
