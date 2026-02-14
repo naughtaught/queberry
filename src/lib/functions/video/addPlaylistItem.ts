@@ -4,7 +4,7 @@ import type { Video } from '$lib/types/video'
 import { updateVideoMetadata } from './updateVideoMetadata'
 import { get } from 'svelte/store'
 
-// TODO remove hardcoding and laod dynamically
+// TODO remove hardcoding and load dynamically
 export const addPlaylistItem = async (): Promise<void> => {
     try {
         const resp = await invokeFunction('add_playlist_item', {

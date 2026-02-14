@@ -343,22 +343,6 @@
                 setIcon(currentVolume)
                 break
             }
-            case 'cycleAudioTracks': {
-                // TODO cycleAudioTracks
-                break
-            }
-            case 'cycleSubtitleTracks': {
-                // TODO cycleSubtitleTracks
-                break
-            }
-            case 'increasePlaybackSpeed': {
-                // TODO increasePlaybackSpeed
-                break
-            }
-            case 'decreasePlaybackSpeed': {
-                // TODO decreasePlaybackSpeed
-                break
-            }
             case 'playlistNext': {
                 const hasNextPlaylistItem = $videoProperties.playlistPosition < $videoProperties.playlistCount - 1
                 if (hasNextPlaylistItem) await navigatePlaylist('next')

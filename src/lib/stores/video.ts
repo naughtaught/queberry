@@ -118,30 +118,6 @@ export const defaultKeyboardShortcuts = readable([
         code: 'Minus',
         shiftKey: false,
     },
-    {
-        id: 'cycleAudioTracks',
-        name: 'Cycle Audio Tracks',
-        code: 'KeyA',
-        shiftKey: false,
-    },
-    {
-        id: 'cycleSubtitleTracks',
-        name: 'Cycle Subtitle Tracks',
-        code: 'KeyS',
-        shiftKey: false,
-    },
-    {
-        id: 'decreasePlaybackSpeed',
-        name: 'Decrease Playback Speed',
-        code: 'Comma',
-        shiftKey: false,
-    },
-    {
-        id: 'increasePlaybackSpeed',
-        name: 'Increase Playback Speed',
-        code: 'Period',
-        shiftKey: false,
-    },
 ])
 
 export const keyboardShortcuts = writable(get(defaultKeyboardShortcuts))
