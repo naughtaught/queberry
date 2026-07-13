@@ -5,6 +5,7 @@ import type { App } from '$lib/types/app'
 import { getVersion } from '@tauri-apps/api/app'
 import patchNotesData from '$lib/data/patchnotes.json'
 import { appData } from '$lib/stores/app'
+import { confirm } from '@tauri-apps/plugin-dialog'
 
 export const checkForUpdates = async (): Promise<App.Response> => {
     try {
@@ -47,7 +48,7 @@ export const checkForUpdates = async (): Promise<App.Response> => {
             }))
 
             // TODO style this
-            const userConfirmed = confirm(`Update to version ${update.version}?`)
+            const userConfirmed = await confirm(`Update to version ${update.version}?`)
 
             if (userConfirmed) {
                 await update.downloadAndInstall()
