@@ -1,0 +1,60 @@
+{
+    "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+    "productName": "queberry",
+    "version": "0.85.2",
+    "identifier": "queberry",
+    "build": {
+        "frontendDist": "../build",
+        "devUrl": "http://localhost:5173",
+        "beforeDevCommand": "bun run dev",
+        "beforeBuildCommand": "bun run build"
+    },
+    "app": {
+        "withGlobalTauri": true,
+        "windows": [
+            {
+                "title": "queberry",
+                "width": 1500,
+                "height": 833,
+                "resizable": true,
+                "fullscreen": false,
+                "transparent": true,
+                "decorations": false,
+                "visible": false,
+                "label": "main"
+            }
+        ],
+        "security": {
+            "csp": null,
+            "assetProtocol": {
+                "enable": true,
+                "scope": ["**"]
+            }
+        }
+    },
+    "bundle": {
+        "createUpdaterArtifacts": true,
+        "active": true,
+        "targets": "all",
+        "icon": ["icons/icon.ico"],
+        "resources": {
+            "./mpv/libmpv-2.dll": "libmpv-2.dll",
+            "./avatars/*": "avatars/"
+        },
+        "windows": {
+            "nsis": {
+                "installMode": "both",
+                "installerHooks": "./installer.nsh"
+            }
+        }
+    },
+    "plugins": {
+        "updater": {
+            "endpoints": ["https://github.com/naughtaught/queberry/releases/latest/download/latest.json"],
+            "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDI4NUZGNTU2OTU1OURENjAKUldSZzNWbVZWdlZmS0tmS2puMy9ROHBTTE5RbEhRbEJOWGEvbVJLNkFjZzB5TzlzRzNnZTJwT1oK",
+            "windows": {
+                "installMode": "passive"
+            }
+        }
+    }
+}

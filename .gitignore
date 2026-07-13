@@ -1,0 +1,82 @@
+# Output
+.output
+.svelte-kit
+.netlify
+.wrangler
+build
+
+# Environment
+.env
+.env*.local
+
+# dependencies
+node_modules
+
+#lock files 
+bun.lock
+package-lock.json
+
+# Vite
+/src/vite.config.js.timestamp-*
+/src/vite.config.ts.timestamp-*
+
+# Typescript
+/src/lib/types/
+
+# Sveltekit
+/src/lib/index.ts
+/src/app.d.ts
+/src/static/
+/static/
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+*.launch
+.settings/
+
+# Temp
+gitignore
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# Tauri
+src-tauri/target/
+src-tauri/gen/schemas
+src-tauri/Cargo.lock
+src-tauri/lib/
+queberry.key
+~/.tauri/
+plugins
+tests
+
+# Database
+src-tauri/db/
+src-tauri/src/db/migrations
+
+# MPV
+/mpv
+src-tauri/mpv/
+*.dll
+
+# Data
+/src/data
+/src/lib/data/*
+src-tauri/avatars/
+logs
+
+# Config
+.vscode
+.prettierrc
+.prettierignore
+eslint.config.js
+
+# Updates
+latest.json
+
+# Notes
+todo.md
+*.txt

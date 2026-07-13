@@ -1,0 +1,107 @@
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SubtitleTrackInfo {
+    pub id: Option<i64>,
+    pub lang: String,
+    pub title: String,
+    pub caption_type: CaptionType,
+}
+
+#[derive(Serialize, Clone, PartialEq)]
+pub enum CaptionType {
+    Normal,
+    #[serde(rename = "SDH")]
+    Sdh,
+    #[serde(rename = "CC")]
+    Cc,
+    Forced,
+    Commentary,
+}
+
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct VideoProperties {
+    pub duration: f64,
+    pub audio_channel: String,
+    pub subtitle_tracks: Vec<SubtitleTrackInfo>,
+    pub current_subtitle_track: Option<SubtitleTrackInfo>,
+    pub audio_tracks: Vec<AudioTrackInfo>,
+    pub current_audio_track: Option<AudioTrackInfo>,
+    pub av_sync: f64,
+    pub subtitle_sync: f64,
+    pub playlist_position: i64,
+    pub playlist_count: i64,
+    pub available_shaders: Vec<ShaderInfo>,
+    pub active_shaders: Vec<String>,
+}
+
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct VideoState {
+    pub current_time: u64,
+    pub cache_time: u64,
+    pub cache_speed: u64,
+    pub is_buffering: bool,
+    pub buffering_percent: u64,
+    pub is_paused: bool,
+}
+
+#[derive(Serialize)]
+pub struct SubtitleTrackResponse {
+    pub value: Option<SubtitleTrackInfo>,
+}
+
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AudioTrackInfo {
+    pub id: Option<i64>,
+    pub lang: String,
+    pub title: String,
+    pub codec: String,
+    pub channels: Option<i64>,
+    pub sample_rate: Option<i64>,
+    pub bitrate: Option<i64>,
+    pub default: bool,
+}
+
+#[derive(Serialize)]
+pub struct AudioTrackResponse {
+    pub value: Option<AudioTrackInfo>,
+}
+
+#[derive(Serialize)]
+pub struct VideoCommandResponse {
+    pub value: Value,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LoadVideoRequest {
+    pub url: String,
+    pub user_id: i32,
+    pub video_language: String,
+    pub progress: Option<f64>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AddPlaylistItemRequest {
+    pub url: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct ShaderInfo {
+    pub name: String,
+    pub filename: String,
+    pub path: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ShutdownState {
+    pub current_time: u64,
+    pub is_completed: bool,
+}
