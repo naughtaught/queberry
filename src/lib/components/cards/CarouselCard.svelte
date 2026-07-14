@@ -21,13 +21,12 @@
     const minWvw = $derived(maxHvh * (2 / 3))
     const avgRating = $derived(media?.ratings?.find((r: { source: string }) => r.source === 'average')?.rating ?? null)
     const totalAiredEpisodes = $derived.by(() => {
-        if (media.type === 'tv') {
+        if (media?.type === 'tv') {
             return media.episode_group_name === 'Default' || !media.episode_group_name
-                ? media.episode_counts['default']
-                : media.episode_counts[media.episode_group_name?.replace('_episodes', '')]
-        } else {
-            return null
+                ? media.episode_counts?.['default']
+                : media.episode_counts?.[media.episode_group_name?.replace('_episodes', '')]
         }
+        return null
     })
     const posterPath = $derived(getImagePath(media?.poster, posterSize(imagescaling, 'carousel')))
 </script>
