@@ -34,6 +34,7 @@
 
     const { data } = $props()
     let media = $derived(data.data)
+    let relatedFetched = $state(false)
 
     const formattedRuntime = $derived(formatRuntime(media))
     const averageRating = $derived(formatAverageRating(media))
@@ -88,7 +89,8 @@
         const mediaId = media.id
         const currentMedia = media
 
-        if (relatedMedia.length === 0) {
+        if (!relatedFetched && relatedMedia.length === 0) {
+            relatedFetched = true
             fetchRelatedMedia(mediaId)
                 .then((resp) => {
                     if (!resp.success) throw resp.error
