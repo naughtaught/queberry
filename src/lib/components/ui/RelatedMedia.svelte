@@ -15,13 +15,13 @@
     const playItem = async (): Promise<void> => {
         try {
             $loadingStates.isPlayButtonLoading = true
-            const mediaItemResp = await fetchMediaItem(currentIndex.media_id, currentIndex.type)
+            const mediaItemResp = await fetchMediaItem(currentIndex.id, currentIndex.type)
 
             if (!mediaItemResp.success) {
                 if (mediaItemResp.error.message.toLowerCase().includes('no data')) {
                     const newType = currentIndex.type === 'movie' ? 'tv' : 'movie'
 
-                    const resp = await fetchMediaItem(currentIndex.media_id, newType)
+                    const resp = await fetchMediaItem(currentIndex.id, newType)
                     if (!resp.success) throw resp.error
                     if (!resp.data)
                         throw createError('Missing media data', 500, {
@@ -81,14 +81,14 @@
                 <a
                     data-sveltekit-preload-data="tap"
                     class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-800/60 px-2 py-1 font-bold shadow-lg shadow-backgroundColor hover:text-primaryColor"
-                    href={resolve(`/details/?id=${currentIndex.media_id}&type=${currentIndex.type}`, {})}>
+                    href={resolve(`/details/?id=${currentIndex.id}&type=${currentIndex.type}`, {})}>
                     Details
                 </a>
             </div>
         </div>
 
         <div class="absolute right-0 bottom-6 flex h-70 w-1/2 gap-x-3 overflow-x-auto pr-2">
-            {#each related as media (media.media_id)}
+            {#each related as media (media.id)}
                 <button
                     onclick={() => (currentIndex = media)}
                     class="aspect-2/3 h-full rounded pb-1 shadow-2xl shadow-backgroundColor">
