@@ -171,6 +171,7 @@ pub fn run() {
             commands::api::api_fetch_random_backdrop,
             commands::api::api_fetch_related_media,
             commands::api::api_fetch_collections,
+            commands::api::api_fetch_person_details,
             commands::avatars::get_avatars,
             commands::avatars::get_avatars_dir_path,
             commands::app::show_window,

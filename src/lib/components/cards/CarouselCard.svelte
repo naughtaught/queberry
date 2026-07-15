@@ -12,7 +12,7 @@
     import WatchlistButton from '$lib/components/inputs/WatchlistButton.svelte'
     import CardRating from '$lib/components/ui/CardRating.svelte'
 
-    let { media, showEpisodes = false } = $props()
+    let { media, showEpisodes = false, updateDetails = true } = $props()
 
     const imagescaling = $derived($settings.imageScaling)
     const scale = $derived(Math.max(0.5, Math.min(2, (imagescaling ?? 100) / 100)))
@@ -32,12 +32,14 @@
 </script>
 
 <div
-    class="group flex aspect-2/3 h-full"
+    class="group flex aspect-2/3 h-full shadow-xl"
     style={`min-height: ${minHpx}px; min-width: ${minWvw}vh; max-height: ${maxHvh}vh;`}>
     <a
         data-sveltekit-preload-data="off"
         class="h-full w-full"
-        onclick={() => ($detailsMedia = media)}
+        onclick={() => {
+            if (updateDetails) $detailsMedia = media
+        }}
         href={resolve(`/details/?id=${media.id}&type=${media.type}`, {})}>
         <div class="relative h-full w-full">
             {#if avgRating}

@@ -13,10 +13,24 @@ export const updateCachedMedia = (media: Api.MediaItem): void => {
         for (const route of routes) {
             const cacheItem = currentCache[route]
 
-            const index = cacheItem.media.findIndex((item: { id: number }) => item.id === media.id)
-
-            if (index !== -1) {
-                cacheItem.media = [...cacheItem.media.slice(0, index), media, ...cacheItem.media.slice(index + 1)]
+            if (route === 'person') {
+                const personArray = cacheItem.media as Api.PersonData[]
+                cacheItem.media = personArray.map((person: Api.PersonData) => {
+                    const index = person.media.findIndex((item: Api.MediaItem) => item.id === media.id)
+                    if (index !== -1) {
+                        return {
+                            ...person,
+                            media: [...person.media.slice(0, index), media, ...person.media.slice(index + 1)],
+                        }
+                    }
+                    return person
+                })
+            } else {
+                const mediaArray = cacheItem.media as Api.MediaItem[]
+                const index = mediaArray.findIndex((item: Api.MediaItem) => item.id === media.id)
+                if (index !== -1) {
+                    cacheItem.media = [...mediaArray.slice(0, index), media, ...mediaArray.slice(index + 1)]
+                }
             }
         }
 

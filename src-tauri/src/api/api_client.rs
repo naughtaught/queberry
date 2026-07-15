@@ -861,3 +861,30 @@ pub async fn api_fetch_related_media(
         .data
         .ok_or_else(|| "No data returned".to_string())
 }
+
+pub async fn api_fetch_person_details(
+    postgres_id: &str,
+    token: &str,
+    person_id: i32,
+) -> Result<serde_json::Value, String> {
+    let client = get_client();
+    let response = client
+        .get(format!("{}/api/person/{}", API_BASE, person_id))
+        .header("X-User-Id", postgres_id)
+        .header("Authorization", format!("Bearer {}", token))
+        .send()
+        .await
+        .map_err(api_error)?;
+
+    let api_response: ApiResponse<serde_json::Value> = response.json().await.map_err(api_error)?;
+
+    if !api_response.success {
+        return Err(api_response
+            .error
+            .unwrap_or_else(|| "Unknown error".to_string()));
+    }
+
+    api_response
+        .data
+        .ok_or_else(|| "No data returned".to_string())
+}

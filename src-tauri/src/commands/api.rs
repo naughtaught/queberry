@@ -412,3 +412,16 @@ pub async fn api_fetch_related_media(
     })
     .await
 }
+
+#[tauri::command]
+pub async fn api_fetch_person_details(
+    postgres_id: String,
+    token: String,
+    person_id: i32,
+) -> Result<ApiResponse<serde_json::Value>, AppError> {
+    handle_command_async("api_fetch_person_details", async || {
+        let data = api_client::api_fetch_person_details(&postgres_id, &token, person_id).await?;
+        Ok(data)
+    })
+    .await
+}

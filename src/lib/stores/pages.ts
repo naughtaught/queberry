@@ -113,6 +113,12 @@ export const DEFAULT_CACHE = readable<App.Cache>({
         paginationPage: 0,
         filters: get(defaultFilters),
     },
+    person: {
+        media: [],
+        lastUpdated: null,
+        paginationPage: 0,
+        filters: get(defaultFilters),
+    },
 })
 
 export const cache = writable<App.Cache>(get(DEFAULT_CACHE))

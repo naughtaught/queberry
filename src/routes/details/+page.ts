@@ -1,7 +1,7 @@
 import type { PageLoad } from './$types'
 import { get } from 'svelte/store'
 import { navigating } from '$app/state'
-import { cache, detailsMedia } from '$lib/stores/pages'
+import { cache } from '$lib/stores/pages'
 import { fetchMediaItem } from '$lib/db/fetchMediaItem'
 import { fetchSeasonData } from '$lib/db/fetchSeasons'
 import { createError, handleError } from '$lib/functions/errors/errorHandling'
@@ -9,22 +9,30 @@ import { createError, handleError } from '$lib/functions/errors/errorHandling'
 export const load: PageLoad = async ({ url }) => {
     const id = url.searchParams.get('id')
     const type = url.searchParams.get('type')
-    const media = get(detailsMedia)
+
     const currentCache = get(cache)
 
     let data
 
     if (navigating.type === 'popstate' || url.pathname === '/video' || navigating.from?.url.pathname === '/video') {
-        return {
-            success: true,
-            data: currentCache['details'].media[0],
+        if (id) {
+            const index = currentCache.details.media.findIndex((item) => item.id === +id)
+
+            if (index !== -1) {
+                return {
+                    success: true,
+                    data: currentCache.details.media[index],
+                }
+            }
         }
     }
 
     try {
         if (id && type) {
-            if (media && media.id === +id) {
-                data = media
+            const index = currentCache.details.media.findIndex((item) => item.id === +id)
+
+            if (index !== -1) {
+                data = currentCache.details.media[index]
             } else {
                 const mediaItemResp = await fetchMediaItem(+id, type)
 
@@ -53,7 +61,7 @@ export const load: PageLoad = async ({ url }) => {
                 data.seasons = seasonResp.data
             }
 
-            currentCache['details'].media = [data]
+            currentCache['details'].media.push(data)
         } else {
             throw createError(`Missing ID or Type: ID: ${id}, TYPE: ${type}`, 500, {})
         }
