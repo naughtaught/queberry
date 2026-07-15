@@ -38,6 +38,7 @@ pub struct UserSettings {
     pub skip_recap: bool,
     pub skip_credits: bool,
     pub skip_preview: bool,
+    pub trailer_volume: i32,
 }
 
 impl UserSettings {
@@ -93,6 +94,7 @@ impl UserSettings {
             skip_recap: false,
             skip_credits: false,
             skip_preview: false,
+            trailer_volume: 30,
         }
     }
 }
@@ -273,6 +275,7 @@ pub struct SettingsRow {
     pub skip_recap: bool,
     pub skip_credits: bool,
     pub skip_preview: bool,
+    pub trailer_volume: i32,
 }
 
 pub fn row_to_settings(row: SettingsRow) -> UserSettings {
@@ -312,6 +315,7 @@ pub fn row_to_settings(row: SettingsRow) -> UserSettings {
         skip_recap: row.skip_recap,
         skip_credits: row.skip_credits,
         skip_preview: row.skip_preview,
+        trailer_volume: row.trailer_volume,
     }
 }
 

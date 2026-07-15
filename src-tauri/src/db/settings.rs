@@ -11,7 +11,7 @@ const SETTINGS_COLUMNS: &str = "\
     open_app_fullscreen, update_notification, onscreen_keyboard_enabled, \
     excluded_resolutions, excluded_video_formats, excluded_audio_options, \
     excluded_sources, indexer_sort_criteria, download_rate_limit, screensaver_timeout, \
-    max_concurrent_downloads, skip_intro, skip_recap, skip_credits, skip_preview";
+    max_concurrent_downloads, skip_intro, skip_recap, skip_credits, skip_preview, trailer_volume";
 
 const SETTINGS_INSERT_COLUMNS: &str = "\
     user_id, preferred_theme, is_light_mode, image_scaling, \
@@ -22,10 +22,10 @@ const SETTINGS_INSERT_COLUMNS: &str = "\
     update_notification, onscreen_keyboard_enabled, excluded_resolutions, \
     excluded_video_formats, excluded_audio_options, excluded_sources, \
     indexer_sort_criteria, download_rate_limit, screensaver_timeout, \
-    max_concurrent_downloads, skip_intro, skip_recap, skip_credits, skip_preview";
+    max_concurrent_downloads, skip_intro, skip_recap, skip_credits, skip_preview, trailer_volume";
 
 const SETTINGS_INSERT_VALUES: &str = "\
-    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?";
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?";
 
 const SETTINGS_UPDATE_CONFLICT: &str = "\
     preferred_theme              = excluded.preferred_theme,
@@ -58,7 +58,8 @@ const SETTINGS_UPDATE_CONFLICT: &str = "\
     skip_intro                   = excluded.skip_intro,
     skip_recap                   = excluded.skip_recap,
     skip_credits                 = excluded.skip_credits,
-    skip_preview                 = excluded.skip_preview";
+    skip_preview                 = excluded.skip_preview,
+    trailer_volume               = excluded.trailer_volume";
 
 #[derive(Clone)]
 pub struct SettingsManager {
@@ -112,6 +113,7 @@ impl SettingsManager {
         .bind(settings.skip_recap)
         .bind(settings.skip_credits)
         .bind(settings.skip_preview)
+        .bind(settings.trailer_volume)
         .execute(&self.db.pool)
         .await?;
 
@@ -157,6 +159,7 @@ impl SettingsManager {
         .bind(default_settings.skip_recap)
         .bind(default_settings.skip_credits)
         .bind(default_settings.skip_preview)
+        .bind(default_settings.trailer_volume)
         .execute(&self.db.pool)
         .await;
 

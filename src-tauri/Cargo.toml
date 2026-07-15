@@ -1,6 +1,6 @@
 [package]
 name = "queberry"
-version = "0.85.2"
+version = "0.86.0"
 description = "A Media App"
 authors = ["naughtaught"]
 license = ""

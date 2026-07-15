@@ -41,6 +41,7 @@ export const settings = writable<Sql.UserSettings>({
     skipRecap: false,
     skipCredits: false,
     skipPreview: false,
+    trailerVolume: 30,
 })
 
 export const restrictedContent = writable<App.RestrictedContent>({

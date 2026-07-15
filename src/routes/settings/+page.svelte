@@ -666,6 +666,16 @@
                             updateSettings('completionPercent', $settings.completionPercent)
                         }} />
                 </div>
+                <div>
+                    <Slider
+                        min={0}
+                        max={100}
+                        bind:value={$settings.trailerVolume}
+                        label="Default Trailer Volume"
+                        func={() => {
+                            updateSettings('trailerVolume', $settings.trailerVolume)
+                        }} />
+                </div>
             </div>
         </section>
         <!-- Timings -->
