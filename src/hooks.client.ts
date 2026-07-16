@@ -1,7 +1,6 @@
 import { invokeFunction } from '$lib/functions/api/invokeFunction'
 import { handleError } from '$lib/functions/errors/errorHandling'
 import { loginUser } from '$lib/functions/user/loginUser'
-import { checkForUpdates } from '$lib/functions/utility/checkForUpdates'
 import { directories, loadingStates, parentalControlsAreEnabled, primaryUser } from '$lib/stores/app'
 import {
     installedIndexerPlugins,
@@ -107,10 +106,6 @@ const getLocalMedia = async (): Promise<void> => {
         }))
     }
 }
-
-setTimeout(() => {
-    checkForUpdates().catch((error) => handleError(error, { display: false }))
-}, 2000)
 
 try {
     initializePlugins()

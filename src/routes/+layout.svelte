@@ -22,6 +22,7 @@
     import { listen } from '@tauri-apps/api/event'
     import type { Sql } from '$lib/types/sql'
     import { closeVideoPlayer } from '$lib/functions/video/closeVideoPlayer'
+    import { checkForUpdates } from '$lib/functions/utility/checkForUpdates'
 
     const { children } = $props()
 
@@ -244,7 +245,11 @@
     }
 
     onMount(() => {
-        invoke('show_window')
+        invoke('show_window').then(() => {
+            setTimeout(() => {
+                checkForUpdates().catch((error) => handleError(error, { display: false }))
+            }, 300)
+        })
         if ($settings.screensaverTimeout > 0) {
             resetInactivityTimer()
             window.addEventListener('mousemove', resetInactivityTimer)
