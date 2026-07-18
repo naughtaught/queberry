@@ -11,6 +11,7 @@
     import PasswordInputField from '$lib/components/inputs/PasswordInputField.svelte'
     import PinInputField from '$lib/components/inputs/PinInputField.svelte'
     import LoadingSpinner from '$lib/components/ui/LoadingSpinner.svelte'
+    import { updateGlobalSettings } from '$lib/functions/user/updateGlobalSettings'
 
     let selectedAvatar = $state(null)
     let email = $state(null)
@@ -74,6 +75,11 @@
                 })
 
                 if (!response.success) throw response.error
+
+                if (primaryAccount) {
+                    const resp = await updateGlobalSettings(response.data, parentalControls)
+                    if (!resp.success) handleError(resp.error)
+                }
 
                 loginUser(response.data, true)
             }

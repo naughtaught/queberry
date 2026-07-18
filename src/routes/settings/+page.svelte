@@ -236,6 +236,8 @@
             const response = await invokeFunction('delete_user', { userId: $user.id })
             if (!response.success) throw response.error
 
+            if ($user.id === $primaryUser) $primaryUser = null
+
             $user = null
 
             const getUsers = await invokeFunction('get_all_users', {})

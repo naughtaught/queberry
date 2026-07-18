@@ -4,13 +4,14 @@ import { get } from 'svelte/store'
 import { invokeFunction } from '$lib/functions/api/invokeFunction'
 import { handleError } from '$lib/functions/errors/errorHandling'
 import { hashBlacklist, restrictedContent, settings, user, users } from '$lib/stores/user'
-import { modals, parentalControlsAreEnabled } from '$lib/stores/app'
+import { directories, modals, parentalControlsAreEnabled, primaryUser } from '$lib/stores/app'
 import { setUserSettings } from '$lib/functions/user/setUserSettings'
 import { defaultSessionSettings, keyboardShortcuts, sessionSettings } from '$lib/stores/video'
 import { currentFilters, defaultFilters } from '$lib/stores/pages'
 import { updateCarousels } from '$lib/functions/utility/updateCarousels'
 import { setEnabledPlugins } from '$lib/functions/plugins/setEnabledPlugins'
 import { toggleFullscreen } from '$lib/functions/ui/toggleFullscreen'
+import { getLocalMedia } from '../utility/getLocalMedia'
 
 export const loginUser = async (userData: Sql.User, skipVerification = false): Promise<void> => {
     try {
@@ -90,8 +91,7 @@ export const loginUser = async (userData: Sql.User, skipVerification = false): P
 
         currentFilters.set(get(defaultFilters))
 
-        const resp = await updateCarousels()
-        if (!resp.success) throw resp.error
+        updateCarousels().catch((err) => handleError(err))
 
         const blacklistedResponse: App.Response = await invokeFunction('get_users_blacklisted', {
             userId: userData.id,
@@ -103,6 +103,21 @@ export const loginUser = async (userData: Sql.User, skipVerification = false): P
 
         const pluginsResp = await setEnabledPlugins()
         if (!pluginsResp.success) throw pluginsResp.error
+
+        const globalSettingsResp = await invokeFunction('get_global_settings', {})
+        if (!globalSettingsResp.success) handleError(globalSettingsResp.error, { display: false })
+
+        if (globalSettingsResp.success && globalSettingsResp.data) {
+            primaryUser.set(globalSettingsResp.data.primaryUserId)
+            parentalControlsAreEnabled.set(globalSettingsResp.data.parentalControlsAreEnabled)
+
+            directories.set({
+                tv: globalSettingsResp.data.tvDirectory ?? null,
+                movies: globalSettingsResp.data.movieDirectory ?? null,
+            })
+
+            getLocalMedia()
+        }
 
         try {
             const updateDownloads: App.Response = await invokeFunction('cleanup_downloads_on_login', {
