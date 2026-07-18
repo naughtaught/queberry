@@ -125,12 +125,6 @@
         <div class="flex-1"></div>
         <div class="mt-10 flex gap-4">
             <button
-                onclick={createLocalAccount}
-                class="flex-1 rounded-lg bg-slate-800 px-6 py-3.5 font-bold text-white shadow-lg transition-all hover:text-primaryColor">
-                {#if !isLoading}Login{:else}<LoadingSpinner />
-                {/if}
-            </button>
-            <button
                 disabled={!$user}
                 onclick={() => {
                     if (isLoading) return
@@ -140,6 +134,12 @@
                     ? 'text-slate-400 hover:text-slate-200'
                     : 'cursor-default! text-neutral-700'} px-6 py-3.5 font-medium transition-colors">
                 Cancel
+            </button>
+            <button
+                onclick={createLocalAccount}
+                class="flex-1 rounded-lg bg-slate-800 px-6 py-3.5 font-bold text-white shadow-lg transition-all hover:text-primaryColor">
+                {#if !isLoading}Login{:else}<LoadingSpinner />
+                {/if}
             </button>
         </div>
         <p class="mt-4 h-4 text-red-500">{errorMessage ? errorMessage : ''}</p>
