@@ -1,7 +1,7 @@
 <script lang="ts">
     import '../app.css'
     import { page } from '$app/state'
-    import { loadingStates, modals, parentalControlsAreEnabled } from '$lib/stores/app'
+    import { appData, loadingStates, modals, parentalControlsAreEnabled } from '$lib/stores/app'
     import VideoLoadingScreen from '$lib/components/ui/VideoLoadingScreen.svelte'
     import { settings, user } from '$lib/stores/user'
     import UserModal from '$lib/components/modals/UserModal.svelte'
@@ -23,6 +23,7 @@
     import type { Sql } from '$lib/types/sql'
     import { closeVideoPlayer } from '$lib/functions/video/closeVideoPlayer'
     import { checkForUpdates } from '$lib/functions/utility/checkForUpdates'
+    import UpdateModal from '$lib/components/modals/UpdateModal.svelte'
 
     const { children } = $props()
 
@@ -248,7 +249,7 @@
         invoke('show_window').then(() => {
             setTimeout(() => {
                 checkForUpdates().catch((error) => handleError(error, { display: false }))
-            }, 300)
+            }, 100)
         })
         if ($settings.screensaverTimeout > 0) {
             resetInactivityTimer()
@@ -363,6 +364,10 @@
 
 {#if $modals.search}
     <SearchModal />
+{/if}
+
+{#if $appData.showUpdateModal}
+    <UpdateModal />
 {/if}
 
 {#if screensaverPath}

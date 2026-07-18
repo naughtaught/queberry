@@ -5,7 +5,6 @@ import type { App } from '$lib/types/app'
 import { getVersion } from '@tauri-apps/api/app'
 import patchNotesData from '$lib/data/patchnotes.json'
 import { appData } from '$lib/stores/app'
-import { confirm } from '@tauri-apps/plugin-dialog'
 
 export const checkForUpdates = async (): Promise<App.Response> => {
     try {
@@ -41,18 +40,71 @@ export const checkForUpdates = async (): Promise<App.Response> => {
             appData.update((version) => ({
                 ...version,
                 updateAvailable: true,
+                showUpdateModal: true,
                 pendingUpdate: {
                     version: update.version,
                     notes,
                 },
             }))
 
-            // TODO style this
-            const userConfirmed = await confirm(`Update to version ${update.version}?`)
+            const userConfirmed = await new Promise<boolean>((resolve) => {
+                appData.update((state) => ({
+                    ...state,
+                    updateResolver: resolve,
+                }))
+            })
+
+            appData.update((state) => ({
+                ...state,
+                updateResolver: null,
+            }))
 
             if (userConfirmed) {
-                await update.downloadAndInstall()
-                await relaunch()
+                appData.update((state) => ({
+                    ...state,
+                    isDownloading: true,
+                    downloadProgress: 0,
+                }))
+
+                try {
+                    let totalSize = 0
+                    let downloadedSoFar = 0
+
+                    await update.downloadAndInstall((event) => {
+                        switch (event.event) {
+                            case 'Started':
+                                totalSize = event.data.contentLength ?? 0
+                                break
+                            case 'Progress':
+                                downloadedSoFar += event.data.chunkLength
+                                if (totalSize > 0) {
+                                    const progress = Math.min(Math.round((downloadedSoFar / totalSize) * 100), 100)
+                                    appData.update((state) => ({
+                                        ...state,
+                                        downloadProgress: progress,
+                                    }))
+                                }
+                                break
+                            case 'Finished':
+                                appData.update((state) => ({
+                                    ...state,
+                                    downloadProgress: 100,
+                                    isDownloading: false,
+                                    isInstalling: true,
+                                }))
+                                break
+                        }
+                    })
+
+                    await relaunch()
+                } catch (downloadError) {
+                    appData.update((state) => ({
+                        ...state,
+                        isDownloading: false,
+                        downloadProgress: 0,
+                    }))
+                    throw downloadError
+                }
             }
         }
         return {
@@ -60,6 +112,13 @@ export const checkForUpdates = async (): Promise<App.Response> => {
             data: null,
         }
     } catch (error) {
+        appData.update((state) => ({
+            ...state,
+            showUpdateModal: false,
+            updateResolver: null,
+            isDownloading: false,
+            downloadProgress: 0,
+        }))
         return formatError(error)
     }
 }

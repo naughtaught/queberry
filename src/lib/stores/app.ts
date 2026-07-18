@@ -70,6 +70,12 @@ export const appData = writable<App.AppData>({
     currentNotes: null,
     updateAvailable: false,
     pendingUpdate: null,
+    showUpdateModal: false,
+    updateResolver: null,
+    isDownloading: false,
+    downloadProgress: 0,
+    downloadContentLength: undefined,
+    isInstalling: false,
 })
 
 export const directories = writable<{ movies: string | null; tv: string | null }>({

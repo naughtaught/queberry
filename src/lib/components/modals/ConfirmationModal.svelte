@@ -25,10 +25,10 @@
 {#if config.isOpen}
     <BaseModal onClose={onCancel}>
         <div class="w-full max-w-md transform rounded-lg p-6" tabindex="-1">
-            <h2 id="modal-title" class="text-text textShadow mb-4 text-xl font-semibold">
+            <h2 id="modal-title" class="mb-4 text-xl font-semibold">
                 {config.title}
             </h2>
-            <p class="text-text mb-6 whitespace-pre-line">
+            <p class="mb-6 whitespace-pre-line">
                 {config.message}
             </p>
 
