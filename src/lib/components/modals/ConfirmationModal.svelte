@@ -34,14 +34,14 @@
 
             <div class="flex justify-end space-x-4">
                 <button
-                    onclick={onConfirm}
-                    class="flex-1 rounded-lg bg-slate-800 px-6 py-3.5 font-bold text-white shadow-lg transition-all hover:text-primaryColor">
-                    Confirm
-                </button>
-                <button
                     onclick={onCancel}
                     class="px-6 py-3.5 font-medium text-slate-400 transition-colors hover:text-slate-200">
                     Cancel
+                </button>
+                <button
+                    onclick={onConfirm}
+                    class="flex-1 rounded-lg bg-slate-800 px-6 py-3.5 font-bold text-white shadow-lg transition-all hover:text-primaryColor">
+                    Confirm
                 </button>
             </div>
         </div>
