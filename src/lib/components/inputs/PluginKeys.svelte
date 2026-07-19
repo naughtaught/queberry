@@ -71,10 +71,7 @@
 
             const pluginsResp = await setEnabledPlugins()
             if (!pluginsResp.success) throw pluginsResp.error
-
-            if (!$settings.defaultResolver) {
-                func('defaultResolver', $enabledResolverPlugins[0].id)
-            }
+            if (!$settings.defaultResolver) func('defaultResolver', $enabledResolverPlugins[0].id)
 
             plugin = null
             newKey = null

@@ -34,6 +34,7 @@
         VIDEO_OPTIONS,
     } from '$lib/stores/app'
     import {
+        disabledPlugins,
         enabledResolverPlugins,
         installedIndexerPlugins,
         installedResolverPlugins,
@@ -1056,8 +1057,8 @@
                                                 onclick={() => {
                                                     updateSettingsArray('disabledPlugins', plugin.id)
                                                 }}
-                                                class="rounded border-2 px-3 py-2 text-sm hover:bg-white/10 {$settings.disabledPlugins.includes(
-                                                    plugin.id,
+                                                class="rounded border-2 px-3 py-2 text-sm hover:bg-white/10 {$disabledPlugins.find(
+                                                    (x) => x.id === plugin.id,
                                                 )
                                                     ? 'text-primaryColor'
                                                     : 'text-textColor'}">{plugin.name}</button>
