@@ -8,7 +8,24 @@ use crate::constants::{API_BASE, API_CLIENT};
 pub struct ApiResponse<T> {
     pub success: bool,
     pub data: Option<T>,
-    pub error: Option<String>,
+    #[serde(default)]
+    pub error: Option<ApiError>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ApiError {
+    pub code: u16,
+    pub message: String,
+    #[serde(default)]
+    pub stack: Option<String>,
+    #[serde(default)]
+    pub context: Option<String>,
+}
+
+impl<T> ApiResponse<T> {
+    pub fn error_message(&self) -> Option<String> {
+        self.error.as_ref().map(|e| e.message.clone())
+    }
 }
 
 fn api_error(e: impl std::fmt::Display) -> String {
@@ -37,7 +54,7 @@ pub async fn login(email: String, password: String) -> Result<LoginResponse, Str
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Unknown error".to_string()));
     }
 
@@ -72,7 +89,7 @@ pub async fn register(
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Unknown error".to_string()));
     }
 
@@ -100,7 +117,7 @@ pub async fn fetch_trending(postgres_id: &str, token: &str) -> Result<serde_json
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Unknown error".to_string()));
     }
 
@@ -128,7 +145,7 @@ pub async fn fetch_up_next(
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Unknown error".to_string()));
     }
 
@@ -151,7 +168,7 @@ pub async fn fetch_recent(postgres_id: &str, token: &str) -> Result<serde_json::
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Unknown error".to_string()));
     }
 
@@ -179,7 +196,7 @@ pub async fn fetch_media_item(
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Unknown error".to_string()));
     }
 
@@ -206,7 +223,7 @@ pub async fn fetch_season_data(
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Unknown error".to_string()));
     }
 
@@ -234,7 +251,7 @@ pub async fn upsert_user_media(
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Unknown error".to_string()));
     }
 
@@ -265,7 +282,7 @@ pub async fn verify_token(postgres_id: &str, token: &str) -> Result<bool, String
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Verification failed".to_string()));
     }
 
@@ -306,7 +323,7 @@ pub async fn fetch_media_list(
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Unknown error".to_string()));
     }
 
@@ -338,7 +355,7 @@ pub async fn upsert_watched_episodes(
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Unknown error".to_string()));
     }
 
@@ -363,7 +380,7 @@ pub async fn delete_watched_episodes(
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Unknown error".to_string()));
     }
 
@@ -388,7 +405,7 @@ pub async fn delete_user_media(
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Unknown error".to_string()));
     }
 
@@ -436,7 +453,7 @@ pub async fn reset_user_media_state(
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Unknown error".to_string()));
     }
 
@@ -460,7 +477,7 @@ pub async fn clear_user_episode_groups(postgres_id: &str, token: &str) -> Result
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Unknown error".to_string()));
     }
 
@@ -489,7 +506,7 @@ pub async fn delete_watched_episode_ids(
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Unknown error".to_string()));
     }
 
@@ -521,7 +538,7 @@ pub async fn search_media(
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Unknown error".to_string()));
     }
 
@@ -562,7 +579,7 @@ pub async fn request_media(
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Unknown error".to_string()));
     }
 
@@ -595,7 +612,7 @@ pub async fn get_media_requests(
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Unknown error".to_string()));
     }
 
@@ -623,7 +640,7 @@ pub async fn delete_media_request(
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Unknown error".to_string()));
     }
 
@@ -650,7 +667,7 @@ pub async fn get_blacklist_entry(
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Unknown error".to_string()));
     }
 
@@ -714,7 +731,7 @@ pub async fn update_user(
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Unknown error".to_string()));
     }
 
@@ -738,7 +755,7 @@ pub async fn reset_token(postgres_id: &str, token: &str) -> Result<serde_json::V
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Unknown error".to_string()));
     }
 
@@ -774,7 +791,7 @@ pub async fn fetch_random_media(
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Unknown error".to_string()));
     }
 
@@ -801,7 +818,7 @@ pub async fn fetch_random_backdrop(
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Unknown error".to_string()));
     }
 
@@ -826,7 +843,7 @@ pub async fn api_fetch_collections(
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Unknown error".to_string()));
     }
 
@@ -853,7 +870,7 @@ pub async fn api_fetch_related_media(
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Unknown error".to_string()));
     }
 
@@ -880,7 +897,7 @@ pub async fn api_fetch_person_details(
 
     if !api_response.success {
         return Err(api_response
-            .error
+            .error_message()
             .unwrap_or_else(|| "Unknown error".to_string()));
     }
 

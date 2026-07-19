@@ -66,7 +66,7 @@ const logToBackend = async (errorDetail: App.ErrorDetail): Promise<void> => {
         })
         await invoke('log_error', { text: payload })
     } catch (e) {
-        console.debug('Failed to send error to backend:', e)
+        handleError(e, { display: false })
     }
 }
 
@@ -80,6 +80,8 @@ const cleanErrorMessage = (message: string): string => {
 export const handleError = <T = unknown>(error: unknown, options: App.ErrorOptions = {}): App.Response<T> => {
     const { log = true, display = true, ...errorOptions } = options
     const formatted = formatError(error, errorOptions)
+
+    if (formatted.error.code === 429) return formatted
 
     console.error(`[${formatted.error.code}] ${formatted.error.message}`, {
         stack: formatted.error.stack,
