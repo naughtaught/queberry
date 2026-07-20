@@ -12,7 +12,7 @@
     import { validateUsername } from '$lib/functions/utility/validateUsername'
     import { validateEmail } from '$lib/functions/utility/validateEmail'
     import { validatePin } from '$lib/functions/utility/validatePin'
-    import type { Api } from '$lib/types/Api'
+    import type { Api } from '$lib/types/api'
     import type { Sql } from '$lib/types/sql'
     import LoadingSpinner from '$lib/components/ui/LoadingSpinner.svelte'
     import UsernameInputField from '$lib/components/inputs/UsernameInputField.svelte'
