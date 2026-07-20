@@ -126,10 +126,9 @@ pub fn validate_and_extract_host(pattern: &str, allow_private: bool) -> Result<S
         (false, trimmed.trim_end_matches('.').to_string())
     };
 
-    let url_str = if host_to_validate.contains("://") {
-        host_to_validate.clone()
-    } else {
-        format!("https://{}", host_to_validate)
+    let url_str = match host_to_validate.contains("://") {
+        true => host_to_validate,
+        false => format!("https://{host_to_validate}"),
     };
 
     let url = Url::parse(&url_str)

@@ -1,28 +1,29 @@
 use crate::constants::DEFAULT_MAX_MEMORY_PAGES;
 use crate::errors::classify_plugin_error;
 use crate::AppError;
+use dashmap::DashMap;
 use extism::{Manifest, Plugin, Wasm};
 use serde_json::Value;
-use std::collections::HashMap;
 use std::panic::{self, AssertUnwindSafe};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 pub struct PluginRuntime {
-    pub plugins: HashMap<String, Plugin>,
+    pub plugins: DashMap<String, Arc<Mutex<Plugin>>>,
     pub default_timeout_ms: u64,
-    plugin_timeouts: HashMap<String, u64>,
+    plugin_timeouts: DashMap<String, u64>,
     default_max_memory_pages: Option<u32>,
-    plugin_memory_limits: HashMap<String, u32>,
+    plugin_memory_limits: DashMap<String, u32>,
 }
 
 impl PluginRuntime {
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         Ok(Self {
-            plugins: HashMap::new(),
+            plugins: DashMap::new(),
             default_timeout_ms: 30_000,
-            plugin_timeouts: HashMap::new(),
+            plugin_timeouts: DashMap::new(),
             default_max_memory_pages: Some(DEFAULT_MAX_MEMORY_PAGES),
-            plugin_memory_limits: HashMap::new(),
+            plugin_memory_limits: DashMap::new(),
         })
     }
 
@@ -36,12 +37,12 @@ impl PluginRuntime {
         self
     }
 
-    pub fn set_plugin_timeout(&mut self, plugin_id: &str, timeout_ms: u64) {
+    pub fn set_plugin_timeout(&self, plugin_id: &str, timeout_ms: u64) {
         self.plugin_timeouts
             .insert(plugin_id.to_string(), timeout_ms);
     }
 
-    pub fn set_plugin_memory_limit(&mut self, plugin_id: &str, max_pages: u32) {
+    pub fn set_plugin_memory_limit(&self, plugin_id: &str, max_pages: u32) {
         self.plugin_memory_limits
             .insert(plugin_id.to_string(), max_pages);
     }
@@ -49,19 +50,19 @@ impl PluginRuntime {
     pub fn get_plugin_timeout(&self, plugin_id: &str) -> u64 {
         self.plugin_timeouts
             .get(plugin_id)
-            .copied()
+            .map(|v| *v)
             .unwrap_or(self.default_timeout_ms)
     }
 
     pub fn get_plugin_memory_limit(&self, plugin_id: &str) -> Option<u32> {
         self.plugin_memory_limits
             .get(plugin_id)
-            .copied()
+            .map(|v| *v)
             .or(self.default_max_memory_pages)
     }
 
     pub fn load_plugin(
-        &mut self,
+        &self,
         plugin_id: String,
         wasm_bytes: &[u8],
         allowed_hosts: &[String],
@@ -90,7 +91,7 @@ impl PluginRuntime {
                 )
             })?;
 
-            self.plugins.insert(plugin_id, plugin);
+            self.plugins.insert(plugin_id, Arc::new(Mutex::new(plugin)));
 
             Ok(())
         }));
@@ -115,11 +116,11 @@ impl PluginRuntime {
     }
 
     pub fn execute_plugin_method(
-        &mut self,
+        &self,
         plugin_id: &str,
         function_name: &str,
         args: Vec<Value>,
-    ) -> Result<Value, Box<dyn std::error::Error>> {
+    ) -> Result<Value, Box<dyn std::error::Error + Send + Sync>> {
         let plugin_id_owned = plugin_id.to_string();
         let function_name_owned = function_name.to_string();
 
@@ -127,10 +128,14 @@ impl PluginRuntime {
             let memory_limit = self.get_plugin_memory_limit(plugin_id);
             let timeout = self.get_plugin_timeout(plugin_id);
 
-            let plugin = self
+            let plugin_arc = self
                 .plugins
-                .get_mut(plugin_id)
+                .get(plugin_id)
                 .ok_or_else(|| format!("Plugin not loaded: {}", plugin_id))?;
+
+            let mut plugin = plugin_arc
+                .lock()
+                .map_err(|e| format!("Failed to acquire plugin lock for '{}': {}", plugin_id, e))?;
 
             let args_json = serde_json::to_string(&args)?;
 
@@ -166,7 +171,7 @@ impl PluginRuntime {
                     "Unknown panic".to_string()
                 };
 
-                self.unload_plugin(&plugin_id_owned);
+                self.plugins.remove(&plugin_id_owned);
 
                 Err(Box::new(AppError::PluginCrashed {
                     plugin_id: plugin_id_owned,
@@ -179,9 +184,8 @@ impl PluginRuntime {
         }
     }
 
-    pub fn unload_plugin(&mut self, plugin_id: &str) {
+    pub fn unload_plugin(&self, plugin_id: &str) {
         self.plugins.remove(plugin_id);
-
         self.plugin_timeouts.remove(plugin_id);
         self.plugin_memory_limits.remove(plugin_id);
     }

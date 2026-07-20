@@ -16,7 +16,7 @@ use std::sync::{Arc, Mutex};
 
 #[derive(Clone)]
 pub struct AppState {
-    pub plugin_manager: Arc<Mutex<PluginManager>>,
+    pub plugin_manager: Arc<PluginManager>,
     pub video_player: Arc<Mutex<Option<MpvPlayer>>>,
     pub download_manager: Option<DownloadManager>,
     pub db_download_manager: Option<DbDownloadManager>,
@@ -65,7 +65,7 @@ impl AppState {
             .map(|db| PluginCacheManager::new(db.clone()));
 
         Self {
-            plugin_manager: Arc::new(Mutex::new(plugin_manager)),
+            plugin_manager: Arc::new(plugin_manager),
             video_player: Arc::new(Mutex::new(None)),
             download_manager,
             db_download_manager,

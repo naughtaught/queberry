@@ -9,16 +9,16 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
-use tokio::sync::{Mutex, RwLock};
+use tokio::sync::Mutex;
 
 pub struct PluginManager {
-    indexer_plugins: HashMap<String, Arc<Plugin>>,
-    resolver_plugins: HashMap<String, Arc<Plugin>>,
-    utility_plugins: HashMap<String, Arc<Plugin>>,
+    indexer_plugins: DashMap<String, Arc<Plugin>>,
+    resolver_plugins: DashMap<String, Arc<Plugin>>,
+    utility_plugins: DashMap<String, Arc<Plugin>>,
     plugins_dir: PathBuf,
-    runtime: Arc<RwLock<PluginRuntime>>,
+    runtime: Arc<PluginRuntime>,
     rate_limiter: RateLimiter,
-    method_lookup: HashMap<String, HashMap<String, String>>,
+    method_lookup: DashMap<String, HashMap<String, String>>,
     loading_locks: Arc<DashMap<String, Arc<Mutex<()>>>>,
     wasm_cache: Arc<DashMap<String, Arc<Vec<u8>>>>,
     execution_locks: Arc<DashMap<String, Arc<Mutex<()>>>>,
@@ -34,13 +34,13 @@ impl PluginManager {
         let rate_limiter = RateLimiter::new().with_window_seconds(RATE_LIMIT_WINDOW_SECONDS);
 
         Self {
-            indexer_plugins: HashMap::new(),
-            resolver_plugins: HashMap::new(),
-            utility_plugins: HashMap::new(),
+            indexer_plugins: DashMap::new(),
+            resolver_plugins: DashMap::new(),
+            utility_plugins: DashMap::new(),
             plugins_dir,
-            runtime: Arc::new(RwLock::new(runtime)),
+            runtime: Arc::new(runtime),
             rate_limiter,
-            method_lookup: HashMap::new(),
+            method_lookup: DashMap::new(),
             loading_locks: Arc::new(DashMap::new()),
             wasm_cache: Arc::new(DashMap::new()),
             execution_locks: Arc::new(DashMap::new()),
@@ -67,14 +67,27 @@ impl PluginManager {
         Ok(wasm_arc)
     }
 
-    pub async fn register_plugin(&mut self, plugin: Plugin) -> Result<(), AppError> {
+    pub async fn register_plugin(&self, plugin: Plugin) -> Result<(), AppError> {
         let plugin_id_str = plugin.id.clone();
+
+        let load_lock = self
+            .loading_locks
+            .entry(plugin_id_str.clone())
+            .or_insert_with(|| Arc::new(Mutex::new(())))
+            .clone();
+        let _guard = load_lock.lock().await;
 
         if self.indexer_plugins.contains_key(&plugin_id_str)
             || self.resolver_plugins.contains_key(&plugin_id_str)
             || self.utility_plugins.contains_key(&plugin_id_str)
         {
-            self.unregister_plugin(&plugin_id_str);
+            self.indexer_plugins.remove(&plugin_id_str);
+            self.resolver_plugins.remove(&plugin_id_str);
+            self.utility_plugins.remove(&plugin_id_str);
+            self.method_lookup.remove(&plugin_id_str);
+            self.rate_limiter.remove_plugin(&plugin_id_str);
+            self.wasm_cache.remove(&plugin_id_str);
+            self.runtime.unload_plugin(&plugin_id_str);
         }
 
         let primary_type = if plugin.types.contains(&PluginType::Indexer) {
@@ -84,11 +97,6 @@ impl PluginManager {
         } else if plugin.types.contains(&PluginType::Utility) {
             PluginType::Utility
         } else {
-            debug_assert!(
-                false,
-                "Plugin '{}' has no valid types - should be caught by validation",
-                plugin_id_str
-            );
             return Err(AppError::Validation(format!(
                 "Plugin '{}' has no valid types",
                 plugin_id_str
@@ -154,13 +162,12 @@ impl PluginManager {
                 .insert(plugin_id_str.clone(), Arc::clone(&plugin_arc));
         }
 
-        let mut runtime_guard = self.runtime.write().await;
+        self.runtime.set_plugin_timeout(&plugin_id_str, timeout_ms);
+        self.runtime
+            .set_plugin_memory_limit(&plugin_id_str, memory_pages);
 
-        runtime_guard.set_plugin_timeout(&plugin_id_str, timeout_ms);
-        runtime_guard.set_plugin_memory_limit(&plugin_id_str, memory_pages);
-
-        if !runtime_guard.plugins.contains_key(&plugin_id_str) {
-            runtime_guard
+        if !self.runtime.plugins.contains_key(&plugin_id_str) {
+            self.runtime
                 .load_plugin(
                     plugin_id_str.clone(),
                     &wasm_bytes,
@@ -172,12 +179,9 @@ impl PluginManager {
         Ok(())
     }
 
-    pub async fn ensure_plugin_loaded(&mut self, plugin_id: &str) -> Result<(), AppError> {
-        {
-            let runtime_guard = self.runtime.read().await;
-            if runtime_guard.plugins.contains_key(plugin_id) {
-                return Ok(());
-            }
+    pub async fn ensure_plugin_loaded(&self, plugin_id: &str) -> Result<(), AppError> {
+        if self.runtime.plugins.contains_key(plugin_id) {
+            return Ok(());
         }
 
         let load_lock = self
@@ -188,11 +192,8 @@ impl PluginManager {
 
         let _guard = load_lock.lock().await;
 
-        {
-            let runtime_guard = self.runtime.read().await;
-            if runtime_guard.plugins.contains_key(plugin_id) {
-                return Ok(());
-            }
+        if self.runtime.plugins.contains_key(plugin_id) {
+            return Ok(());
         }
 
         let plugin_arc = self
@@ -215,23 +216,19 @@ impl PluginManager {
             .value()
             .clone();
 
-        let mut runtime_guard = self.runtime.write().await;
-
-        if !runtime_guard.plugins.contains_key(plugin_id) {
-            runtime_guard
-                .load_plugin(
-                    plugin_id.to_string(),
-                    &wasm_bytes,
-                    &plugin_arc.permissions.validated_hosts,
-                )
-                .map_err(|e| AppError::Runtime(e.to_string()))?;
-        }
+        self.runtime
+            .load_plugin(
+                plugin_id.to_string(),
+                &wasm_bytes,
+                &plugin_arc.permissions.validated_hosts,
+            )
+            .map_err(|e| AppError::Runtime(e.to_string()))?;
 
         Ok(())
     }
 
     pub async fn call_plugin_method(
-        &mut self,
+        &self,
         plugin_name: &str,
         interface_method: &str,
         args: Vec<Value>,
@@ -252,27 +249,14 @@ impl PluginManager {
 
         self.ensure_plugin_loaded(plugin_name).await?;
 
-        let runtime = Arc::clone(&self.runtime);
-        let plugin_name_owned = plugin_name.to_string();
-        let plugin_method_owned = plugin_method.clone();
-        let args_owned = args.clone();
+        let runtime: Arc<PluginRuntime> = Arc::clone(&self.runtime);
+        let plugin_name_owned: String = plugin_name.to_string();
+        let plugin_method_owned: String = plugin_method.clone();
 
-        let result = tokio::task::spawn_blocking(move || {
-            let mut runtime_guard = match runtime.try_write() {
-                Ok(guard) => guard,
-                Err(_) => {
-                    return Err(
-                        Box::new(AppError::Runtime("Runtime lock contention".into()))
-                            as Box<dyn std::error::Error + Send>,
-                    );
-                }
-            };
-
-            runtime_guard
-                .execute_plugin_method(&plugin_name_owned, &plugin_method_owned, args_owned)
-                .map_err(|e| {
-                    Box::new(AppError::Runtime(e.to_string())) as Box<dyn std::error::Error + Send>
-                })
+        let result: Result<Value, AppError> = tokio::task::spawn_blocking(move || {
+            runtime
+                .execute_plugin_method(&plugin_name_owned, &plugin_method_owned, args)
+                .map_err(|e| AppError::Runtime(e.to_string()))
         })
         .await
         .map_err(|e| AppError::Runtime(format!("Plugin execution task failed: {}", e)))?;
@@ -291,13 +275,17 @@ impl PluginManager {
                         details: format!("Plugin crashed: {}", err_str),
                     })
                 } else {
-                    Err(AppError::Runtime(err_str))
+                    Err(e)
                 }
             }
         }
     }
 
-    pub fn unregister_plugin(&mut self, plugin_id: &str) {
+    pub fn unregister_plugin(&self, plugin_id: &str) {
+        self.unregister_plugin_internal(plugin_id);
+    }
+
+    fn unregister_plugin_internal(&self, plugin_id: &str) {
         self.indexer_plugins.remove(plugin_id);
         self.resolver_plugins.remove(plugin_id);
         self.utility_plugins.remove(plugin_id);
@@ -305,21 +293,14 @@ impl PluginManager {
         self.rate_limiter.remove_plugin(plugin_id);
         self.loading_locks.remove(plugin_id);
         self.wasm_cache.remove(plugin_id);
-
-        let _ = self.unload_plugin(plugin_id);
+        self.runtime.unload_plugin(plugin_id);
     }
 
-    pub fn unload_plugin(&mut self, plugin_id: &str) -> Result<(), AppError> {
-        let mut runtime_guard = self
-            .runtime
-            .try_write()
-            .map_err(|_| AppError::Runtime("Runtime lock contention".into()))?;
-
-        runtime_guard.plugins.remove(plugin_id);
-        Ok(())
+    pub fn unload_plugin_from_runtime(&self, plugin_id: &str) {
+        self.runtime.unload_plugin(plugin_id);
     }
 
-    pub async fn refresh_plugin(&mut self, plugin_id: &str) -> Result<(), AppError> {
+    pub async fn refresh_plugin(&self, plugin_id: &str) -> Result<(), AppError> {
         self.unregister_plugin(plugin_id);
 
         let plugin_dir = self.plugins_dir.join(plugin_id);
@@ -346,8 +327,7 @@ impl PluginManager {
     ) -> Result<String, AppError> {
         self.method_lookup
             .get(plugin_name)
-            .and_then(|methods| methods.get(interface_method))
-            .cloned()
+            .and_then(|methods| methods.get(interface_method).cloned())
             .ok_or_else(|| {
                 AppError::NotFound(format!(
                     "Method '{}' not found in plugin '{}'",
