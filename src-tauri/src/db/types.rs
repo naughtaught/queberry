@@ -508,20 +508,20 @@ impl DownloadStatus {
     }
 
     pub fn is_terminal(&self) -> bool {
-        matches!(
+        core::matches!(
             self,
             DownloadStatus::Completed | DownloadStatus::Cancelled | DownloadStatus::Failed
         )
     }
 
     pub fn is_active(&self) -> bool {
-        matches!(self, DownloadStatus::Downloading | DownloadStatus::Paused)
+        core::matches!(self, DownloadStatus::Downloading | DownloadStatus::Paused)
     }
 }
 
 impl fmt::Display for DownloadStatus {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.as_str())
+        std::write!(f, "{}", self.as_str())
     }
 }
 
