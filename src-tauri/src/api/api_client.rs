@@ -136,7 +136,7 @@ pub async fn fetch_up_next(
         .get(format!("{}/api/up-next", API_BASE))
         .header("X-User-Id", postgres_id)
         .header("Authorization", format!("Bearer {}", token))
-        .query(&[("local_date", local_date)])
+        .query(&[("localDate", local_date)])
         .send()
         .await
         .map_err(api_error)?;
@@ -344,8 +344,8 @@ pub async fn upsert_watched_episodes(
         .header("X-User-Id", postgres_id)
         .header("Authorization", format!("Bearer {}", token))
         .json(&serde_json::json!({
-            "media_id": media_id,
-            "episode_ids": episode_ids,
+            "mediaId": media_id,
+            "episodeIds": episode_ids,
         }))
         .send()
         .await
@@ -442,8 +442,8 @@ pub async fn reset_user_media_state(
         .header("X-User-Id", postgres_id)
         .header("Authorization", format!("Bearer {}", token))
         .json(&serde_json::json!({
-            "postgres_id": postgres_id,
-            "column_name": column_name,
+            "postgresId": postgres_id,
+            "columnName": column_name,
         }))
         .send()
         .await
@@ -467,7 +467,7 @@ pub async fn clear_user_episode_groups(postgres_id: &str, token: &str) -> Result
         .header("X-User-Id", postgres_id)
         .header("Authorization", format!("Bearer {}", token))
         .json(&serde_json::json!({
-            "postgres_id": postgres_id,
+            "postgresId": postgres_id,
         }))
         .send()
         .await
@@ -496,7 +496,7 @@ pub async fn delete_watched_episode_ids(
         .header("X-User-Id", postgres_id)
         .header("Authorization", format!("Bearer {}", token))
         .json(&serde_json::json!({
-            "episode_ids": episode_ids,
+            "episodeIds": episode_ids,
         }))
         .send()
         .await
@@ -526,9 +526,9 @@ pub async fn search_media(
         .header("X-User-Id", postgres_id)
         .header("Authorization", format!("Bearer {}", token))
         .query(&[
-            ("search_term", search_term),
+            ("searchTerm", search_term),
             ("page", &page.to_string()),
-            ("page_size", &page_size.to_string()),
+            ("pageSize", &page_size.to_string()),
         ])
         .send()
         .await
@@ -712,10 +712,10 @@ pub async fn update_user(
         body["username"] = serde_json::json!(u);
     }
     if let Some(cp) = current_password {
-        body["current_password"] = serde_json::json!(cp);
+        body["currentPassword"] = serde_json::json!(cp);
     }
     if let Some(np) = new_password {
-        body["new_password"] = serde_json::json!(np);
+        body["newPassword"] = serde_json::json!(np);
     }
 
     let response = client

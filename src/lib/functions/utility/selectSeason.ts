@@ -8,15 +8,16 @@ export const selectSeason = (
     if (media.type !== 'tv' || !media.seasons) return null
     if (!media.seasons.seasons || !Array.isArray(media.seasons.seasons)) return null
 
-    const preferredEpisodeKey = media.episode_group_name ? `${media.episode_group_name}` : 'default_episodes'
+    const preferredEpisodeKey = media.episode_group_name
+        ? `${media.episode_group_name.toLowerCase().replace(/\s+/g, '_')}_episodes`
+        : 'default_episodes'
 
     const currentSeason = media.seasons.seasons
-        .filter((season: Api.Season) => season.season_num !== 0)
-        .find((season: Api.Season) => {
+        .filter((season) => (hasCurrentSeason === 0 ? true : season.season_num !== 0))
+        .find((season) => {
             if (hasCurrentSeason !== null) return season.season_num === hasCurrentSeason
 
             let episodes = season[preferredEpisodeKey]
-
             if (!Array.isArray(episodes)) episodes = season.default_episodes
 
             if (showWatched) {

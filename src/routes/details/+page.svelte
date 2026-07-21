@@ -42,7 +42,7 @@
     let showWatchedEpisodes = $state(false)
     const { cast, directors, writers, creators } = $derived(parseCredits(media, 10))
     let currentSeason: number | null = $state(null)
-    let selectedSeason = $derived(media.type === 'tv' ? selectSeason(media, showWatchedEpisodes, currentSeason) : null)
+    let selectedSeason = $derived(media?.type === 'tv' ? selectSeason(media, showWatchedEpisodes, currentSeason) : null)
     const backdropPath = $derived.by(() => {
         if (media?.backdrop) return getImagePath(media.backdrop, 'original')
         return null

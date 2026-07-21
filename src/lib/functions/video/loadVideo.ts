@@ -180,9 +180,7 @@ export const loadVideo = async (
 
                         season = selectSeason(media, showWatched)
 
-                        if (season && !episodeData) {
-                            episodeData = getFirstUnwatchedEpisode(season, media, showWatched)
-                        }
+                        if (season && !episodeData) episodeData = getFirstUnwatchedEpisode(season, media, showWatched)
 
                         seasonNum = seasonNumber ? seasonNumber : (season?.season_num ?? 1)
                         episodeNum = episodeNum ? episodeNum : (episodeData?.episode_num ?? 1)
@@ -213,14 +211,21 @@ export const loadVideo = async (
                         mediaSources = localResults
                         localMedia = true
                     } else {
+                        const seasonNumb = episodeData?.is_movie
+                            ? null
+                            : (episodeData?.original_season_num ?? seasonNum)
+                        const episodeNumber = episodeData?.is_movie
+                            ? null
+                            : (episodeData?.original_episode_num ?? episodeNum)
+
                         const resp = await withTimeout(
                             fetchSources(
-                                imdbId,
+                                episodeData?.imdb_id ?? media.imdb_id,
                                 media.title,
                                 media.released,
-                                media.type,
-                                seasonNum,
-                                episodeNum,
+                                episodeData?.is_movie ? 'movie' : media.type,
+                                seasonNumb,
+                                episodeNumber,
                                 episodeData?.episode_id ?? null,
                                 true,
                             ),

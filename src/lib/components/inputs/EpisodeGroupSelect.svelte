@@ -31,7 +31,17 @@
             const currentUser = validateUser()
             if (!currentUser) return
 
-            media.episode_group_name = key
+            const groupName =
+                key === 'default_episodes'
+                    ? null
+                    : key
+                          .replace(/_episodes$/, '')
+                          .replace(/_/g, ' ')
+                          .split(' ')
+                          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                          .join(' ')
+
+            media.episode_group_name = groupName
 
             const upsertResponse = await invokeFunction('api_upsert_user_media', {
                 postgresId: currentUser.postgresId,
@@ -39,7 +49,7 @@
                 data: {
                     postgresId: currentUser.postgresId,
                     mediaId: media.id,
-                    episode_group_name: key,
+                    episodeGroupName: groupName,
                 },
             })
 
@@ -47,6 +57,8 @@
 
             selectedSeason = selectSeason(media, showWatchedEpisodes)
             selectedSeasonEpisodes = getSelectedSeasonsEpisodes(selectedSeason, media)
+            selectedSeasonEpisodes = selectedSeasonEpisodes.filter((x: { watched: boolean | null }) => !x.watched)
+            
             selectedEpisode =
                 getFirstUnwatchedEpisode(selectedSeason, media, showWatchedEpisodes) ?? selectedSeasonEpisodes[0]
             selectedEpisodeGroup = key

@@ -40,6 +40,7 @@
     beforeNavigate(() => {
         if (sectionElement) $scrollPositions.home.y = sectionElement.scrollTop
     })
+
 </script>
 
 {#if recentReleases?.length > 0 || trendingMovies?.length > 0 || trendingTv?.length > 0}
