@@ -95,7 +95,12 @@
                 .then((resp) => {
                     if (!resp.success) throw resp.error
                     relatedMedia = resp.data
-                    $cache['details'].media = [currentMedia]
+                    const index = $cache.details.media.findIndex((item) => item.id === currentMedia.id)
+                    if (index !== -1) {
+                        $cache.details.media[index] = currentMedia
+                    } else {
+                        $cache.details.media = [...$cache.details.media, currentMedia]
+                    }
                 })
                 .catch((error) => handleError(error))
         }

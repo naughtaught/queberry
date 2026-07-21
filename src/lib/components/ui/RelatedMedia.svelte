@@ -79,7 +79,7 @@
                     {#if $loadingStates.isPlayButtonLoading}<LoadingSpinner />{:else}Play{/if}
                 </button>
                 <a
-                    data-sveltekit-preload-data="tap"
+                    data-sveltekit-preload-data="hover"
                     class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-800/60 px-2 py-1 font-bold shadow-lg shadow-backgroundColor hover:text-primaryColor"
                     href={resolve(`/details/?id=${currentIndex.id}&type=${currentIndex.type}`, {})}>
                     Details

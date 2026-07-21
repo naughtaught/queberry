@@ -4,7 +4,7 @@
     import { page } from '$app/state'
     import { getImagePath } from '$lib/functions/ui/getImagePath'
     import { posterSize } from '$lib/functions/ui/posterSize'
-    import { activeGridViewSideBarItem, detailsMedia } from '$lib/stores/pages'
+    import { activeGridViewSideBarItem } from '$lib/stores/pages'
     import { settings } from '$lib/stores/user'
     import type { Api } from '$lib/types/api'
     import FavouriteButton from '$lib/components/inputs/FavouriteButton.svelte'
@@ -59,10 +59,9 @@
     class="group flex aspect-2/3 h-full"
     style={`min-height: ${minHpx}px; min-width: ${minWvw}vh; max-height: ${maxHvh}vh;`}>
     <a
-        data-sveltekit-preload-data="off"
+        data-sveltekit-preload-data="hover"
         tabindex="-1"
         href={resolve(`/details/?id=${media.id}&type=${media.type}`, {})}
-        onclick={() => ($detailsMedia = media)}
         onmouseenter={() => handleMouseEnter(media)}
         onmouseleave={() => handleMouseLeave()}>
         {#if index === dataLength - 20}

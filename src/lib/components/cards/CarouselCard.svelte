@@ -2,7 +2,6 @@
     import { resolve } from '$app/paths'
     import { getImagePath } from '$lib/functions/ui/getImagePath'
     import { posterSize } from '$lib/functions/ui/posterSize'
-    import { detailsMedia } from '$lib/stores/pages'
     import { settings } from '$lib/stores/user'
     import CardPlayButton from '$lib/components/inputs/CardPlayButton.svelte'
     import FavouriteButton from '$lib/components/inputs/FavouriteButton.svelte'
@@ -12,7 +11,7 @@
     import WatchlistButton from '$lib/components/inputs/WatchlistButton.svelte'
     import CardRating from '$lib/components/ui/CardRating.svelte'
 
-    let { media, showEpisodes = false, updateDetails = true } = $props()
+    let { media, showEpisodes = false } = $props()
 
     const imagescaling = $derived($settings.imageScaling)
     const scale = $derived(Math.max(0.5, Math.min(2, (imagescaling ?? 100) / 100)))
@@ -38,11 +37,8 @@
     class="group flex aspect-2/3 h-full shadow-xl"
     style={`min-height: ${minHpx}px; min-width: ${minWvw}vh; max-height: ${maxHvh}vh;`}>
     <a
-        data-sveltekit-preload-data="off"
+        data-sveltekit-preload-data="hover"
         class="h-full w-full"
-        onclick={() => {
-            if (updateDetails) $detailsMedia = media
-        }}
         href={resolve(`/details/?id=${media.id}&type=${media.type}`, {})}>
         <div class="relative h-full w-full">
             {#if avgRating}

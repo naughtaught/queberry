@@ -10,8 +10,6 @@ export const cursorId = writable(null)
 
 export const activeGridViewSideBarItem = writable<Api.MediaItem | null>()
 
-export const detailsMedia = writable<Api.MediaItem | null>(null)
-
 export const defaultFilters = writable<Api.Filters>({
     minYear: 1903,
     maxYear: new Date().getFullYear() + 1,

@@ -3,7 +3,6 @@
     import { posterSize } from '$lib/functions/ui/posterSize'
     import StarIcon from 'virtual:icons/material-symbols/star'
     import { resolve } from '$app/paths'
-    import { detailsMedia } from '$lib/stores/pages'
     import { modals } from '$lib/stores/app'
     import { parseCredits } from '$lib/functions/utility/parseCredits'
     import { SvelteSet } from 'svelte/reactivity'
@@ -29,9 +28,8 @@
 </script>
 
 <a
-    data-sveltekit-preload-data="off"
+    data-sveltekit-preload-data="hover"
     onclick={() => {
-        $detailsMedia = result
         $modals.search = false
     }}
     href={resolve(`/details/?id=${result.id}&type=${result.type}`, {})}

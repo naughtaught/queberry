@@ -75,7 +75,7 @@
         {:else}
             <a
                 class="ml-auto flex items-center justify-end gap-1 text-sm font-bold text-slate-500 transition-colors"
-                data-sveltekit-preload-data="off"
+                data-sveltekit-preload-data="hover"
                 tabindex="-1"
                 href={resolve(`/details/?id=${request.media_id}&type=${request.media_type}`, {})}>
                 View

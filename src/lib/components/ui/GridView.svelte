@@ -4,7 +4,7 @@
     import { setScrollPosition } from '$lib/functions/ui/setScrollPosition'
     import { isValidRoute } from '$lib/functions/utility/isValidRoute'
     import { loadingStates, scrollPositions } from '$lib/stores/app'
-    import { activeGridViewSideBarItem, detailsMedia } from '$lib/stores/pages'
+    import { activeGridViewSideBarItem } from '$lib/stores/pages'
     import type { Api } from '$lib/types/api'
     import GridViewMediaCard from '$lib/components/cards/GridViewMediaCard.svelte'
 
@@ -50,7 +50,6 @@
             case 'Enter':
                 event.preventDefault()
                 if (focusedMediaItem) {
-                    $detailsMedia = focusedMediaItem
                     goto(`/details/?id=${focusedMediaItem.id}&type=${focusedMediaItem.type}`)
                 }
                 break
