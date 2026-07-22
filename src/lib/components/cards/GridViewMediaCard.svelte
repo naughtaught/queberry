@@ -73,7 +73,7 @@
                 class:glow-shadow={media?.has_released_season_finale && page.url.pathname === '/watchlist'}
                 class="aspect-2/3 w-full rounded object-cover shadow-lg"
                 src={posterPath ? posterPath : '/images/poster-placeholder.png'}
-                alt={media?.name ?? 'Media poster'} />
+                alt={media?.title ?? 'Media poster'} />
             <div
                 class="absolute bottom-0 left-0 z-20 hidden w-full max-w-86 justify-between px-3 pb-3 group-hover:flex">
                 <WatchedButton bind:media background="bg-gray-700/40" />
