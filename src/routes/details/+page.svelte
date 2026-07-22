@@ -31,10 +31,12 @@
     import { cache } from '$lib/stores/pages.js'
     import { handleError } from '$lib/functions/errors/errorHandling.js'
     import RelatedMedia from '$lib/components/ui/RelatedMedia.svelte'
+    import { fetchCollections } from '$lib/db/fetchCollections.js'
 
     const { data } = $props()
     let media = $derived(data.data)
     let relatedFetched = $state(false)
+    let collectionsFetched = $state(false)
 
     const formattedRuntime = $derived(formatRuntime(media))
     const averageRating = $derived(formatAverageRating(media))
@@ -55,9 +57,11 @@
     let isSourcesOpen = $state(false)
     let selectedSource: Plugins.IndexerSource | null = $state(null)
 
+    let collections = $state<Api.Collection[]>([])
+    let relatedMedia = $state<Api.Collection[]>([])
+
     const filteredCollections = $derived.by(() => {
-        if (!media.collections) return []
-        const { collections } = media
+        if (!collections.length) return []
         const updatedCollections = collections.map((collection: Api.Collection) => ({
             ...collection,
             collection_items: collection.collection_items.filter((item) => item.media_id !== page.data.data.id),
@@ -65,7 +69,6 @@
 
         return updatedCollections.filter((collection: Api.Collection) => collection.collection_items.length !== 0)
     })
-    let relatedMedia = $derived(media.relatedMedia ?? [])
 
     $effect(() => {
         if (selectedSeason) {
@@ -89,12 +92,28 @@
         const mediaId = media.id
         const currentMedia = media
 
-        if (!relatedFetched && relatedMedia.length === 0) {
+        if (!relatedFetched) {
             relatedFetched = true
             fetchRelatedMedia(mediaId)
                 .then((resp) => {
                     if (!resp.success) throw resp.error
                     relatedMedia = resp.data
+                    const index = $cache.details.media.findIndex((item) => item.id === currentMedia.id)
+                    if (index !== -1) {
+                        $cache.details.media[index] = currentMedia
+                    } else {
+                        $cache.details.media = [...$cache.details.media, currentMedia]
+                    }
+                })
+                .catch((error) => handleError(error))
+        }
+
+        if (!collectionsFetched) {
+            collectionsFetched = true
+            fetchCollections(mediaId)
+                .then((resp) => {
+                    if (!resp.success) throw resp.error
+                    collections = resp.data
                     const index = $cache.details.media.findIndex((item) => item.id === currentMedia.id)
                     if (index !== -1) {
                         $cache.details.media[index] = currentMedia
@@ -230,7 +249,7 @@
             <div class="py-6">
                 <h3 class="mb-4 text-[10px] font-bold tracking-[0.2em] text-slate-500 uppercase">Collections</h3>
                 <div class="flex flex-col">
-                    <Collections collections={filteredCollections} unfilteredCollection={media.collections} />
+                    <Collections collections={filteredCollections} unfilteredCollection={collections} />
                 </div>
             </div>
         {/if}
