@@ -33,6 +33,7 @@
                     episode_id: null,
                     rating: media.rating,
                 })
+
                 if (!resp.success) throw resp.error
 
                 media = { ...resp.data }
@@ -42,7 +43,12 @@
                 (season: Api.Season) => season.season_num === selectedSeason.season_num,
             )
 
-            const episodesToUpdate = media.episode_group_name ? `${media.episode_group_name}` : 'default_episodes'
+            const episodeGroupKey =
+                media.episode_group_name && media.episode_group_name !== 'Default'
+                    ? `${media.episode_group_name.toLowerCase().replace(' ', '_')}_episodes`
+                    : 'default_episodes'
+
+            const episodesToUpdate = selectedSeasonData?.[episodeGroupKey] ? episodeGroupKey : 'default_episodes'
 
             const isAllWatched = selectedSeasonData[episodesToUpdate].every(
                 (episode: { watched: boolean }) => episode.watched,
@@ -73,6 +79,7 @@
                     episode_id: null,
                     rating: media.rating,
                 })
+
                 if (!resp.success) throw resp.error
 
                 media = { ...resp.data }

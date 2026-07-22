@@ -55,12 +55,16 @@
 
                 if (!media.watched && media.type === 'tv') {
                     $loadingStates.isEpisodesLoading = true
-                    const episodesToUpdate = media.episode_group_name
-                        ? `${media.episode_group_name}`
-                        : 'default_episodes'
+                    const episodeGroupKey =
+                        media.episode_group_name && media.episode_group_name !== 'Default'
+                            ? `${media.episode_group_name.toLowerCase().replace(' ', '_')}_episodes`
+                            : 'default_episodes'
+
                     const allEpisodes = (media.seasons?.seasons ?? [])
                         .filter((season: Api.Season) => season.season_num !== 0)
-                        .flatMap((season: Api.Season) => season[episodesToUpdate] || [])
+                        .flatMap((season: Api.Season) => {
+                            return season[episodeGroupKey] || season.default_episodes || []
+                        })
                     const response = await setEpisodeWatchedState(allEpisodes, media, false)
                     if (!response.success) throw response.error
                     media = { ...response.data.media }

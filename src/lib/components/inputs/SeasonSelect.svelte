@@ -17,7 +17,8 @@
 
     const seasons = $derived.by(() => {
         let allSeasons = media.seasons.seasons
-        const preferredEpisodeKey = selectedEpisodeGroup ? `${selectedEpisodeGroup}` : 'default_episodes'
+        const episodeGroupKey =
+            selectedEpisodeGroup && selectedEpisodeGroup !== 'Default' ? `${selectedEpisodeGroup}` : 'default_episodes'
 
         if (selectedEpisodeGroup !== 'Default') {
             allSeasons = media.seasons.seasons.filter((season: { season_num: number }) => season.season_num !== 0)
@@ -28,7 +29,7 @@
         if (showWatchedEpisodes) return allSeasons
 
         return allSeasons.filter((season: Api.Season) => {
-            const episodes = (season[preferredEpisodeKey] ?? season.default_episodes) as Api.Episode[]
+            const episodes = (season[episodeGroupKey] || season.default_episodes) as Api.Episode[]
             return episodes?.some((episode: Api.Episode) => !episode.watched)
         })
     })

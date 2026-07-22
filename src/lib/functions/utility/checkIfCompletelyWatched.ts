@@ -4,7 +4,10 @@ export const checkIfCompletelyWatched = (media: Api.MediaItem): boolean => {
     if (media.type !== 'tv' || !media.seasons) return false
     if (!media.seasons.seasons || !Array.isArray(media.seasons.seasons)) return false
 
-    const preferredEpisodeKey = media.episode_group_name ? `${media.episode_group_name}` : 'default_episodes'
+    const preferredEpisodeKey =
+        media.episode_group_name && media.episode_group_name !== 'Default'
+            ? `${media.episode_group_name.toLowerCase().replace(' ', '_')}_episodes`
+            : 'default_episodes'
     const now = new Date()
 
     return media.seasons.seasons
