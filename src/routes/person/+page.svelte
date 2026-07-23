@@ -212,7 +212,7 @@
         <div class="flex flex-wrap gap-8">
             {#if media.length}
                 {#each media as item (item.id)}
-                    <CarouselCard media={item} updateDetails={false} />
+                    <CarouselCard media={item} />
                 {/each}
             {:else}
                 <p>No matching media found.</p>

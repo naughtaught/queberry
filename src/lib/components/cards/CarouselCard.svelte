@@ -18,7 +18,6 @@
     const minHpx = $derived(300 * scale)
     const maxHvh = $derived(25 * scale)
     const minWvw = $derived(maxHvh * (2 / 3))
-    const avgRating = $derived(media?.ratings?.find((r: { source: string }) => r.source === 'average')?.rating ?? null)
     const totalAiredEpisodes = $derived.by(() => {
         if (media?.type === 'tv' && showEpisodes) {
             const defaultOrNoGroup = media.episode_group_name === 'Default' || !media.episode_group_name
@@ -41,9 +40,9 @@
         class="h-full w-full"
         href={resolve(`/details/?id=${media.id}&type=${media.type}`, {})}>
         <div class="relative h-full w-full">
-            {#if avgRating}
+            {#if media.average_rating}
                 <div class="absolute -top-3 -left-2 hidden h-16 w-16 group-hover:flex">
-                    <CardRating rating={avgRating} />
+                    <CardRating rating={media.average_rating} />
                 </div>
             {/if}
 
