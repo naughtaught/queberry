@@ -21,6 +21,7 @@
         selectedEpisode = $bindable(),
         isSourcesOpen = $bindable(),
         showWatchedEpisodes = $bindable(),
+        userSelectedSeason = $bindable(),
     } = $props()
 
     const { episode_group_keys } = $derived(media.seasons ?? null)
@@ -107,6 +108,7 @@
                     {selectedEpisodeGroup}
                     {showWatchedEpisodes}
                     {media}
+                    bind:userSelectedSeason
                     bind:selectedSeason
                     bind:selectedEpisode />
             {/if}

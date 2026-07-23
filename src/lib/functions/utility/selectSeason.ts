@@ -14,10 +14,12 @@ export const selectSeason = (
 
     const currentSeason = media.seasons.seasons
         .filter((season) => (hasCurrentSeason === 0 ? true : season.season_num !== 0))
+        .sort((a, b) => a.season_num - b.season_num)
         .find((season) => {
             if (hasCurrentSeason !== null) return season.season_num === hasCurrentSeason
 
             let episodes = season[preferredEpisodeKey]
+
             if (!Array.isArray(episodes)) episodes = season.default_episodes
 
             if (showWatched) {

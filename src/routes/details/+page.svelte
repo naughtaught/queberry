@@ -43,8 +43,10 @@
     const mediaRatings = $derived(orderRatings(media?.ratings))
     let showWatchedEpisodes = $state(false)
     const { cast, directors, writers, creators } = $derived(parseCredits(media, 10))
-    let currentSeason: number | null = $state(null)
-    let selectedSeason = $derived(media?.type === 'tv' ? selectSeason(media, showWatchedEpisodes, currentSeason) : null)
+    let userSelectedSeason: number | null = $state(null)
+    let selectedSeason = $derived(
+        media?.type === 'tv' ? selectSeason(media, showWatchedEpisodes, userSelectedSeason) : null,
+    )
     const backdropPath = $derived.by(() => {
         if (media?.backdrop) return getImagePath(media.backdrop, 'original')
         return null
@@ -72,11 +74,7 @@
 
     $effect(() => {
         if (selectedSeason) {
-            currentSeason = selectedSeason.season_num
             selectedEpisode = getFirstUnwatchedEpisode(selectedSeason, media, showWatchedEpisodes)
-        } else {
-            currentSeason = null
-            selectedEpisode = null
         }
     })
 
@@ -135,7 +133,7 @@
 {/if}
 
 {#if $modals.download}
-    <DownloadModal {media} source={selectedSource} seasonNumber={currentSeason} episodeData={selectedEpisode} />
+    <DownloadModal {media} source={selectedSource} seasonNumber={userSelectedSeason} episodeData={selectedEpisode} />
 {/if}
 
 {#snippet crewList(crewItems: Api.CastMember[], type: string)}
@@ -267,5 +265,11 @@
 {#if isSourcesOpen}
     <SourcesSideBar {media} {selectedSeason} {selectedEpisode} bind:selectedSource bind:isSourcesOpen />
 {:else}
-    <DetailsSideBar bind:showWatchedEpisodes bind:media bind:selectedSeason bind:selectedEpisode bind:isSourcesOpen />
+    <DetailsSideBar
+        bind:showWatchedEpisodes
+        bind:media
+        bind:selectedSeason
+        bind:selectedEpisode
+        bind:isSourcesOpen
+        bind:userSelectedSeason />
 {/if}

@@ -6,6 +6,7 @@
 
     let {
         media,
+        userSelectedSeason = $bindable(),
         selectedSeason = $bindable(),
         selectedEpisode = $bindable(),
         showWatchedEpisodes,
@@ -50,6 +51,7 @@
     const handleSeasonClick = (event: MouseEvent | KeyboardEvent, season: Api.Season): void => {
         event.stopPropagation()
         selectedSeason = season
+        userSelectedSeason = season.season_num
         selectedEpisode = getFirstUnwatchedEpisode(selectedSeason, media, showWatchedEpisodes) ?? 1
         isOpen = false
     }
