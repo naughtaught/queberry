@@ -43,26 +43,32 @@
                         mediaId: media.id,
                     })
                     if (!response.success) throw response.error
-                    const episodeGroups = ['default_episodes', ...(resp.data.episode_group_keys || [])]
-                    media = {
-                        ...resp.data,
-                        seasons: resp.data.seasons.map((season: Api.Season) => {
-                            const updatedSeason = { ...season }
+                    if (media.seasons) {
+                        const episodeGroups = ['default_episodes', ...(preChanges.seasons.episode_group_keys || [])]
+                        media = {
+                            ...resp.data,
+                            seasons: {
+                                ...media.seasons,
+                                seasons: media.seasons.seasons.map((season: Api.Season) => {
+                                    const updatedSeason = { ...season }
 
-                            episodeGroups.forEach((groupName) => {
-                                const episodes = updatedSeason[groupName]
-                                if (Array.isArray(episodes)) {
-                                    updatedSeason[groupName] = episodes.map((episode: Api.Episode) => ({
-                                        ...episode,
-                                        watched: false,
-                                    }))
-                                }
-                            })
+                                    episodeGroups.forEach((groupName) => {
+                                        const episodes = updatedSeason[groupName]
+                                        if (Array.isArray(episodes)) {
+                                            updatedSeason[groupName] = episodes.map((episode: Api.Episode) => ({
+                                                ...episode,
+                                                watched: false,
+                                            }))
+                                        }
+                                    })
 
-                            return updatedSeason
-                        }),
+                                    return updatedSeason
+                                }),
+                            },
+                        }
                     }
                 }
+
                 updateCachedMedia(media)
                 if (media.type === 'tv' && preChanges.watched) await fetchUpNext()
             }
