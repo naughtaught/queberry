@@ -559,7 +559,7 @@ pub async fn request_media(
     let client = get_client();
 
     let request_body = serde_json::json!({
-        "external_ids": {
+        "externalIds": {
             "imdb": { "id": imdb_id },
             "tmdb": { "id": tmdb_id, "type": tmdb_type },
             "tvdb": { "id": tvdb_id, "type": tvdb_type }
@@ -575,12 +575,19 @@ pub async fn request_media(
         .await
         .map_err(api_error)?;
 
-    let api_response: ApiResponse<serde_json::Value> = response.json().await.map_err(api_error)?;
+    let response_text = response.text().await.map_err(|e| e.to_string())?;
+
+    let api_response: ApiResponse<serde_json::Value> = serde_json::from_str(&response_text)
+        .map_err(|e| {
+            let err = format!("Failed to parse response: {} - Body: {}", e, response_text);
+            err
+        })?;
 
     if !api_response.success {
-        return Err(api_response
+        let error_msg = api_response
             .error_message()
-            .unwrap_or_else(|| "Unknown error".to_string()));
+            .unwrap_or_else(|| "Unknown error".to_string());
+        return Err(error_msg);
     }
 
     api_response
