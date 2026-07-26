@@ -47,6 +47,20 @@ export const fetchVideoFromSources = async (
             throw response.error
         }
 
+        if (response.success && !response.data) {
+            modals.update((states) => ({
+                ...states,
+                transfer: true,
+            }))
+            return {
+                videoUrl: '',
+                filename: null,
+                files: [],
+                infohash: null,
+                resolver: null,
+            }
+        }
+
         if (response.data?.download_link) {
             return {
                 videoUrl: response.data.download_link,
