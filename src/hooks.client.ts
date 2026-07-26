@@ -27,9 +27,21 @@ const getTransfers = async (): Promise<void> => {
         const transfers = await invokeFunction('list_transfers', {})
         if (!transfers.success) throw transfers.error
 
-        transfersInProgress.set({
-            ...transfers.data,
-        })
+        const transfersObject: Plugins.TransferProgress = {}
+
+        for (const transfer of transfers.data) {
+            transfersObject[transfer.hash] = {
+                transferId: transfer.transferId,
+                progress: transfer.progress,
+                filename: transfer.filename,
+                hash: transfer.hash,
+                status: 'checking',
+                resolver: transfer.resolver,
+                speed: 0,
+            }
+        }
+
+        transfersInProgress.set(transfersObject)
     } catch (error) {
         handleError(error, {
             display: false,

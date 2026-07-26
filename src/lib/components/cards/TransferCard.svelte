@@ -20,7 +20,7 @@
                             <span class="text-[14px]">{transfer.status}</span>
                         </span>
                         <span class="flex items-center gap-1 text-[10px] tracking-[0.2em] text-textColor uppercase">
-                            {transfer.speed} Mbps
+                            {transfer.speed ?? '-'} Mbps
                         </span>
                     </div>
                 </div>
@@ -29,12 +29,13 @@
                 </div>
             </div>
             <div class="h-2 w-full overflow-hidden rounded-full bg-white/5">
-                <div class="h-full bg-primaryColor transition-all duration-1000" style="width: 56%"></div>
+                <div class="h-full bg-primaryColor transition-all duration-1000" style="width: {transfer.progress}%">
+                </div>
             </div>
         </div>
         <div class="flex gap-2">
             <button
-                onclick={() => deleteTransfer(transfer.info_hash)}
+                onclick={() => deleteTransfer(transfer.hash)}
                 class="group/closebutton flex h-12 w-12 items-center justify-center rounded-full bg-white/5 transition-colors hover:bg-red-500/20">
                 <CloseIcon class="text-textColor transition-colors group-hover/closebutton:text-red-500" />
             </button>
