@@ -34,6 +34,7 @@ export const startTransfer = async (source: Plugins.IndexerSource): Promise<void
                 progress: 0,
                 status: response.data.status,
                 resolver: resolver.id,
+                filename: source.filename,
             },
         })
 

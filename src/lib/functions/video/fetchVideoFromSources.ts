@@ -1,4 +1,4 @@
-import { SKIP_ERRORS } from '$lib/stores/app'
+import { modals, SKIP_ERRORS } from '$lib/stores/app'
 import type { Plugins } from '$lib/types/plugins'
 import { fetchSources } from '$lib/functions/plugins/fetchSources'
 import { fetchVideoUrl } from '$lib/functions/video/fetchVideoUrl'
@@ -28,7 +28,22 @@ export const fetchVideoFromSources = async (
 
         if (!response.success) {
             const errorMessage = response?.error?.message?.toLowerCase() || ''
+
+            if (!options.skipErrors && errorMessage === 'no sources found.') {
+                modals.update((states) => ({
+                    ...states,
+                    transfer: true,
+                }))
+                return {
+                    videoUrl: '',
+                    filename: null,
+                    files: [],
+                    infohash: null,
+                    resolver: null,
+                }
+            }
             if (skipErrors && SKIP_ERRORS.some((e) => errorMessage.includes(e))) continue
+
             throw response.error
         }
 

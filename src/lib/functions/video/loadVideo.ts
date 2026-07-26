@@ -286,17 +286,19 @@ export const loadVideo = async (
 
                 Object.assign(playlistItem, videoData)
 
-                if (!playlistItem.videoUrl) {
+                if (!playlistItem.videoUrl && !targeted) {
                     throw createError(`No Video File Found`, 400, {
                         log: false,
                     })
                 }
 
-                if (targeted) {
+                if (targeted && playlistItem.videoUrl !== '') {
                     loadingStates.update((states) => ({
                         ...states,
                         isVideoLoading: true,
                     }))
+                } else {
+                    return
                 }
 
                 checkCancellation()
