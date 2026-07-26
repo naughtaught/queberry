@@ -151,11 +151,23 @@ impl PluginRuntime {
                     )
                 })?;
 
-            let value: Value =
-                serde_json::from_str(result).map_err(|e| AppError::PluginInvalidOutput {
+            let result_text = result.to_string();
+
+            let value: Value = serde_json::from_str(&result_text).map_err(|e| {
+                let preview: String = result_text.chars().take(500).collect();
+                AppError::PluginInvalidOutput {
                     plugin_id: plugin_id.to_string(),
-                    details: format!("Invalid JSON: {}. Raw output: {}", e, result),
-                })?;
+                    details: format!(
+                        "Invalid JSON: {}. Raw output (first 500 chars): {}",
+                        e,
+                        if result_text.len() > 500 {
+                            format!("{}...", preview)
+                        } else {
+                            preview
+                        }
+                    ),
+                }
+            })?;
 
             Ok(value)
         }));
@@ -174,12 +186,12 @@ impl PluginRuntime {
                 self.plugins.remove(&plugin_id_owned);
 
                 Err(Box::new(AppError::PluginCrashed {
-                    plugin_id: plugin_id_owned,
-                    details: format!(
-                        "Plugin panicked during execution of '{}': {}. The plugin has been unloaded for safety.",
-                        function_name_owned, panic_msg
-                    ),
-                }))
+                plugin_id: plugin_id_owned,
+                details: format!(
+                    "Plugin panicked during execution of '{}': {}. The plugin has been unloaded for safety.",
+                    function_name_owned, panic_msg
+                ),
+            }))
             }
         }
     }

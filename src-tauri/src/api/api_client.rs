@@ -32,6 +32,40 @@ fn api_error(e: impl std::fmt::Display) -> String {
     e.to_string().replace(API_BASE, "API")
 }
 
+fn parse_api_response<T: serde::de::DeserializeOwned>(
+    response_text: &str,
+) -> Result<ApiResponse<T>, String> {
+    match serde_json::from_str::<ApiResponse<T>>(response_text) {
+        Ok(response) => Ok(response),
+        Err(e) => {
+            let preview: String = response_text.chars().take(200).collect();
+            Err(format!(
+                "Failed to parse response: {} - Body: {}",
+                e, preview
+            ))
+        }
+    }
+}
+
+async fn handle_response<T: serde::de::DeserializeOwned>(
+    response: reqwest::Response,
+) -> Result<T, String> {
+    let response_text = response.text().await.map_err(|e| e.to_string())?;
+
+    let api_response: ApiResponse<T> = parse_api_response(&response_text)?;
+
+    if !api_response.success {
+        let error_msg = api_response
+            .error_message()
+            .unwrap_or_else(|| "Unknown error".to_string());
+        return Err(error_msg);
+    }
+
+    api_response
+        .data
+        .ok_or_else(|| "No data returned".to_string())
+}
+
 pub fn get_client() -> &'static Client {
     API_CLIENT.get_or_init(|| {
         Client::builder()
@@ -50,7 +84,9 @@ pub async fn login(email: String, password: String) -> Result<LoginResponse, Str
         .await
         .map_err(api_error)?;
 
-    let api_response: ApiResponse<serde_json::Value> = response.json().await.map_err(api_error)?;
+    let response_text = response.text().await.map_err(|e| e.to_string())?;
+
+    let api_response: ApiResponse<serde_json::Value> = parse_api_response(&response_text)?;
 
     if !api_response.success {
         return Err(api_response
@@ -85,7 +121,9 @@ pub async fn register(
         .await
         .map_err(api_error)?;
 
-    let api_response: ApiResponse<serde_json::Value> = response.json().await.map_err(api_error)?;
+    let response_text = response.text().await.map_err(|e| e.to_string())?;
+
+    let api_response: ApiResponse<serde_json::Value> = parse_api_response(&response_text)?;
 
     if !api_response.success {
         return Err(api_response
@@ -113,17 +151,7 @@ pub async fn fetch_trending(postgres_id: &str, token: &str) -> Result<serde_json
         .await
         .map_err(api_error)?;
 
-    let api_response: ApiResponse<serde_json::Value> = response.json().await.map_err(api_error)?;
-
-    if !api_response.success {
-        return Err(api_response
-            .error_message()
-            .unwrap_or_else(|| "Unknown error".to_string()));
-    }
-
-    api_response
-        .data
-        .ok_or_else(|| "No data returned".to_string())
+    handle_response(response).await
 }
 
 pub async fn fetch_up_next(
@@ -141,17 +169,7 @@ pub async fn fetch_up_next(
         .await
         .map_err(api_error)?;
 
-    let api_response: ApiResponse<serde_json::Value> = response.json().await.map_err(api_error)?;
-
-    if !api_response.success {
-        return Err(api_response
-            .error_message()
-            .unwrap_or_else(|| "Unknown error".to_string()));
-    }
-
-    api_response
-        .data
-        .ok_or_else(|| "No data returned".to_string())
+    handle_response(response).await
 }
 
 pub async fn fetch_recent(postgres_id: &str, token: &str) -> Result<serde_json::Value, String> {
@@ -164,17 +182,7 @@ pub async fn fetch_recent(postgres_id: &str, token: &str) -> Result<serde_json::
         .await
         .map_err(api_error)?;
 
-    let api_response: ApiResponse<serde_json::Value> = response.json().await.map_err(api_error)?;
-
-    if !api_response.success {
-        return Err(api_response
-            .error_message()
-            .unwrap_or_else(|| "Unknown error".to_string()));
-    }
-
-    api_response
-        .data
-        .ok_or_else(|| "No data returned".to_string())
+    handle_response(response).await
 }
 
 pub async fn fetch_media_item(
@@ -192,17 +200,7 @@ pub async fn fetch_media_item(
         .await
         .map_err(api_error)?;
 
-    let api_response: ApiResponse<serde_json::Value> = response.json().await.map_err(api_error)?;
-
-    if !api_response.success {
-        return Err(api_response
-            .error_message()
-            .unwrap_or_else(|| "Unknown error".to_string()));
-    }
-
-    api_response
-        .data
-        .ok_or_else(|| "No data returned".to_string())
+    handle_response(response).await
 }
 
 pub async fn fetch_season_data(
@@ -219,17 +217,7 @@ pub async fn fetch_season_data(
         .await
         .map_err(api_error)?;
 
-    let api_response: ApiResponse<serde_json::Value> = response.json().await.map_err(api_error)?;
-
-    if !api_response.success {
-        return Err(api_response
-            .error_message()
-            .unwrap_or_else(|| "Unknown error".to_string()));
-    }
-
-    api_response
-        .data
-        .ok_or_else(|| "No data returned".to_string())
+    handle_response(response).await
 }
 
 pub async fn upsert_user_media(
@@ -247,15 +235,7 @@ pub async fn upsert_user_media(
         .await
         .map_err(api_error)?;
 
-    let api_response: ApiResponse<()> = response.json().await.map_err(api_error)?;
-
-    if !api_response.success {
-        return Err(api_response
-            .error_message()
-            .unwrap_or_else(|| "Unknown error".to_string()));
-    }
-
-    Ok(())
+    handle_response(response).await
 }
 
 pub async fn verify_token(postgres_id: &str, token: &str) -> Result<bool, String> {
@@ -275,10 +255,9 @@ pub async fn verify_token(postgres_id: &str, token: &str) -> Result<bool, String
         ));
     }
 
-    let api_response: ApiResponse<bool> = response
-        .json()
-        .await
-        .map_err(|e| format!("Parse error: {}", e))?;
+    let response_text = response.text().await.map_err(|e| e.to_string())?;
+
+    let api_response: ApiResponse<bool> = parse_api_response(&response_text)?;
 
     if !api_response.success {
         return Err(api_response
@@ -305,31 +284,7 @@ pub async fn fetch_media_list(
         .await
         .map_err(|e| format!("Request failed: {}", e))?;
 
-    let bytes = response
-        .bytes()
-        .await
-        .map_err(|e| format!("Failed to read body: {}", e))?;
-
-    let text = String::from_utf8_lossy(&bytes).into_owned();
-
-    let api_response: ApiResponse<serde_json::Value> =
-        serde_json::from_str(&text).map_err(|e| {
-            format!(
-                "JSON parse error: {} - Body: {}",
-                e,
-                &text[..text.len().min(200)]
-            )
-        })?;
-
-    if !api_response.success {
-        return Err(api_response
-            .error_message()
-            .unwrap_or_else(|| "Unknown error".to_string()));
-    }
-
-    api_response
-        .data
-        .ok_or_else(|| "No data returned".to_string())
+    handle_response(response).await
 }
 
 pub async fn upsert_watched_episodes(
@@ -351,15 +306,7 @@ pub async fn upsert_watched_episodes(
         .await
         .map_err(api_error)?;
 
-    let api_response: ApiResponse<()> = response.json().await.map_err(api_error)?;
-
-    if !api_response.success {
-        return Err(api_response
-            .error_message()
-            .unwrap_or_else(|| "Unknown error".to_string()));
-    }
-
-    Ok(())
+    handle_response(response).await
 }
 
 pub async fn delete_watched_episodes(
@@ -376,15 +323,7 @@ pub async fn delete_watched_episodes(
         .await
         .map_err(api_error)?;
 
-    let api_response: ApiResponse<()> = response.json().await.map_err(api_error)?;
-
-    if !api_response.success {
-        return Err(api_response
-            .error_message()
-            .unwrap_or_else(|| "Unknown error".to_string()));
-    }
-
-    Ok(())
+    handle_response(response).await
 }
 
 pub async fn delete_user_media(
@@ -401,15 +340,7 @@ pub async fn delete_user_media(
         .await
         .map_err(api_error)?;
 
-    let api_response: ApiResponse<()> = response.json().await.map_err(api_error)?;
-
-    if !api_response.success {
-        return Err(api_response
-            .error_message()
-            .unwrap_or_else(|| "Unknown error".to_string()));
-    }
-
-    Ok(())
+    handle_response(response).await
 }
 
 pub async fn delete_user(postgres_id: &str, token: &str) -> Result<(), String> {
@@ -449,15 +380,7 @@ pub async fn reset_user_media_state(
         .await
         .map_err(api_error)?;
 
-    let api_response: ApiResponse<()> = response.json().await.map_err(api_error)?;
-
-    if !api_response.success {
-        return Err(api_response
-            .error_message()
-            .unwrap_or_else(|| "Unknown error".to_string()));
-    }
-
-    Ok(())
+    handle_response(response).await
 }
 
 pub async fn clear_user_episode_groups(postgres_id: &str, token: &str) -> Result<(), String> {
@@ -473,15 +396,7 @@ pub async fn clear_user_episode_groups(postgres_id: &str, token: &str) -> Result
         .await
         .map_err(api_error)?;
 
-    let api_response: ApiResponse<()> = response.json().await.map_err(api_error)?;
-
-    if !api_response.success {
-        return Err(api_response
-            .error_message()
-            .unwrap_or_else(|| "Unknown error".to_string()));
-    }
-
-    Ok(())
+    handle_response(response).await
 }
 
 pub async fn delete_watched_episode_ids(
@@ -502,15 +417,7 @@ pub async fn delete_watched_episode_ids(
         .await
         .map_err(api_error)?;
 
-    let api_response: ApiResponse<()> = response.json().await.map_err(api_error)?;
-
-    if !api_response.success {
-        return Err(api_response
-            .error_message()
-            .unwrap_or_else(|| "Unknown error".to_string()));
-    }
-
-    Ok(())
+    handle_response(response).await
 }
 
 pub async fn search_media(
@@ -534,17 +441,7 @@ pub async fn search_media(
         .await
         .map_err(api_error)?;
 
-    let api_response: ApiResponse<serde_json::Value> = response.json().await.map_err(api_error)?;
-
-    if !api_response.success {
-        return Err(api_response
-            .error_message()
-            .unwrap_or_else(|| "Unknown error".to_string()));
-    }
-
-    api_response
-        .data
-        .ok_or_else(|| "No data returned".to_string())
+    handle_response(response).await
 }
 
 pub async fn request_media(
@@ -575,24 +472,7 @@ pub async fn request_media(
         .await
         .map_err(api_error)?;
 
-    let response_text = response.text().await.map_err(|e| e.to_string())?;
-
-    let api_response: ApiResponse<serde_json::Value> = serde_json::from_str(&response_text)
-        .map_err(|e| {
-            let err = format!("Failed to parse response: {} - Body: {}", e, response_text);
-            err
-        })?;
-
-    if !api_response.success {
-        let error_msg = api_response
-            .error_message()
-            .unwrap_or_else(|| "Unknown error".to_string());
-        return Err(error_msg);
-    }
-
-    api_response
-        .data
-        .ok_or_else(|| "No data returned".to_string())
+    handle_response(response).await
 }
 
 pub async fn get_media_requests(
@@ -615,17 +495,7 @@ pub async fn get_media_requests(
         .await
         .map_err(api_error)?;
 
-    let api_response: ApiResponse<serde_json::Value> = response.json().await.map_err(api_error)?;
-
-    if !api_response.success {
-        return Err(api_response
-            .error_message()
-            .unwrap_or_else(|| "Unknown error".to_string()));
-    }
-
-    api_response
-        .data
-        .ok_or_else(|| "No data returned".to_string())
+    handle_response(response).await
 }
 
 pub async fn delete_media_request(
@@ -643,17 +513,7 @@ pub async fn delete_media_request(
         .await
         .map_err(api_error)?;
 
-    let api_response: ApiResponse<serde_json::Value> = response.json().await.map_err(api_error)?;
-
-    if !api_response.success {
-        return Err(api_response
-            .error_message()
-            .unwrap_or_else(|| "Unknown error".to_string()));
-    }
-
-    api_response
-        .data
-        .ok_or_else(|| "No data returned".to_string())
+    handle_response(response).await
 }
 
 pub async fn get_blacklist_entry(
@@ -670,7 +530,9 @@ pub async fn get_blacklist_entry(
         .await
         .map_err(api_error)?;
 
-    let api_response: ApiResponse<serde_json::Value> = response.json().await.map_err(api_error)?;
+    let response_text = response.text().await.map_err(|e| e.to_string())?;
+
+    let api_response: ApiResponse<serde_json::Value> = parse_api_response(&response_text)?;
 
     if !api_response.success {
         return Err(api_response
@@ -734,17 +596,7 @@ pub async fn update_user(
         .await
         .map_err(api_error)?;
 
-    let api_response: ApiResponse<serde_json::Value> = response.json().await.map_err(api_error)?;
-
-    if !api_response.success {
-        return Err(api_response
-            .error_message()
-            .unwrap_or_else(|| "Unknown error".to_string()));
-    }
-
-    api_response
-        .data
-        .ok_or_else(|| "No data returned".to_string())
+    handle_response(response).await
 }
 
 pub async fn reset_token(postgres_id: &str, token: &str) -> Result<serde_json::Value, String> {
@@ -758,17 +610,7 @@ pub async fn reset_token(postgres_id: &str, token: &str) -> Result<serde_json::V
         .await
         .map_err(api_error)?;
 
-    let api_response: ApiResponse<serde_json::Value> = response.json().await.map_err(api_error)?;
-
-    if !api_response.success {
-        return Err(api_response
-            .error_message()
-            .unwrap_or_else(|| "Unknown error".to_string()));
-    }
-
-    api_response
-        .data
-        .ok_or_else(|| "No data returned".to_string())
+    handle_response(response).await
 }
 
 pub async fn fetch_random_media(
@@ -794,7 +636,9 @@ pub async fn fetch_random_media(
         .await
         .map_err(api_error)?;
 
-    let api_response: ApiResponse<serde_json::Value> = response.json().await.map_err(api_error)?;
+    let response_text = response.text().await.map_err(|e| e.to_string())?;
+
+    let api_response: ApiResponse<serde_json::Value> = parse_api_response(&response_text)?;
 
     if !api_response.success {
         return Err(api_response
@@ -821,7 +665,9 @@ pub async fn fetch_random_backdrop(
 
     let response = request.send().await.map_err(api_error)?;
 
-    let api_response: ApiResponse<Option<String>> = response.json().await.map_err(api_error)?;
+    let response_text = response.text().await.map_err(|e| e.to_string())?;
+
+    let api_response: ApiResponse<Option<String>> = parse_api_response(&response_text)?;
 
     if !api_response.success {
         return Err(api_response
@@ -846,17 +692,7 @@ pub async fn api_fetch_collections(
         .await
         .map_err(api_error)?;
 
-    let api_response: ApiResponse<serde_json::Value> = response.json().await.map_err(api_error)?;
-
-    if !api_response.success {
-        return Err(api_response
-            .error_message()
-            .unwrap_or_else(|| "Unknown error".to_string()));
-    }
-
-    api_response
-        .data
-        .ok_or_else(|| "No data returned".to_string())
+    handle_response(response).await
 }
 
 pub async fn api_fetch_related_media(
@@ -873,17 +709,7 @@ pub async fn api_fetch_related_media(
         .await
         .map_err(api_error)?;
 
-    let api_response: ApiResponse<serde_json::Value> = response.json().await.map_err(api_error)?;
-
-    if !api_response.success {
-        return Err(api_response
-            .error_message()
-            .unwrap_or_else(|| "Unknown error".to_string()));
-    }
-
-    api_response
-        .data
-        .ok_or_else(|| "No data returned".to_string())
+    handle_response(response).await
 }
 
 pub async fn api_fetch_person_details(
@@ -900,15 +726,5 @@ pub async fn api_fetch_person_details(
         .await
         .map_err(api_error)?;
 
-    let api_response: ApiResponse<serde_json::Value> = response.json().await.map_err(api_error)?;
-
-    if !api_response.success {
-        return Err(api_response
-            .error_message()
-            .unwrap_or_else(|| "Unknown error".to_string()));
-    }
-
-    api_response
-        .data
-        .ok_or_else(|| "No data returned".to_string())
+    handle_response(response).await
 }
