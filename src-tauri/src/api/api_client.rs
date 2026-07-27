@@ -47,7 +47,7 @@ fn parse_api_response<T: serde::de::DeserializeOwned>(
     }
 }
 
-async fn handle_response<T: serde::de::DeserializeOwned>(
+async fn handle_response<T: serde::de::DeserializeOwned + Default>(
     response: reqwest::Response,
 ) -> Result<T, String> {
     let response_text = response.text().await.map_err(|e| e.to_string())?;
@@ -61,9 +61,7 @@ async fn handle_response<T: serde::de::DeserializeOwned>(
         return Err(error_msg);
     }
 
-    api_response
-        .data
-        .ok_or_else(|| "No data returned".to_string())
+    Ok(api_response.data.unwrap_or_default())
 }
 
 pub fn get_client() -> &'static Client {
