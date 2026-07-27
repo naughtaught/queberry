@@ -218,6 +218,8 @@ export const loadVideo = async (
                             ? null
                             : (episodeData?.original_episode_num ?? episodeNum)
 
+                        checkCancellation()
+
                         const resp = await withTimeout(
                             fetchSources(
                                 episodeData?.imdb_id ?? media.imdb_id,
@@ -265,6 +267,8 @@ export const loadVideo = async (
                         resolver: 'Local Media',
                     }
                 } else {
+                    checkCancellation()
+
                     videoData = await withTimeout(
                         fetchVideoFromSources(
                             {
@@ -286,6 +290,8 @@ export const loadVideo = async (
 
                 Object.assign(playlistItem, videoData)
 
+                checkCancellation()
+
                 if (!playlistItem.videoUrl && !targeted) {
                     throw createError(`No Video File Found`, 400, {
                         log: false,
@@ -297,7 +303,14 @@ export const loadVideo = async (
                         ...states,
                         isVideoLoading: true,
                     }))
-                } else {
+                } else if (targeted) {
+                    if (overallTimeoutId) clearTimeout(overallTimeoutId)
+
+                    loadingStates.update((states) => ({
+                        ...states,
+                        isPlayButtonLoading: false,
+                        isVideoLoading: false,
+                    }))
                     return
                 }
 
