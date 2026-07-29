@@ -6,6 +6,7 @@ use crate::db::keyboard_shortcuts::KeyboardShortcutsManager;
 use crate::db::keys::KeysManager;
 use crate::db::local_media::LocalMediaManager;
 use crate::db::plugin_cache::PluginCacheManager;
+use crate::db::resolved_cache::ResolvedCacheManager;
 use crate::db::transfers::TransferManager;
 use crate::db::Database;
 use crate::db::{settings::SettingsManager, user::UserManager};
@@ -31,6 +32,7 @@ pub struct AppState {
     keyboard_shortcuts_manager: Option<KeyboardShortcutsManager>,
     transfers_manager: Option<TransferManager>,
     local_media_manager: Option<LocalMediaManager>,
+    resolved_cache_manager: Option<ResolvedCacheManager>,
 }
 
 impl AppState {
@@ -63,6 +65,9 @@ impl AppState {
         let plugin_cache = database
             .as_ref()
             .map(|db| PluginCacheManager::new(db.clone()));
+        let resolved_cache_manager = database
+            .as_ref()
+            .map(|db| ResolvedCacheManager::new(db.clone()));
 
         Self {
             plugin_manager: Arc::new(plugin_manager),
@@ -80,6 +85,7 @@ impl AppState {
             keyboard_shortcuts_manager,
             transfers_manager,
             local_media_manager,
+            resolved_cache_manager,
         }
     }
 
@@ -125,5 +131,10 @@ impl AppState {
 
     pub fn get_db_download_manager(&self) -> Option<&DbDownloadManager> {
         self.db_download_manager.as_ref()
+    }
+
+    pub fn get_resolved_cache_manager(&self) -> Option<&ResolvedCacheManager> {
+        // add this
+        self.resolved_cache_manager.as_ref()
     }
 }

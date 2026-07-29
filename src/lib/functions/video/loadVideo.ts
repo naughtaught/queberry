@@ -10,15 +10,13 @@ import { DEFAULT_VIDEO_METADATA, shouldCancelVideoLoad, videoMetadata } from '$l
 import { fetchSeasonData } from '$lib/db/fetchSeasons'
 import { selectSeason } from '$lib/functions/utility/selectSeason'
 import { getFirstUnwatchedEpisode } from '$lib/functions/utility/getFirstUnwatchedEpisode'
-import { fetchSources } from '$lib/functions/plugins/fetchSources'
 import { getLanguageCodeByName } from '$lib/functions/utility/parseLanguage'
 import { invokeFunction } from '$lib/functions/api/invokeFunction'
 import { createError, handleError } from '$lib/functions/errors/errorHandling'
 import { checkIfCompletelyWatched } from '$lib/functions/utility/checkIfCompletelyWatched'
 import { shuffleSettings } from '$lib/stores/pages'
 import { getRandomEpisode } from '$lib/functions/video/getRandomEpisode'
-import { fetchVideoFromSources } from '$lib/functions/video/fetchVideoFromSources'
-import { fetchLocalMedia } from '$lib/functions/video/fetchLocalMedia'
+import { resolveVideoData } from './resolveVideoData'
 
 const TIMEOUTS = {
     SEASON_DATA: 10000,
@@ -84,9 +82,7 @@ export const loadVideo = async (
     let episodeData = episode
     let episodeNum = episodeData?.episode_num ?? null
     let season = null
-    let mediaSources = sources
     let showWatched = false
-    let localMedia = false
 
     const isCancelled = (): boolean => get(shouldCancelVideoLoad)
     let overallTimeoutId: NodeJS.Timeout | undefined = undefined
@@ -193,112 +189,27 @@ export const loadVideo = async (
                     playlistItem.episode = episodeData ?? null
                 }
 
-                if (!mediaSources || mediaSources.length === 0) {
-                    checkCancellation()
-
-                    const imdbId = episode?.imdb_id ? episode.imdb_id : media.imdb_id
-
-                    const localResults = await fetchLocalMedia(
-                        imdbId,
-                        media.title,
-                        media.released,
-                        media.type,
-                        seasonNum,
-                        episodeNum,
-                    )
-
-                    if (localResults.length > 0) {
-                        mediaSources = localResults
-                        localMedia = true
-                    } else {
-                        const seasonNumb = episodeData?.is_movie
-                            ? null
-                            : (episodeData?.original_season_num ?? seasonNum)
-                        const episodeNumber = episodeData?.is_movie
-                            ? null
-                            : (episodeData?.original_episode_num ?? episodeNum)
-
-                        checkCancellation()
-
-                        const resp = await withTimeout(
-                            fetchSources(
-                                episodeData?.imdb_id ?? media.imdb_id,
-                                media.title,
-                                media.released,
-                                episodeData?.is_movie ? 'movie' : media.type,
-                                seasonNumb,
-                                episodeNumber,
-                                episodeData?.episode_id ?? null,
-                                true,
-                            ),
-                            TIMEOUTS.SOURCES_FETCH,
-                            isCancelled,
-                        )
-
-                        if (!resp.success) throw resp.error
-
-                        if (resp.success && resp.data.length > 0) {
-                            mediaSources = resp.data
-                        } else if (resp.success && resp.data.length === 0) {
-                            throw createError(`No sources found for ${media.imdb_id}`, 404, {
-                                log: false,
-                            })
-                        }
-                    }
-                }
-
-                if (!mediaSources) {
-                    throw createError(`No sources found for ${media.imdb_id}`, 404, {
-                        log: false,
-                    })
-                }
-
-                const originalSeasonNumber = episode?.original_season_num ? episode.original_season_num : seasonNum
-                const originalEpisodeNumber = episode?.original_episode_num ? episode.original_episode_num : episodeNum
                 const imdbId = episode?.imdb_id ?? media.imdb_id
 
-                let videoData
-                if (localMedia || mediaSources[0].source === 'Local Media') {
-                    videoData = {
-                        videoUrl: mediaSources[0].filePath,
-                        filename: mediaSources[0].filename,
-                        files: [],
-                        infohash: null,
-                        resolver: 'Local Media',
-                    }
-                } else {
-                    checkCancellation()
+                const seasonNumb = episodeData?.is_movie ? null : (episodeData?.original_season_num ?? seasonNum)
+                const episodeNumber = episodeData?.is_movie ? null : (episodeData?.original_episode_num ?? episodeNum)
 
-                    videoData = await withTimeout(
-                        fetchVideoFromSources(
-                            {
-                                imdbId,
-                                title: media.title,
-                                released: media.released,
-                                type: media.type,
-                                seasonNumber: originalSeasonNumber,
-                                episodeNumber: originalEpisodeNumber,
-                                episodeId: episodeData?.episode_id ?? null,
-                                skipErrors: !targeted,
-                            },
-                            mediaSources,
-                        ),
-                        TIMEOUTS.VIDEO_URL_FETCH,
-                        isCancelled,
-                    )
-                }
+                const videoData = await resolveVideoData(
+                    imdbId,
+                    media,
+                    seasonNumb,
+                    episodeNumber,
+                    episode,
+                    checkCancellation,
+                    sources,
+                    targeted,
+                )
 
                 Object.assign(playlistItem, videoData)
 
                 checkCancellation()
 
-                if (!playlistItem.videoUrl && !targeted) {
-                    throw createError(`No Video File Found`, 400, {
-                        log: false,
-                    })
-                }
-
-                if (targeted && playlistItem.videoUrl !== '') {
+                if (targeted && playlistItem.videoUrl) {
                     loadingStates.update((states) => ({
                         ...states,
                         isVideoLoading: true,

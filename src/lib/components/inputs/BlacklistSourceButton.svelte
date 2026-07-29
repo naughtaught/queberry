@@ -45,6 +45,12 @@
                 const resp = await invokeFunction('close_video_player', {})
                 if (!resp.success) throw resp.error
             }
+
+            const deleteResolvedCache = await invokeFunction('delete_resolved_cache_by_infohash', {
+                infohash,
+            })
+
+            if (!deleteResolvedCache.success) throw deleteResolvedCache.error
         } catch (error) {
             handleError(error)
         }

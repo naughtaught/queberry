@@ -448,6 +448,17 @@ pub struct CreateDownload {
     pub downloaded_bytes: Option<i64>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ResolvedCache {
+    pub id: i64,
+    pub imdb_id: String,
+    pub infohash: String,
+    pub plugin_id: String,
+    pub files_json: String,
+    pub created_at: i64,
+}
+
 impl From<KeyboardShortcutsRow> for KeyboardShortcuts {
     fn from(row: KeyboardShortcutsRow) -> Self {
         Self {

@@ -225,6 +225,16 @@
                 confirmationModalConfig.message = `Are you sure you want to reset your media?
                 All media states and ratings will be reset.`
                 break
+            case 'Reset Apikey':
+                confirmationModalConfig.message = `Are you sure you want to reset your apikey?
+                This will log out all other devices.`
+                break
+            case 'Reset Blacklist':
+                confirmationModalConfig.message = `Are you sure you want to reset your blacklisted sources?`
+                break
+            case 'Reset Cached':
+                confirmationModalConfig.message = `Are you sure you want to reset your cached media?`
+                break
             default:
                 confirmationModalConfig.message = confirmationModalConfig.message
                 break
@@ -259,12 +269,6 @@
                 token: $user.token,
             })
             if (!response.success) throw response.error
-
-            const blacklisted = await invokeFunction('delete_users_blacklisted', {
-                userId: $user.id,
-            })
-            if (!blacklisted.success) throw blacklisted.error
-            $hashBlacklist = []
 
             const resp = await updateCarousels()
             if (!resp.success) throw resp.error
@@ -374,6 +378,24 @@
         if (!response.success) throw response.error
     }
 
+    const resetBlacklist = async (): Promise<void> => {
+        try {
+            if (!$user) return
+            const blacklisted = await invokeFunction('delete_users_blacklisted', {
+                userId: $user.id,
+            })
+            if (!blacklisted.success) throw blacklisted.error
+            $hashBlacklist = []
+        } catch (error) {
+            handleError(error)
+        }
+    }
+
+    const resetCached = async (): Promise<void> => {
+        const response = await invokeFunction('delete_all_resolved_cache', {})
+        if (!response.success) handleError(response.error)
+    }
+
     // TODO keyboard mapping
 </script>
 
@@ -416,44 +438,54 @@
                         <img alt="Profile Avatar" class="h-full w-full object-cover" src={avatarSrc} />
                     </div>
                 </div>
-                <div class="grid w-full flex-1 grid-cols-2 gap-6">
-                    <div>
-                        <h4>Username</h4>
-                        <p class="text-xs font-medium">{$user?.username}</p>
+                <div class="flex flex-col gap-6">
+                    <div class="grid w-full flex-1 grid-cols-2 gap-6">
+                        <div>
+                            <h4>Username</h4>
+                            <p class="text-xs font-medium">{$user?.username}</p>
+                        </div>
+                        <div>
+                            <h4>Email Address</h4>
+                            <p class="text-xs font-medium">{$user?.email}</p>
+                        </div>
                     </div>
-                    <div>
-                        <h4>Email Address</h4>
-                        <p class="text-xs font-medium">{$user?.email}</p>
-                    </div>
-                    <div class="my-auto items-center">
+                    <div class="grid w-full flex-1 grid-cols-3 gap-6">
                         <button
                             onclick={() => {
                                 setConfirmationConfig('Delete Account', () => deleteAccount())
                             }}
                             class="rounded-lg border border-white/5 bg-slate-800 px-6 py-2 text-xs font-bold transition-colors hover:bg-white/10"
                             >Delete Account</button>
-                    </div>
-                    <div class="my-auto items-center">
                         <button
                             onclick={() => {
                                 setConfirmationConfig('Delete User', () => deleteUser())
                             }}
                             class="rounded-lg border border-white/5 bg-slate-800 px-6 py-2 text-xs font-bold transition-colors hover:bg-white/10"
                             >Delete User</button>
-                    </div>
-                    <div class="my-auto items-center">
                         <button
                             onclick={() => {
                                 setConfirmationConfig('Reset Media', () => resetMedia())
                             }}
                             class="rounded-lg border border-white/5 bg-slate-800 px-6 py-2 text-xs font-bold transition-colors hover:bg-white/10"
                             >Reset Media</button>
-                    </div>
-                    <div>
                         <button
-                            onclick={resetApiKey}
+                            onclick={() => {
+                                setConfirmationConfig('Reset Apikey', () => resetApiKey())
+                            }}
                             class="rounded-lg border border-white/5 bg-slate-800 px-6 py-2 text-xs font-bold transition-colors hover:bg-white/10"
-                            >Reset API Key</button>
+                            >Reset APIKey</button>
+                        <button
+                            onclick={() => {
+                                setConfirmationConfig('Reset Blacklist', () => resetBlacklist())
+                            }}
+                            class="rounded-lg border border-white/5 bg-slate-800 px-6 py-2 text-xs font-bold transition-colors hover:bg-white/10"
+                            >Reset Blacklist</button>
+                        <button
+                            onclick={() => {
+                                setConfirmationConfig('Reset Cached', () => resetCached())
+                            }}
+                            class="rounded-lg border border-white/5 bg-slate-800 px-6 py-2 text-xs font-bold transition-colors hover:bg-white/10"
+                            >Reset Cached</button>
                     </div>
                 </div>
             </div>

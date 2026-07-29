@@ -1,8 +1,8 @@
 use crate::{
     db::types::{
         Blacklist, CreateTransfer, CreateUserData, EditableMediaFields, GlobalSettings,
-        KeyboardShortcuts, Keys, LocalMediaWithFiles, ScanResult, Transfer, UpdateGlobalSettings,
-        UpdateUserData, UserContentRatings,
+        KeyboardShortcuts, Keys, LocalMediaWithFiles, ResolvedCache, ScanResult, Transfer,
+        UpdateGlobalSettings, UpdateUserData, UserContentRatings,
     },
     errors::{handle_command_async, ApiResponse},
     state::AppState,
@@ -582,6 +582,74 @@ pub async fn update_local_media(
 
         manager.update_local_media(media).await?;
         Ok(())
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn get_resolved_cache_by_imdb_id(
+    app_state: State<'_, AppState>,
+    imdb_id: String,
+) -> Result<ApiResponse<Vec<ResolvedCache>>, AppError> {
+    handle_command_async("get_resolved_cache_by_imdb_id", async || {
+        let manager = app_state.get_resolved_cache_manager().ok_or_else(|| {
+            AppError::Runtime("Resolved cache manager not initialized".to_string())
+        })?;
+
+        let results = manager.get_by_imdb_id(&imdb_id).await?;
+        Ok(results)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn create_resolved_cache(
+    app_state: State<'_, AppState>,
+    imdb_id: String,
+    infohash: String,
+    plugin_id: String,
+    files_json: String,
+) -> Result<ApiResponse<ResolvedCache>, AppError> {
+    handle_command_async("create_resolved_cache", async || {
+        let manager = app_state.get_resolved_cache_manager().ok_or_else(|| {
+            AppError::Runtime("Resolved cache manager not initialized".to_string())
+        })?;
+
+        let result = manager
+            .create(imdb_id, infohash, plugin_id, files_json)
+            .await?;
+        Ok(result)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn delete_all_resolved_cache(
+    app_state: State<'_, AppState>,
+) -> Result<ApiResponse<bool>, AppError> {
+    handle_command_async("delete_resolved_cache_by_id", async || {
+        let manager = app_state.get_resolved_cache_manager().ok_or_else(|| {
+            AppError::Runtime("Resolved cache manager not initialized".to_string())
+        })?;
+
+        manager.delete_all().await?;
+        Ok(true)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn delete_resolved_cache_by_infohash(
+    app_state: State<'_, AppState>,
+    infohash: String,
+) -> Result<ApiResponse<bool>, AppError> {
+    handle_command_async("delete_resolved_cache_by_infohash", async || {
+        let manager = app_state.get_resolved_cache_manager().ok_or_else(|| {
+            AppError::Runtime("Resolved cache manager not initialized".to_string())
+        })?;
+
+        manager.delete_by_infohash(&infohash).await?;
+        Ok(true)
     })
     .await
 }

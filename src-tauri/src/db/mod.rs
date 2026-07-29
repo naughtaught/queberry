@@ -8,6 +8,7 @@ pub mod keys;
 pub mod local_media;
 pub mod migrations;
 pub mod plugin_cache;
+pub mod resolved_cache;
 pub mod settings;
 pub mod sqlite;
 pub mod transfers;

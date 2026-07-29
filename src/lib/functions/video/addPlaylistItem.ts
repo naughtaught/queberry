@@ -6,13 +6,12 @@ import { parseFilenameForEpisode } from '$lib/functions/utility/parseFilenameFor
 import { invokeFunction } from '$lib/functions/api/invokeFunction'
 import { updateVideoMetadata } from '$lib/functions/video/updateVideoMetadata'
 import { createError, handleError } from '$lib/functions/errors/errorHandling'
-import { fetchVideoFromSources } from '$lib/functions/video/fetchVideoFromSources'
 import { checkParentalControls } from '$lib/functions/video/checkParentalControls'
 import { addCollectionItemToPlaylist } from '$lib/functions/video/addCollectionItemToPlaylist'
 import { shuffleSettings } from '$lib/stores/pages'
 import { addShuffleItemToPlaylist } from '$lib/functions/video/addShuffleItemToPlaylist'
-import { fetchLocalMedia } from '$lib/functions/video/fetchLocalMedia'
-import { checkMethodApi } from '$lib/functions/plugins/checkMethodApi'
+import { unrestrictLink } from './unrestrictLink'
+import { resolveVideoData } from './resolveVideoData'
 
 export const addPlaylistItem = async (): Promise<void> => {
     try {
@@ -44,16 +43,14 @@ export const addPlaylistItem = async (): Promise<void> => {
             if (file) {
                 if (!playlistItem.resolver) throw createError('Resolver not found', 404, {})
 
-                checkMethodApi(playlistItem.resolver, 'UnrestrictLink')
+                const downloadLink = await unrestrictLink(
+                    playlistItem.resolver.apikey,
+                    file.link,
+                    playlistItem.resolver,
+                )
 
-                const resp = await invokeFunction('call_plugin_method', {
-                    pluginName: playlistItem.resolver.id,
-                    methodName: 'UnrestrictLink',
-                    args: [playlistItem.resolver.apikey ?? null, file.link],
-                })
-                if (!resp.success) throw resp.error
-                if (resp.data?.link) {
-                    playlistItem.videoUrl = resp.data.link
+                if (downloadLink) {
+                    playlistItem.videoUrl = downloadLink
                     playlistItem.filename = file.filename
                 }
             }
@@ -66,36 +63,15 @@ export const addPlaylistItem = async (): Promise<void> => {
             const originalEpisodeNumber = newEpisode?.original_episode_num ?? newEpisodeNumber
             const imdbId = newEpisode.imdb_id ?? metadata.media.imdb_id
 
-            const localResults = await fetchLocalMedia(
+            const videoData = await resolveVideoData(
                 imdbId,
-                metadata.media.title,
-                metadata.media.released,
-                metadata.media.type,
+                metadata.media,
                 originalSeasonNumber,
                 originalEpisodeNumber,
+                newEpisode,
+                null,
+                null,
             )
-
-            let videoData
-            if (localResults.length > 0) {
-                videoData = {
-                    videoUrl: localResults[0].filePath,
-                    filename: localResults[0].filename,
-                    files: [],
-                    infohash: null,
-                    resolver: 'Local Media',
-                }
-            } else {
-                videoData = await fetchVideoFromSources({
-                    imdbId,
-                    title: metadata.media.title,
-                    released: metadata.media.released,
-                    type: metadata.media.type,
-                    seasonNumber: originalSeasonNumber,
-                    episodeNumber: originalEpisodeNumber,
-                    episodeId: newEpisode.episode_id,
-                })
-            }
-
             Object.assign(playlistItem, videoData)
         }
 

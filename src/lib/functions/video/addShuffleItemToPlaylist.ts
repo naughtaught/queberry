@@ -6,11 +6,10 @@ import type { Video } from '$lib/types/video'
 import { get } from 'svelte/store'
 import { createError, getErrorMessage } from '$lib/functions/errors/errorHandling'
 import { getRandomEpisode } from '$lib/functions/video/getRandomEpisode'
-import { fetchVideoFromSources } from '$lib/functions/video/fetchVideoFromSources'
 import { checkParentalControls } from '$lib/functions/video/checkParentalControls'
 import { invokeFunction } from '$lib/functions/api/invokeFunction'
 import { updateVideoMetadata } from '$lib/functions/video/updateVideoMetadata'
-import { fetchLocalMedia } from '$lib/functions/video/fetchLocalMedia'
+import { resolveVideoData } from './resolveVideoData'
 
 export const addShuffleItemToPlaylist = async (metadata: Video.Metadata): Promise<void> => {
     if (!metadata.media) return
@@ -107,35 +106,15 @@ export const addShuffleItemToPlaylist = async (metadata: Video.Metadata): Promis
         const imdbId = episode?.imdb_id ?? media.imdb_id
 
         try {
-            const localResults = await fetchLocalMedia(
+            const videoData = await resolveVideoData(
                 imdbId,
-                media.title,
-                media.released,
-                media.type,
-                media.type === 'tv' ? seasonNumber : null,
-                media.type === 'tv' ? (episode?.episode_num ?? null) : null,
+                media,
+                seasonNumber,
+                episode?.episode_num ?? null,
+                episode,
+                null,
+                null,
             )
-
-            let videoData
-            if (localResults.length > 0) {
-                videoData = {
-                    videoUrl: localResults[0].filePath,
-                    filename: localResults[0].filename,
-                    files: [],
-                    infohash: null,
-                    resolver: 'Local Media',
-                }
-            } else {
-                videoData = await fetchVideoFromSources({
-                    imdbId,
-                    title: media.title,
-                    released: media.released,
-                    type: media.type,
-                    seasonNumber: media.type === 'tv' ? seasonNumber : null,
-                    episodeNumber: media.type === 'tv' ? (episode?.episode_num ?? null) : null,
-                    episodeId: episode?.episode_id ?? null,
-                })
-            }
 
             Object.assign(playlistItem, videoData)
 
