@@ -89,7 +89,7 @@ impl MpvConfig {
             ("audio-pitch-correction", "yes"),
             // Seeking behavior
             ("hr-seek", "yes"),
-            ("reset-on-next-file", "video-aspect,vid,aid,sid"),
+            ("reset-on-next-file", "vid,aid,sid"),
             ("vd-lavc-software-fallback", "yes"),
             ("ytdl", "no"),
         ]
@@ -139,7 +139,7 @@ impl MpvConfig {
                 "reconnect=1,reconnect_streamed=1,reconnect_delay_max=15",
             ),
             ("msg-level", "all=warn"),
-            // ("terminal", "yes"),
+            ("terminal", "yes"),
             ("save-position-on-quit", "no"),
             ("stop-playback-on-init-failure", "no"),
         ]

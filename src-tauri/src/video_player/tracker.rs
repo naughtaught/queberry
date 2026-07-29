@@ -46,13 +46,13 @@ impl PlayerTracker {
                         if let Ok(duration) = guard.get_property::<f64>("duration") {
                             if duration > 0.0 {
                                 match guard.set_property("time-pos", time) {
-                                    Ok(_) => (),
-                                    Err(e) => println!("Seek failed: {:?}", e),
+                                    Ok(_) => break,
+                                    Err(e) => println!("Seek failed, retrying: {:?}", e),
                                 }
-                                break;
                             }
                         }
                     }
+                    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
                 }
             }
 
