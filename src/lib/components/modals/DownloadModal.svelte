@@ -16,8 +16,8 @@
     import { user } from '$lib/stores/user'
     import { getSeasonPoster } from '$lib/functions/utility/getSeasonPoster'
     import { extractSeasonAndEpisode } from '$lib/functions/utility/extractSeasonAndEpisode'
-    import { checkMethodApi } from '$lib/functions/plugins/checkMethodApi'
     import { getImagePath } from '$lib/functions/ui/getImagePath'
+    import { unrestrictLink } from '$lib/functions/video/unrestrictLink'
 
     const { media, source, seasonNumber, episodeData } = $props()
 
@@ -135,20 +135,9 @@
                 const existingFilenames = downloadLinks.map((x) => x.fileUrl)
                 if (existingFilenames.includes(file.filename)) continue
 
-                checkMethodApi(resolver, 'UnrestrictLink')
+                const downloadLink = await unrestrictLink(resolver.apikey, file.link, resolver)
 
-                const resp = await invokeFunction('call_plugin_method', {
-                    pluginName: resolver.id,
-                    methodName: 'UnrestrictLink',
-                    args: [resolver.apikey ?? null, file.link],
-                })
-
-                if (!resp.success) {
-                    handleError(resp.error || 'Failed to unrestrict link')
-                    continue
-                }
-
-                if (resp.data?.link) {
+                if (downloadLink) {
                     const extracted = extractSeasonAndEpisode(file.filename)
 
                     if (!$user) throw createError('Missing User', 401, { log: false })
@@ -162,7 +151,7 @@
                         released: media.released,
                         season: extracted?.season ?? null,
                         episode: extracted?.episode ?? null,
-                        fileUrl: resp.data.link,
+                        fileUrl: downloadLink,
                         mediaPoster: getImagePath(media.poster, 'original') ?? null,
                         seasonPoster: extracted?.season
                             ? getSeasonPoster(extracted?.season, media.seasons?.seasons ?? null)

@@ -203,7 +203,6 @@
         <span class="w-14 cursor-default text-sm text-textColor" class:opacity-50={$sessionSettings[disableKey]}
             >{label}</span>
         <div class="flex cursor-default gap-1">
-            <!-- Start Time -->
             <div class="flex items-center gap-0.5">
                 <input
                     type="text"

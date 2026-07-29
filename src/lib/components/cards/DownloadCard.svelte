@@ -9,7 +9,7 @@
     import { onMount } from 'svelte'
     import LoadingSpinner from '$lib/components/ui/LoadingSpinner.svelte'
     import { user } from '$lib/stores/user'
-    import { checkMethodApi } from '$lib/functions/plugins/checkMethodApi'
+    import { unrestrictLink } from '$lib/functions/video/unrestrictLink'
 
     const { download } = $props()
 
@@ -69,22 +69,13 @@
                     log: false,
                 })
             }
+            const downloadLink = await unrestrictLink(plugin.apikey, download.link.fileLink, plugin)
 
-            checkMethodApi(plugin, 'UnrestrictLink')
-
-            const resp = await invokeFunction('call_plugin_method', {
-                pluginName: download.link.resolverId,
-                methodName: 'UnrestrictLink',
-                args: [plugin.apikey ?? null, download.link.fileLink],
-            })
-
-            if (!resp.success) throw resp.error
-
-            if (resp.data?.link) {
+            if (downloadLink) {
                 if (!$user) throw createError('Missing User', 401, { log: false })
                 await invokeFunction('retry_download', {
                     uuid: download.link.uuid,
-                    newFileUrl: resp.data.link,
+                    newFileUrl: downloadLink,
                     userId: $user.id,
                 })
             }
