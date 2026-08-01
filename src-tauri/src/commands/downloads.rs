@@ -65,11 +65,13 @@ pub async fn process_download_queue(
             .ok_or_else(|| AppError::Runtime("Download manager not initialized".to_string()))?
             .clone();
 
-        let db = state
-            .get_db_download_manager()
-            .ok_or_else(|| AppError::Runtime("Database download manager not initialized".to_string()))?;
+        let db = state.get_db_download_manager().ok_or_else(|| {
+            AppError::Runtime("Database download manager not initialized".to_string())
+        })?;
 
-        let stuck_downloads = db.list_downloads_by_status(user_id, DownloadStatus::Downloading).await?;
+        let stuck_downloads = db
+            .list_downloads_by_status(user_id, DownloadStatus::Downloading)
+            .await?;
         for stuck in &stuck_downloads {
             let is_active = {
                 let downloads = download_manager.downloads.read().await;
@@ -77,12 +79,18 @@ pub async fn process_download_queue(
             };
 
             if !is_active {
-                let _ = db.update_download_status(user_id, &stuck.uuid, DownloadStatus::Pending).await;
+                let _ = db
+                    .update_download_status(user_id, &stuck.uuid, DownloadStatus::Pending)
+                    .await;
             }
         }
 
-        let pending = db.list_downloads_by_status(user_id, DownloadStatus::Pending).await?;
-        let paused = db.list_downloads_by_status(user_id, DownloadStatus::Paused).await?;
+        let pending = db
+            .list_downloads_by_status(user_id, DownloadStatus::Pending)
+            .await?;
+        let paused = db
+            .list_downloads_by_status(user_id, DownloadStatus::Paused)
+            .await?;
 
         let mut all_downloads = Vec::new();
         all_downloads.extend(pending);
@@ -118,7 +126,9 @@ pub async fn process_download_queue(
                 filename: download.filename.clone(),
             };
 
-            let _ = download_manager.download_file_command(app_handle.clone(), params, user_id).await;
+            let _ = download_manager
+                .download_file_command(app_handle.clone(), params, user_id)
+                .await;
         }
 
         Ok(())
@@ -182,16 +192,16 @@ pub async fn clear_completed_downloads(
     hours: Option<i64>,
 ) -> Result<ApiResponse<u64>, AppError> {
     handle_command_async("clear_completed_downloads", async || {
-        let db = state
-            .get_db_download_manager()
-            .ok_or_else(|| AppError::Runtime("Database download manager not initialized".to_string()))?;
-        
+        let db = state.get_db_download_manager().ok_or_else(|| {
+            AppError::Runtime("Database download manager not initialized".to_string())
+        })?;
+
         let deleted = if let Some(h) = hours {
             db.clear_completed_downloads_older_than(h).await?
         } else {
             db.clear_completed_downloads(user_id).await?
         };
-        
+
         Ok(deleted)
     })
     .await
@@ -210,15 +220,17 @@ pub async fn retry_download(
             .get_download_manager()
             .ok_or_else(|| AppError::Runtime("Download manager not initialized".to_string()))?
             .clone();
-        
-        let db = state
-            .get_db_download_manager()
-            .ok_or_else(|| AppError::Runtime("Database download manager not initialized".to_string()))?;
-        
+
+        let db = state.get_db_download_manager().ok_or_else(|| {
+            AppError::Runtime("Database download manager not initialized".to_string())
+        })?;
+
         let download = db.get_download(user_id, &uuid).await?;
-        
-        db.update_download_url(user_id, &uuid, &new_file_url).await?;
-        db.update_download_status(user_id, &uuid, DownloadStatus::Pending).await?;
+
+        db.update_download_url(user_id, &uuid, &new_file_url)
+            .await?;
+        db.update_download_status(user_id, &uuid, DownloadStatus::Pending)
+            .await?;
 
         let _ = app_handle.emit(
             "download_queued",
@@ -226,7 +238,7 @@ pub async fn retry_download(
                 "uuid": uuid,
             }),
         );
-        
+
         let params = DownloadMetaData {
             folder_path: download.folder_path,
             file_link: download.file_link,
@@ -242,7 +254,7 @@ pub async fn retry_download(
             uuid: download.uuid,
             filename: download.filename,
         };
-        
+
         download_manager
             .download_file_command(app_handle, params, user_id)
             .await
@@ -263,11 +275,13 @@ pub async fn cleanup_downloads_on_login(
             .ok_or_else(|| AppError::Runtime("Download manager not initialized".to_string()))?
             .clone();
 
-        let db = state
-            .get_db_download_manager()
-            .ok_or_else(|| AppError::Runtime("Database download manager not initialized".to_string()))?;
+        let db = state.get_db_download_manager().ok_or_else(|| {
+            AppError::Runtime("Database download manager not initialized".to_string())
+        })?;
 
-        let stuck_downloads = db.list_downloads_by_status(user_id, DownloadStatus::Downloading).await?;
+        let stuck_downloads = db
+            .list_downloads_by_status(user_id, DownloadStatus::Downloading)
+            .await?;
         for stuck in &stuck_downloads {
             let is_active = {
                 let downloads = download_manager.downloads.read().await;
@@ -275,7 +289,9 @@ pub async fn cleanup_downloads_on_login(
             };
 
             if !is_active {
-                let _ = db.update_download_status(user_id, &stuck.uuid, DownloadStatus::Pending).await;
+                let _ = db
+                    .update_download_status(user_id, &stuck.uuid, DownloadStatus::Pending)
+                    .await;
             }
         }
 
@@ -294,9 +310,9 @@ pub async fn clear_completed_download(
     uuid: String,
 ) -> Result<ApiResponse<bool>, AppError> {
     handle_command_async("clear_single_completed_download", async || {
-        let db = state
-            .get_db_download_manager()
-            .ok_or_else(|| AppError::Runtime("Database download manager not initialized".to_string()))?;
+        let db = state.get_db_download_manager().ok_or_else(|| {
+            AppError::Runtime("Database download manager not initialized".to_string())
+        })?;
 
         db.delete_download(user_id, &uuid).await
     })

@@ -393,10 +393,9 @@ impl LocalMediaManager {
 
     pub async fn scan_folder(&self, directory: &str) -> Result<ScanResult, AppError> {
         let path = Path::new(directory);
-               
+
         let mut result = ScanResult::default();
-        self.scan_recursive(path, &mut result)
-            .await?;
+        self.scan_recursive(path, &mut result).await?;
 
         self.cleanup_all().await?;
 
@@ -559,8 +558,7 @@ impl LocalMediaManager {
     }
 
     fn extract_resolution(lower: &str) -> String {
-        match_first_pattern(lower, RESOLUTION_PATTERNS)
-            .unwrap_or_else(|| "Unknown".to_string())
+        match_first_pattern(lower, RESOLUTION_PATTERNS).unwrap_or_else(|| "Unknown".to_string())
     }
 
     fn extract_video_codec(lower: &str) -> Option<String> {
@@ -624,26 +622,41 @@ impl LocalMediaManager {
     }
 
     pub async fn get_editable_local_media(&self) -> Result<Vec<EditableMediaFields>, AppError> {
-        let rows = sqlx::query_as::<_, (i64, Option<String>, i64, String, Option<i64>, Option<i64>, Option<bool>)>(
+        let rows = sqlx::query_as::<
+            _,
+            (
+                i64,
+                Option<String>,
+                i64,
+                String,
+                Option<i64>,
+                Option<i64>,
+                Option<bool>,
+            ),
+        >(
             "SELECT lm.id, lm.imdb_id, lf.id, lf.file_path, lf.season, lf.episode, lf.is_default 
             FROM local_media lm 
             JOIN local_filepaths lf ON lf.media_id = lm.id 
-            ORDER BY lm.id, lf.season, lf.episode"
+            ORDER BY lm.id, lf.season, lf.episode",
         )
         .fetch_all(&self.db.pool)
         .await?;
 
         Ok(rows
             .into_iter()
-            .map(|(media_id, imdb_id, filepath_id, file_path, season, episode, is_default)| EditableMediaFields {
-                media_id,
-                imdb_id,
-                filepath_id,
-                file_path,
-                season,
-                episode,
-                is_default,
-            })
+            .map(
+                |(media_id, imdb_id, filepath_id, file_path, season, episode, is_default)| {
+                    EditableMediaFields {
+                        media_id,
+                        imdb_id,
+                        filepath_id,
+                        file_path,
+                        season,
+                        episode,
+                        is_default,
+                    }
+                },
+            )
             .collect())
     }
 
@@ -653,7 +666,7 @@ impl LocalMediaManager {
     ) -> Result<(), AppError> {
         for item in media {
             sqlx::query(
-                "UPDATE local_filepaths SET season = ?, episode = ?, is_default = ? WHERE id = ?"
+                "UPDATE local_filepaths SET season = ?, episode = ?, is_default = ? WHERE id = ?",
             )
             .bind(item.season)
             .bind(item.episode)
@@ -664,18 +677,17 @@ impl LocalMediaManager {
 
             if let Some(imdb) = &item.imdb_id {
                 let (media_id,) = sqlx::query_as::<_, (i64,)>(
-                    "SELECT media_id FROM local_filepaths WHERE id = ?"
+                    "SELECT media_id FROM local_filepaths WHERE id = ?",
                 )
                 .bind(item.filepath_id)
                 .fetch_one(&self.db.pool)
                 .await?;
 
-                let existing = sqlx::query_as::<_, (i64,)>(
-                    "SELECT id FROM local_media WHERE imdb_id = ?"
-                )
-                .bind(imdb)
-                .fetch_optional(&self.db.pool)
-                .await?;
+                let existing =
+                    sqlx::query_as::<_, (i64,)>("SELECT id FROM local_media WHERE imdb_id = ?")
+                        .bind(imdb)
+                        .fetch_optional(&self.db.pool)
+                        .await?;
 
                 if let Some((existing_id,)) = existing {
                     if existing_id != media_id {
@@ -702,7 +714,4 @@ impl LocalMediaManager {
 
         Ok(())
     }
-
-
-
 }
