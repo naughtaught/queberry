@@ -22,6 +22,7 @@
         isSourcesOpen = $bindable(),
         showWatchedEpisodes = $bindable(),
         userSelectedSeason = $bindable(),
+        isReportModalOpen = $bindable()
     } = $props()
 
     const { episode_group_keys } = $derived(media.seasons ?? null)
@@ -139,7 +140,7 @@
         <div class="grow"></div>
     {/if}
     {#if isMenuOpen}
-        <MenuModal bind:isMenuOpen bind:showWatchedEpisodes {selectedSeason} {selectedEpisode} {media} />
+        <MenuModal bind:isMenuOpen bind:showWatchedEpisodes bind:isReportModalOpen {selectedSeason} {selectedEpisode} {media} />
     {/if}
     <div class="border-t border-white/5 bg-white/5 p-4">
         <div class="flex gap-3">

@@ -752,7 +752,7 @@ pub async fn api_submit_report(
         body["content_type"] = serde_json::json!(v);
     }
     if let Some(v) = params.content_id {
-        body["content_id"] = serde_json::json!(v);
+        body["content_id"] = serde_json::Value::Number(serde_json::Number::from(v));
     }
     if let Some(v) = params.content_location {
         body["content_location"] = serde_json::json!(v);

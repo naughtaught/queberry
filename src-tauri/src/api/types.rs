@@ -133,7 +133,7 @@ pub struct ReportParams {
     pub steps_to_reproduce: Option<String>,
     pub log_file: Option<String>,
     pub content_type: Option<String>,
-    pub content_id: Option<String>,
+    pub content_id: Option<i32>,
     pub content_location: Option<String>,
     pub suggested_fix: Option<String>,
     pub app_version: Option<String>,

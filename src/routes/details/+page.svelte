@@ -32,6 +32,7 @@
     import { handleError } from '$lib/functions/errors/errorHandling.js'
     import RelatedMedia from '$lib/components/ui/RelatedMedia.svelte'
     import { fetchCollections } from '$lib/db/fetchCollections.js'
+    import ContentReportModal from '$lib/components/modals/ContentReportModal.svelte'
 
     const { data } = $props()
     let media = $derived(data.data)
@@ -61,6 +62,7 @@
 
     let collections = $state<Api.Collection[]>([])
     let relatedMedia = $state<Api.Collection[]>([])
+    let isReportModalOpen = $state(false)
 
     const filteredCollections = $derived.by(() => {
         if (!collections.length) return []
@@ -134,6 +136,10 @@
 
 {#if $modals.download}
     <DownloadModal {media} source={selectedSource} seasonNumber={userSelectedSeason} episodeData={selectedEpisode} />
+{/if}
+
+{#if isReportModalOpen}
+    <ContentReportModal bind:isReportModalOpen {media} />
 {/if}
 
 {#snippet crewList(crewItems: Api.CastMember[], type: string)}
@@ -271,5 +277,6 @@
         bind:selectedSeason
         bind:selectedEpisode
         bind:isSourcesOpen
-        bind:userSelectedSeason />
+        bind:userSelectedSeason
+        bind:isReportModalOpen />
 {/if}

@@ -10,6 +10,7 @@
         isMenuOpen = $bindable(),
         sources = $bindable(),
         showWatchedEpisodes = $bindable(null),
+        isReportModalOpen = $bindable(),
         media,
         selectedSeason,
         selectedEpisode,
@@ -30,7 +31,7 @@
             selectedSeason?.season_num,
             selectedEpisode?.episode_num,
             selectedEpisode?.episode_id,
-            false
+            false,
         )
 
         if (resp.success && resp.data.length > 0) {
@@ -44,13 +45,13 @@
 </script>
 
 <div
-    use:clickOutside={{ ignore: '#menu-button' }}
+    use:clickOutside={{ ignore: '#menu-button, #report-modal' }}
     onclickOutside={() => {
         isMenuOpen = false
     }}
     class="glass-panel fixed bottom-12 z-10 mb-8 flex h-1/2 w-full rounded-t-xl border border-slate-200/10 shadow-2xl">
-    <div class="relative">
-        <div class="space-y-5 p-4 text-white">
+    <div class="relative flex w-full flex-col">
+        <div class="flex-1 space-y-5 p-4 text-white">
             <h2 class="text-xl font-bold">Menu</h2>
             <div class="flex flex-col gap-y-3">
                 {#if media.type === 'tv'}
@@ -61,6 +62,18 @@
                     bind:checked={$areSourceFiltersEnabled}
                     func={() => handleSourceFilters()} />
             </div>
+        </div>
+        <div class="flex w-full items-center justify-between p-4">
+            <div>
+                <p class="text-sm font-bold">Report</p>
+                <p class="text-xs">Content Issue</p>
+            </div>
+            <button
+                onclick={() => {
+                    isReportModalOpen = true
+                }}
+                class="rounded-lg border border-white/5 bg-slate-800 px-6 py-2 text-xs font-bold transition-colors hover:bg-white/10"
+                >Report</button>
         </div>
     </div>
 </div>
