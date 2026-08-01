@@ -24,6 +24,17 @@
     const averageRating = $derived(formatAverageRating(media))
     const mediaRatings = $derived(orderRatings(media?.ratings))
     const { cast, directors, creators } = $derived(parseCredits(media, 3))
+
+    let sidebarElement: HTMLElement | null = $state(null)
+    // svelte-ignore state_referenced_locally
+    let previousMedia = $state(media)
+
+    $effect(() => {
+        if (media.id !== previousMedia.id) {
+            if (sidebarElement) sidebarElement.scrollTop = 0
+            previousMedia = media
+        }
+    })
 </script>
 
 {#if $modals.trailer}
@@ -75,7 +86,7 @@
         </div>
     </div>
 
-    <div class="flex-1 space-y-6 overflow-y-auto px-8 py-6">
+    <div class="flex-1 space-y-6 overflow-y-auto px-8 py-6" bind:this={sidebarElement}>
         <div class="space-y-4">
             <h3 class="text-[10px] font-bold tracking-[0.2em] text-slate-500 uppercase">The Story</h3>
             <p class="text-sm leading-relaxed font-normal text-slate-300">
