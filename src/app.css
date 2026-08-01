@@ -127,6 +127,7 @@
         -webkit-appearance: none;
     }
 
+    textarea,
     input[type='number'],
     input[type='email'],
     input[type='text'],

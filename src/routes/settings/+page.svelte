@@ -44,6 +44,7 @@
     import { AUDIO_CHANNELS } from '$lib/stores/video'
     import type { Sql } from '$lib/types/sql'
     import { open } from '@tauri-apps/plugin-dialog'
+    import BugReportModal from '$lib/components/modals/BugReportModal.svelte'
 
     let avatarSrc = $state('')
     let parentalControlUser = $derived($primaryUser)
@@ -52,6 +53,7 @@
     let isUpdateModalOpen = $state(false)
     let isMediaManagerOpen = $state(false)
     let isPatchNotesModalOpen = $state(false)
+    let isReportModalOpen = $state(false)
     let confirmationModalConfig = $state({
         isOpen: false,
         title: '',
@@ -411,6 +413,10 @@
     <LocalMediaManager bind:isMediaManagerOpen />
 {/if}
 
+{#if isReportModalOpen}
+    <BugReportModal bind:isReportModalOpen />
+{/if}
+
 {#if confirmationModalConfig.isOpen}
     <ConfirmationModal bind:config={confirmationModalConfig} />
 {/if}
@@ -514,6 +520,18 @@
                         }}
                         class="rounded-lg border border-white/5 bg-slate-800 px-6 py-2 text-xs font-bold transition-colors hover:bg-white/10"
                         >Open</button>
+                </div>
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-bold">Report</p>
+                        <p class="text-xs">Bugs</p>
+                    </div>
+                    <button
+                        onclick={() => {
+                            isReportModalOpen = true
+                        }}
+                        class="rounded-lg border border-white/5 bg-slate-800 px-6 py-2 text-xs font-bold transition-colors hover:bg-white/10"
+                        >Report</button>
                 </div>
             </div>
         </section>

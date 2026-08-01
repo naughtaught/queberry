@@ -1,7 +1,7 @@
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
-use crate::api::types::{LoginResponse, MediaFilters, UpsertUserMediaData};
+use crate::api::types::{LoginResponse, MediaFilters, ReportParams, UpsertUserMediaData};
 use crate::constants::{API_BASE, API_CLIENT};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -720,6 +720,58 @@ pub async fn api_fetch_person_details(
         .get(format!("{}/api/person/{}", API_BASE, person_id))
         .header("X-User-Id", postgres_id)
         .header("Authorization", format!("Bearer {}", token))
+        .send()
+        .await
+        .map_err(api_error)?;
+
+    handle_response(response).await
+}
+
+pub async fn api_submit_report(
+    postgres_id: &str,
+    token: &str,
+    params: ReportParams,
+) -> Result<(), String> {
+    let client = get_client();
+
+    let mut body = serde_json::json!({
+        "type": params.report_type,
+        "description": params.description,
+    });
+
+    if let Some(v) = params.severity {
+        body["severity"] = serde_json::json!(v);
+    }
+    if let Some(v) = params.steps_to_reproduce {
+        body["steps_to_reproduce"] = serde_json::json!(v);
+    }
+    if let Some(v) = params.log_file {
+        body["log_file"] = serde_json::json!(v);
+    }
+    if let Some(v) = params.content_type {
+        body["content_type"] = serde_json::json!(v);
+    }
+    if let Some(v) = params.content_id {
+        body["content_id"] = serde_json::json!(v);
+    }
+    if let Some(v) = params.content_location {
+        body["content_location"] = serde_json::json!(v);
+    }
+    if let Some(v) = params.suggested_fix {
+        body["suggested_fix"] = serde_json::json!(v);
+    }
+    if let Some(v) = params.app_version {
+        body["app_version"] = serde_json::json!(v);
+    }
+    if let Some(v) = params.user_email {
+        body["user_email"] = serde_json::json!(v);
+    }
+
+    let response = client
+        .post(format!("{}/api/report", API_BASE))
+        .header("X-User-Id", postgres_id)
+        .header("Authorization", format!("Bearer {}", token))
+        .json(&body)
         .send()
         .await
         .map_err(api_error)?;

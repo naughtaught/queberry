@@ -1,5 +1,5 @@
 use crate::api::api_client;
-use crate::api::types::{MediaFilters, UpsertUserMediaData};
+use crate::api::types::{MediaFilters, ReportParams, UpsertUserMediaData};
 use crate::errors::{handle_command_async, ApiResponse};
 use crate::AppError;
 
@@ -422,6 +422,69 @@ pub async fn api_fetch_person_details(
     handle_command_async("api_fetch_person_details", async || {
         let data = api_client::api_fetch_person_details(&postgres_id, &token, person_id).await?;
         Ok(data)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn api_submit_report(
+    postgres_id: String,
+    token: String,
+    email: Option<String>,
+    params: ReportParams,
+) -> Result<ApiResponse<()>, AppError> {
+    handle_command_async("api_submit_report", async || {
+        let log_file = if params.report_type == "bug" {
+            let log_dir = dirs::data_local_dir()
+                .unwrap_or_else(std::env::temp_dir)
+                .join("queberry")
+                .join("logs");
+
+            if log_dir.exists() {
+                let mut log_files: Vec<_> = std::fs::read_dir(&log_dir)
+                    .ok()
+                    .into_iter()
+                    .flatten()
+                    .filter_map(|e| e.ok())
+                    .filter(|e| e.path().extension().is_some_and(|ext| ext == "log"))
+                    .collect();
+
+                log_files.sort_by_key(|e| {
+                    e.metadata()
+                        .ok()
+                        .and_then(|m| m.modified().ok())
+                        .unwrap_or(std::time::SystemTime::UNIX_EPOCH)
+                });
+
+                log_files
+                    .last()
+                    .and_then(|f| std::fs::read_to_string(f.path()).ok())
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        api_client::api_submit_report(
+            &postgres_id,
+            &token,
+            crate::api::types::ReportParams {
+                report_type: params.report_type,
+                description: params.description,
+                severity: params.severity,
+                steps_to_reproduce: params.steps_to_reproduce,
+                log_file,
+                content_type: params.content_type,
+                content_id: params.content_id,
+                content_location: params.content_location,
+                suggested_fix: params.suggested_fix,
+                app_version: Some(env!("CARGO_PKG_VERSION").to_string()),
+                user_email: email,
+            },
+        )
+        .await?;
+        Ok(())
     })
     .await
 }

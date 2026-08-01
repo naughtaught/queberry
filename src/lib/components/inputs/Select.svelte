@@ -8,6 +8,7 @@
         activeOption = $bindable(),
         ascending = $bindable(null),
         maxWidth = 'max-w-1/2',
+        labelOptions = '',
         func = () => {},
     } = $props()
 
@@ -35,7 +36,7 @@
         isOpen = false
     }}>
     <div class="mb-1 flex w-full items-center justify-between text-sm tracking-wide text-slate-500">
-        <span>{name}</span>
+        <span class={labelOptions}>{name}</span>
         <button
             class=" hover:text-primaryColor"
             onclick={() => {
