@@ -9,7 +9,6 @@
     import ToggleSwitch from '$lib/components/inputs/ToggleSwitch.svelte'
     import ConfirmationModal from '$lib/components/modals/ConfirmationModal.svelte'
     import Patchnotes from '$lib/components/modals/Patchnotes.svelte'
-
     import LocalMediaManager from '$lib/components/modals/LocalMediaManager.svelte'
     import LoadingSpinner from '$lib/components/ui/LoadingSpinner.svelte'
     import { languages } from '$lib/data/languages'
@@ -44,7 +43,18 @@
     import { AUDIO_CHANNELS } from '$lib/stores/video'
     import type { Sql } from '$lib/types/sql'
     import { open } from '@tauri-apps/plugin-dialog'
+    import { openUrl } from '@tauri-apps/plugin-opener'
+
     import BugReportModal from '$lib/components/modals/BugReportModal.svelte'
+
+    const metadataThanks = [
+        { name: 'TMDB', href: 'https://www.themoviedb.org/' },
+        { name: 'TheTVDB', href: 'https://thetvdb.com/' },
+    ]
+    const trendingThanks = [
+        { name: 'TMDB', href: 'https://www.themoviedb.org/' },
+        { name: 'Simkl', href: 'https://simkl.com/' },
+    ]
 
     let avatarSrc = $state('')
     let parentalControlUser = $derived($primaryUser)
@@ -396,6 +406,10 @@
     const resetCached = async (): Promise<void> => {
         const response = await invokeFunction('delete_all_resolved_cache', {})
         if (!response.success) handleError(response.error)
+    }
+
+    const openLink = async (url: string): Promise<void> => {
+        await openUrl(url)
     }
 
     // TODO keyboard mapping
@@ -1117,6 +1131,49 @@
                                 </div>
                             {/if}
                         </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Attribution -->
+        <section class="glass-panel sidebar-gradient col-span-12 rounded-lg p-8 shadow-2xl">
+            <div class="mb-4">
+                <h3 class="mt-1 text-xl font-bold">Special Thanks</h3>
+            </div>
+            <div class="grid h-full grid-cols-2 items-start gap-4">
+                <div class="grid h-[90%] space-y-1 text-textColor">
+                    <h5>Metadata:</h5>
+                    <div class="flex flex-col space-y-3">
+                        {#each metadataThanks as source, i (i)}
+                            <button onclick={() => openLink(source.href)} class="relative flex items-center">
+                                <img
+                                    class="max-h-7"
+                                    width="24"
+                                    src="/metadata/{source.name.toLowerCase()}.svg"
+                                    alt="{source.name} logo" />
+                                <div class="ml-1 flex flex-col">
+                                    <p class="font-outline">{source.name}</p>
+                                </div>
+                            </button>
+                        {/each}
+                    </div>
+                </div>
+                <div class="grid h-[90%] space-y-1 text-textColor">
+                    <h5>Trending:</h5>
+                    <div class="flex flex-col space-y-3">
+                        {#each trendingThanks as source, i (i)}
+                            <button onclick={() => openLink(source.href)} class="relative flex items-center">
+                                <img
+                                    class="max-h-7"
+                                    width="24"
+                                    src="/metadata/{source.name.toLowerCase()}.svg"
+                                    alt="{source.name} logo" />
+                                <div class="ml-1 flex flex-col">
+                                    <p class="font-outline">{source.name}</p>
+                                </div>
+                            </button>
+                        {/each}
                     </div>
                 </div>
             </div>

@@ -50,6 +50,7 @@ tokio = { version = "1.49", features = ["full"] }
 thiserror = "2.0"
 url = "2.5"
 wasmtime = "44.0"
+tauri-plugin-opener = "2"
 
 
 [dev-dependencies]
