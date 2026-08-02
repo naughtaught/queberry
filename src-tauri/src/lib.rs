@@ -180,6 +180,7 @@ pub fn run() {
             commands::api::api_submit_report,
             commands::avatars::get_avatars,
             commands::avatars::get_avatars_dir_path,
+            commands::avatars::add_avatar,
             commands::app::show_window,
             commands::app::log_error,
             commands::app::get_log_path,

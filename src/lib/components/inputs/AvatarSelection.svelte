@@ -4,27 +4,53 @@
     import { users } from '$lib/stores/user'
     import { convertFileSrc } from '@tauri-apps/api/core'
     import { onMount } from 'svelte'
+    import { open } from '@tauri-apps/plugin-dialog'
 
     let { selectedAvatar = $bindable(), isLoading } = $props()
     let avatars: { name: string; src: string }[] = $state([])
 
-    onMount(async () => {
+    const fetchAvatars = async (): Promise<void> => {
+        const userAvatars = $users?.map((x) => x.avatar).filter(Boolean) ?? []
+        const response = await invokeFunction('get_avatars', {})
+
+        if (!response.success) throw response.error
+
+        const data = response.data as [string, string][]
+
+        avatars = data
+            .filter(([name]) => !userAvatars.includes(name))
+            .map(([name, path]) => ({ name, src: convertFileSrc(path) }))
+            .sort((a, b) => b.name.localeCompare(a.name))
+    }
+
+    onMount(() => {
         try {
-            const userAvatars = $users?.map((x) => x.avatar).filter(Boolean) ?? []
-            const response = await invokeFunction('get_avatars', {})
-
-            if (!response.success) throw response.error
-
-            const data = response.data as [string, string][]
-
-            avatars = data
-                .filter(([name]) => !userAvatars.includes(name))
-                .map(([name, path]) => ({ name, src: convertFileSrc(path) }))
-                .sort((a, b) => b.name.localeCompare(a.name))
+            fetchAvatars()
         } catch (error) {
             handleError(error)
         }
     })
+
+    const addAvatar = async (): Promise<void> => {
+        try {
+            const file = await open({
+                multiple: false,
+                directory: false,
+            })
+
+            if (!file) return
+
+            const response = await invokeFunction('add_avatar', { filePath: file })
+
+            if (!response.success) throw response.error
+
+            await fetchAvatars()
+
+            selectedAvatar = response.data[0]
+        } catch (error) {
+            handleError(error)
+        }
+    }
 </script>
 
 <div class="max-h-120 w-105 px-6 pt-6">
@@ -47,8 +73,9 @@
             </button>
         {/each}
         <button
+            onclick={addAvatar}
             class="flex aspect-square cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-600 transition-all hover:bg-slate-700">
-            <span class="text-slate-500">add</span>
+            <span class="text-slate-500">Add</span>
         </button>
     </div>
 </div>
