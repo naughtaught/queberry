@@ -179,17 +179,17 @@
             <div class="mt-10 flex gap-4">
                 <button
                     disabled={isLoading}
-                    onclick={updateAccount}
-                    class="flex-1 rounded-lg bg-slate-800 px-6 py-3.5 font-bold text-white shadow-lg transition-all hover:text-primaryColor">
-                    {#if !isLoading}Update{:else}<LoadingSpinner />{/if}
-                </button>
-                <button
-                    disabled={isLoading}
                     onclick={() => {
                         isUpdateModalOpen = false
                     }}
                     class="px-6 py-3.5 font-medium text-slate-400 transition-colors hover:text-slate-200">
                     Cancel
+                </button>
+                <button
+                    disabled={isLoading}
+                    onclick={updateAccount}
+                    class="flex-1 rounded-lg bg-slate-800 px-6 py-3.5 font-bold text-white shadow-lg transition-all hover:text-primaryColor">
+                    {#if !isLoading}Update{:else}<LoadingSpinner />{/if}
                 </button>
             </div>
             <p class="mt-4 h-4 text-red-500">{errorMessage ? errorMessage : ''}</p>
