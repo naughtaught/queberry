@@ -133,10 +133,10 @@ impl MpvConfig {
             ("force-window", "yes"),
             // Network/streaming
             ("prefetch-playlist", "yes"),
-            ("network-timeout", "30"),
+            ("network-timeout", "60"),
             (
                 "stream-lavf-o",
-                "reconnect=1,reconnect_streamed=1,reconnect_delay_max=15",
+                "reconnect=1,reconnect_streamed=1,reconnect_delay_max=15,reconnect_on_http_error=%19%429,500,502,503,504,multiple_requests=1",
             ),
             ("msg-level", "all=warn"),
             ("terminal", "yes"),
