@@ -35,6 +35,7 @@
     import {
         disabledPlugins,
         enabledResolverPlugins,
+        indexerSources,
         installedIndexerPlugins,
         installedResolverPlugins,
         installedUtilityPlugins,
@@ -164,6 +165,7 @@
         if (setting === 'disabledPlugins') {
             const pluginsResp = await setEnabledPlugins()
             if (!pluginsResp.success) throw pluginsResp.error
+            $indexerSources = []
         }
     }
 
@@ -1135,7 +1137,6 @@
                 </div>
             </div>
         </section>
-
         <!-- Attribution -->
         <section class="glass-panel sidebar-gradient col-span-12 rounded-lg p-8 shadow-2xl">
             <div class="mb-4">
