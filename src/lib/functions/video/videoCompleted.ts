@@ -34,7 +34,6 @@ export const videoCompleted = async (): Promise<void> => {
                 episode_id: null,
             })
             if (!resp.success) throw resp.error
-
             updateCachedMedia({ ...resp.data })
         } else if (metadata.media.progress) {
             const resp = await setMediaStates(updatedMedia, {
@@ -45,8 +44,9 @@ export const videoCompleted = async (): Promise<void> => {
                 episode_id: null,
             })
             if (!resp.success) throw resp.error
-
             updateCachedMedia({ ...resp.data })
+        } else if (metadata.media?.type === 'tv' && !metadata.media.progress) {
+            updateCachedMedia({ ...updatedMedia })
         }
 
         if (metadata.media.type === 'tv') await fetchUpNext()
