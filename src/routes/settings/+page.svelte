@@ -47,6 +47,7 @@
     import { openUrl } from '@tauri-apps/plugin-opener'
 
     import BugReportModal from '$lib/components/modals/BugReportModal.svelte'
+    import PrivacyPolicyModal from '$lib/components/modals/PrivacyPolicyModal.svelte'
 
     const metadataThanks = [
         { name: 'TMDB', href: 'https://www.themoviedb.org/' },
@@ -65,6 +66,7 @@
     let isMediaManagerOpen = $state(false)
     let isPatchNotesModalOpen = $state(false)
     let isReportModalOpen = $state(false)
+    let isPrivicyPolicyOpen = $state(false)
     let confirmationModalConfig = $state({
         isOpen: false,
         title: '',
@@ -433,6 +435,10 @@
     <BugReportModal bind:isReportModalOpen />
 {/if}
 
+{#if isPrivicyPolicyOpen}
+    <PrivacyPolicyModal bind:isPrivicyPolicyOpen />
+{/if}
+
 {#if confirmationModalConfig.isOpen}
     <ConfirmationModal bind:config={confirmationModalConfig} />
 {/if}
@@ -517,7 +523,7 @@
             <div class="mb-8">
                 <h3 class="mt-1 text-xl font-bold">App Info</h3>
             </div>
-            <div class="space-y-8">
+            <div class="space-y-5">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-bold">Version</p>
@@ -533,6 +539,18 @@
                     <button
                         onclick={() => {
                             isPatchNotesModalOpen = true
+                        }}
+                        class="rounded-lg border border-white/5 bg-slate-800 px-6 py-2 text-xs font-bold transition-colors hover:bg-white/10"
+                        >Open</button>
+                </div>
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-bold">Privacy</p>
+                        <p class="text-xs">Policy</p>
+                    </div>
+                    <button
+                        onclick={() => {
+                            isPrivicyPolicyOpen = true
                         }}
                         class="rounded-lg border border-white/5 bg-slate-800 px-6 py-2 text-xs font-bold transition-colors hover:bg-white/10"
                         >Open</button>
@@ -795,7 +813,6 @@
                 </div>
             </div>
         </section>
-
         <!-- Local Media & Downloads -->
         <section class="glass-panel sidebar-gradient col-span-12 rounded-lg p-8 shadow-2xl">
             <div class="mb-8">
