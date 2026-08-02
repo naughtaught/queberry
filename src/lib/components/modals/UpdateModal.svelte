@@ -23,7 +23,7 @@
 <svelte:window onkeydown={handleKeypress} />
 
 <BaseModal onClose={onCancel}>
-    <div class="w-full max-w-md min-w-96 transform rounded-lg p-6" tabindex="-1">
+    <div class="max-h-[80vh] w-full max-w-2xl min-w-96 transform rounded-lg p-6" tabindex="-1">
         {#if $appData.isDownloading}
             <h2 class="mb-4 text-xl font-semibold">Downloading Update...</h2>
             <div class="mb-4">
@@ -43,7 +43,7 @@
         {:else}
             <h2 id="modal-title" class="mb-12 text-3xl font-semibold">Update Available</h2>
             {#if $appData.pendingUpdate?.notes}
-                <p class="prose max-w-none prose-invert">
+                <p class="prose max-h-[50vh] max-w-none overflow-y-auto p-2 prose-invert">
                     <Markdown source={$appData.pendingUpdate.notes} />
                 </p>
             {/if}
