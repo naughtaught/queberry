@@ -1,5 +1,6 @@
 <script lang="ts">
     import BaseModal from '$lib/components/modals/BaseModal.svelte'
+    import CloseIcon from 'virtual:icons/material-symbols/close'
 
     let { isPrivicyPolicyOpen = $bindable() } = $props()
 
@@ -10,6 +11,12 @@
 
 <BaseModal onClose={onCancel}>
     <div class="w-full transform rounded-xl p-6" tabindex="-1">
+        <button
+            tabindex="0"
+            class="absolute -top-5 -right-5 z-50 rounded-full bg-black/50 p-2 text-textColor hover:text-primaryColor"
+            onclick={onCancel}>
+            <CloseIcon class="h-6 w-6" />
+        </button>
         <h2 id="modal-title" class="mb-6 text-xl font-semibold text-textColor">Privacy Policy</h2>
         <div class="min-w-[50vw] space-y-5">
             <div>
