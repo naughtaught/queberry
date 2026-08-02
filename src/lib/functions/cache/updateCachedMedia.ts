@@ -29,7 +29,11 @@ export const updateCachedMedia = (media: Api.MediaItem): void => {
                 const mediaArray = cacheItem.media as Api.MediaItem[]
                 const index = mediaArray.findIndex((item: Api.MediaItem) => item.id === media.id)
                 if (index !== -1) {
-                    cacheItem.media = [...mediaArray.slice(0, index), media, ...mediaArray.slice(index + 1)]
+                    cacheItem.media = [
+                        ...mediaArray.slice(0, index),
+                        { ...mediaArray[index], ...media },
+                        ...mediaArray.slice(index + 1),
+                    ]
                 }
             }
         }
