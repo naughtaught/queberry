@@ -11,7 +11,7 @@ import { currentFilters, defaultFilters } from '$lib/stores/pages'
 import { updateCarousels } from '$lib/functions/utility/updateCarousels'
 import { setEnabledPlugins } from '$lib/functions/plugins/setEnabledPlugins'
 import { toggleFullscreen } from '$lib/functions/ui/toggleFullscreen'
-import { getLocalMedia } from '../utility/getLocalMedia'
+import { getLocalMedia } from '$lib/functions/utility/getLocalMedia'
 
 export const loginUser = async (userData: Sql.User, skipVerification = false): Promise<void> => {
     try {

@@ -1,7 +1,7 @@
 import type { Video } from '$lib/types/video'
-import { invokeFunction } from '../api/invokeFunction'
-import { handleError } from '../errors/errorHandling'
-import { parseFilenameForEpisode } from '../utility/parseFilenameForEpisode'
+import { invokeFunction } from '$lib/functions/api/invokeFunction'
+import { handleError } from '$lib/functions/errors/errorHandling'
+import { parseFilenameForEpisode } from '$lib/functions/utility/parseFilenameForEpisode'
 
 export const checkForResolvedFiles = async (
     imdbId: string,

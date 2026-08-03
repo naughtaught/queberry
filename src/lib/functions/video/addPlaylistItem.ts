@@ -10,8 +10,8 @@ import { checkParentalControls } from '$lib/functions/video/checkParentalControl
 import { addCollectionItemToPlaylist } from '$lib/functions/video/addCollectionItemToPlaylist'
 import { shuffleSettings } from '$lib/stores/pages'
 import { addShuffleItemToPlaylist } from '$lib/functions/video/addShuffleItemToPlaylist'
-import { unrestrictLink } from './unrestrictLink'
-import { resolveVideoData } from './resolveVideoData'
+import { unrestrictLink } from '$lib/functions/video/unrestrictLink'
+import { resolveVideoData } from '$lib/functions/video/resolveVideoData'
 
 export const addPlaylistItem = async (): Promise<void> => {
     try {

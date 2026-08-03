@@ -1,7 +1,7 @@
 <script lang="ts">
-    import Checkbox from '../inputs/Checkbox.svelte'
-    import Select from '../inputs/Select.svelte'
-    import BaseModal from './BaseModal.svelte'
+    import Checkbox from '$lib/components/inputs/Checkbox.svelte'
+    import Select from '$lib/components/inputs/Select.svelte'
+    import BaseModal from '$lib/components/modals/BaseModal.svelte'
     import ResetIcon from 'virtual:icons/ri/reset-left-fill'
 
     const types = [

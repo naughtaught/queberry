@@ -1,7 +1,7 @@
 import type { Plugins } from '$lib/types/plugins'
-import { invokeFunction } from '../api/invokeFunction'
-import { handleError } from '../errors/errorHandling'
-import { checkMethodApi } from '../plugins/checkMethodApi'
+import { invokeFunction } from '$lib/functions/api/invokeFunction'
+import { handleError } from '$lib/functions/errors/errorHandling'
+import { checkMethodApi } from '$lib/functions/plugins/checkMethodApi'
 
 export const unrestrictLink = async (
     apikey: string | null | undefined,

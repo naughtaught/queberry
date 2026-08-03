@@ -16,7 +16,7 @@ import { createError, handleError } from '$lib/functions/errors/errorHandling'
 import { checkIfCompletelyWatched } from '$lib/functions/utility/checkIfCompletelyWatched'
 import { shuffleSettings } from '$lib/stores/pages'
 import { getRandomEpisode } from '$lib/functions/video/getRandomEpisode'
-import { resolveVideoData } from './resolveVideoData'
+import { resolveVideoData } from '$lib/functions/video/resolveVideoData'
 
 const TIMEOUTS = {
     SEASON_DATA: 10000,

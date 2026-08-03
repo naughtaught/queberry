@@ -1,14 +1,14 @@
 import { enabledResolverPlugins } from '$lib/stores/plugins'
 import type { Video } from '$lib/types/video'
 import { get } from 'svelte/store'
-import { checkForResolvedFiles } from './checkForResolvedFiles'
-import { fetchLocalMedia } from './fetchLocalMedia'
-import { unrestrictLink } from './unrestrictLink'
-import { fetchVideoFromSources } from './fetchVideoFromSources'
-import { addToResolvedCache } from './addToResolvedCache'
+import { checkForResolvedFiles } from '$lib/functions/video/checkForResolvedFiles'
+import { fetchLocalMedia } from '$lib/functions/video/fetchLocalMedia'
+import { unrestrictLink } from '$lib/functions/video/unrestrictLink'
+import { fetchVideoFromSources } from '$lib/functions/video/fetchVideoFromSources'
+import { addToResolvedCache } from '$lib/functions/video/addToResolvedCache'
 import type { Api } from '$lib/types/api'
 import type { Plugins } from '$lib/types/plugins'
-import { createError } from '../errors/errorHandling'
+import { createError } from '$lib/functions/errors/errorHandling'
 
 export const resolveVideoData = async (
     imdbId: string,

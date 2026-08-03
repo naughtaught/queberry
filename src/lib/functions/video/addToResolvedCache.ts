@@ -1,6 +1,6 @@
 import type { Video } from '$lib/types/video'
-import { invokeFunction } from '../api/invokeFunction'
-import { handleError } from '../errors/errorHandling'
+import { invokeFunction } from '$lib/functions/api/invokeFunction'
+import { handleError } from '$lib/functions/errors/errorHandling'
 
 export const addToResolvedCache = async (
     imdbId: string,

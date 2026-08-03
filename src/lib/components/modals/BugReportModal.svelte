@@ -4,9 +4,9 @@
     import { appData, toastNotification } from '$lib/stores/app'
     import { user } from '$lib/stores/user'
     import { Reports } from '$lib/types/reports'
-    import EmailInputField from '../inputs/EmailInputField.svelte'
-    import Select from '../inputs/Select.svelte'
-    import BaseModal from './BaseModal.svelte'
+    import EmailInputField from '$lib/components/inputs/EmailInputField.svelte'
+    import Select from '$lib/components/inputs/Select.svelte'
+    import BaseModal from '$lib/components/modals/BaseModal.svelte'
 
     let { isReportModalOpen = $bindable() } = $props()
 

@@ -9,7 +9,7 @@ import { getRandomEpisode } from '$lib/functions/video/getRandomEpisode'
 import { checkParentalControls } from '$lib/functions/video/checkParentalControls'
 import { invokeFunction } from '$lib/functions/api/invokeFunction'
 import { updateVideoMetadata } from '$lib/functions/video/updateVideoMetadata'
-import { resolveVideoData } from './resolveVideoData'
+import { resolveVideoData } from '$lib/functions/video/resolveVideoData'
 
 export const addShuffleItemToPlaylist = async (metadata: Video.Metadata): Promise<void> => {
     if (!metadata.media) return

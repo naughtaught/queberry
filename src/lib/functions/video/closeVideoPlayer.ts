@@ -1,5 +1,5 @@
-import { invokeFunction } from '../api/invokeFunction'
-import { handleError } from '../errors/errorHandling'
+import { invokeFunction } from '$lib/functions/api/invokeFunction'
+import { handleError } from '$lib/functions/errors/errorHandling'
 
 export const closeVideoPlayer = async (): Promise<void> => {
     try {

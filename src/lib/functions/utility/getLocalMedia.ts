@@ -1,8 +1,8 @@
 import { directories, loadingStates } from '$lib/stores/app'
 import { get } from 'svelte/store'
-import { invokeFunction } from '../api/invokeFunction'
+import { invokeFunction } from '$lib/functions/api/invokeFunction'
 import type { App } from '$lib/types/app'
-import { handleError } from '../errors/errorHandling'
+import { handleError } from '$lib/functions/errors/errorHandling'
 
 export const getLocalMedia = async (): Promise<void> => {
     loadingStates.update((states) => ({
