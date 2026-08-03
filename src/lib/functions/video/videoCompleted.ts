@@ -4,7 +4,6 @@ import { get } from 'svelte/store'
 import { setEpisodeWatchedState } from '$lib/functions/states/setEpisodeWatchedState'
 import { setMediaStates } from '$lib/functions/states/setMediaStates'
 import { updateCachedMedia } from '$lib/functions/cache/updateCachedMedia'
-import { fetchUpNext } from '$lib/db/fetchUpNext'
 import { addPlaylistItem } from '$lib/functions/video/addPlaylistItem'
 import { createError, handleError } from '$lib/functions/errors/errorHandling'
 import { shuffleSettings } from '$lib/stores/pages'
@@ -48,8 +47,6 @@ export const videoCompleted = async (): Promise<void> => {
         } else if (metadata.media?.type === 'tv' && !metadata.media.progress) {
             updateCachedMedia({ ...updatedMedia })
         }
-
-        if (metadata.media.type === 'tv') await fetchUpNext()
 
         if (
             get(shuffleSettings).continuousPlay ||

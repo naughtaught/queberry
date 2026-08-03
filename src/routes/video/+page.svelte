@@ -31,6 +31,7 @@
     import type { Api } from '$lib/types/api'
     import { listen, type UnlistenFn } from '@tauri-apps/api/event'
     import { onDestroy, onMount } from 'svelte'
+    import { fetchUpNext } from '$lib/db/fetchUpNext'
 
     const SUBTITLE_SHIFT_POSITION = 84
     const MOUSE_TIMEOUT = 2000
@@ -120,6 +121,9 @@
             const shutdownState = event.payload as Video.ShutdownState
             const metadataSnapshot = $videoMetadata
             const userSnapshot = $user
+
+            const hasWatchedTv = metadataSnapshot.playlist.some((x) => x.media?.type === 'tv')
+            if (hasWatchedTv) fetchUpNext()
 
             $shuffleSettings = { ...defaultShuffleSettings }
             goto($previousPage)
