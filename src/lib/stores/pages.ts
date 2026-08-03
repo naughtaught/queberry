@@ -47,8 +47,6 @@ export const defaultFilters = writable<Api.Filters>({
     contentRatings: [],
     genders: [],
     status: [],
-    tags: [],
-    excludeTags: [],
 })
 
 export const currentFilters = writable<Api.Filters>(get(defaultFilters))

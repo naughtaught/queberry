@@ -27,16 +27,13 @@
     import TransferModal from '$lib/components/modals/TransferModal.svelte'
     import type { Plugins } from '$lib/types/plugins.js'
     import DownloadModal from '$lib/components/modals/DownloadModal.svelte'
-    import { fetchRelatedMedia } from '$lib/db/fetchRelatedMedia.js'
     import { cache } from '$lib/stores/pages.js'
     import { handleError } from '$lib/functions/errors/errorHandling.js'
-    import RelatedMedia from '$lib/components/ui/RelatedMedia.svelte'
     import { fetchCollections } from '$lib/db/fetchCollections.js'
     import ContentReportModal from '$lib/components/modals/ContentReportModal.svelte'
 
     const { data } = $props()
     let media = $derived(data.data)
-    let relatedFetched = $state(false)
     let collectionsFetched = $state(false)
 
     const formattedRuntime = $derived(formatRuntime(media))
@@ -61,7 +58,6 @@
     let selectedSource: Plugins.IndexerSource | null = $state(null)
 
     let collections = $state<Api.Collection[]>([])
-    let relatedMedia = $state<Api.Collection[]>([])
     let isReportModalOpen = $state(false)
 
     const filteredCollections = $derived.by(() => {
@@ -91,22 +87,6 @@
     $effect(() => {
         const mediaId = media.id
         const currentMedia = media
-
-        if (!relatedFetched) {
-            relatedFetched = true
-            fetchRelatedMedia(mediaId)
-                .then((resp) => {
-                    if (!resp.success) throw resp.error
-                    relatedMedia = resp.data
-                    const index = $cache.details.media.findIndex((item) => item.id === currentMedia.id)
-                    if (index !== -1) {
-                        $cache.details.media[index] = currentMedia
-                    } else {
-                        $cache.details.media = [...$cache.details.media, currentMedia]
-                    }
-                })
-                .catch((error) => handleError(error))
-        }
 
         if (!collectionsFetched) {
             collectionsFetched = true
@@ -254,14 +234,6 @@
                 <h3 class="mb-4 text-[10px] font-bold tracking-[0.2em] text-slate-500 uppercase">Collections</h3>
                 <div class="flex flex-col">
                     <Collections collections={filteredCollections} unfilteredCollection={collections} />
-                </div>
-            </div>
-        {/if}
-        {#if relatedMedia?.length > 0}
-            <div class="py-6">
-                <h3 class="mb-4 text-[10px] font-bold tracking-[0.2em] text-slate-500 uppercase">Related</h3>
-                <div class="flex flex-col">
-                    <RelatedMedia related={relatedMedia} />
                 </div>
             </div>
         {/if}

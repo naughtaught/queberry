@@ -174,7 +174,6 @@ pub fn run() {
             commands::api::api_update_user,
             commands::api::api_fetch_random_media,
             commands::api::api_fetch_random_backdrop,
-            commands::api::api_fetch_related_media,
             commands::api::api_fetch_collections,
             commands::api::api_fetch_person_details,
             commands::api::api_submit_report,

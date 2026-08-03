@@ -693,23 +693,6 @@ pub async fn api_fetch_collections(
     handle_response(response).await
 }
 
-pub async fn api_fetch_related_media(
-    postgres_id: &str,
-    token: &str,
-    media_id: i32,
-) -> Result<serde_json::Value, String> {
-    let client = get_client();
-    let response = client
-        .get(format!("{}/api/related/{}", API_BASE, media_id))
-        .header("X-User-Id", postgres_id)
-        .header("Authorization", format!("Bearer {}", token))
-        .send()
-        .await
-        .map_err(api_error)?;
-
-    handle_response(response).await
-}
-
 pub async fn api_fetch_person_details(
     postgres_id: &str,
     token: &str,
