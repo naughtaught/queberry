@@ -10,6 +10,7 @@ export const getNextEpisode = (): {
     newEpisodeNumber: number | null
 } => {
     const userSettings = get(settings)
+    const todaysDate = new Date().toISOString().split('T')[0]
 
     const nullResult = { newSeasonNumber: null, newEpisode: null, newEpisodeNumber: null }
 
@@ -29,6 +30,7 @@ export const getNextEpisode = (): {
     const nextInSeason = currentEpisodes.find((e) => e.episode_num === currentEpisodeNumber + 1)
 
     if (nextInSeason) {
+        if (nextInSeason.air_date && nextInSeason.air_date > todaysDate) return nullResult
         return {
             newSeasonNumber: currentSeasonNumber,
             newEpisode: nextInSeason,
@@ -42,7 +44,7 @@ export const getNextEpisode = (): {
     const nextSeasonEpisodes = getSelectedSeasonsEpisodes(nextSeason, metadata.media)
     const firstEpisode = [...nextSeasonEpisodes].sort((a, b) => a.episode_num - b.episode_num)[0]
 
-    if (!firstEpisode) return nullResult
+    if (!firstEpisode || (firstEpisode.air_date && firstEpisode.air_date > todaysDate)) return nullResult
 
     if (userSettings.seasonCompletionRequired) {
         const doesSeasonHaveAFinale = nextSeasonEpisodes.find((x: Api.Episode) => x.is_finale)
