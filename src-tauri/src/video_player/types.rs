@@ -1,16 +1,17 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-#[derive(Serialize, Clone)]
+#[derive(Debug, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SubtitleTrackInfo {
     pub id: Option<i64>,
     pub lang: String,
     pub title: String,
     pub caption_type: CaptionType,
+    pub is_external: bool,
 }
 
-#[derive(Serialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Clone, PartialEq)]
 pub enum CaptionType {
     Normal,
     #[serde(rename = "SDH")]

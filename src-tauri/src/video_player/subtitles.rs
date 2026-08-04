@@ -75,7 +75,7 @@ impl SubtitleManager {
             if track_type == "sub" {
                 match self.extract_subtitle_track_info(&mpv_guard, i) {
                     Ok(info) => subtitles.push(info),
-                    Err(e) => log::warn!("Failed to extract subtitle info for track {}: {}", i, e),
+                    Err(e) => log::error!("Failed to extract subtitle info for track {}: {}", i, e),
                 }
             }
         }
@@ -106,6 +106,10 @@ impl SubtitleManager {
             .get_property(&codec_prop)
             .unwrap_or_else(|_| "".to_string());
 
+        let is_external = mpv
+            .get_property::<bool>(&format!("track-list/{}/external", track_index))
+            .unwrap_or(false);
+
         let caption_type = Self::detect_caption_type(&title, &codec);
 
         Ok(SubtitleTrackInfo {
@@ -113,6 +117,7 @@ impl SubtitleManager {
             lang,
             title,
             caption_type,
+            is_external,
         })
     }
 
@@ -181,6 +186,17 @@ impl SubtitleManager {
             return Ok(None);
         }
 
+        let external_subtitles: Vec<&SubtitleTrackInfo> =
+            filtered.iter().filter(|track| track.is_external).collect();
+
+        if !external_subtitles.is_empty() {
+            let best_external = external_subtitles
+                .into_iter()
+                .min_by_key(|track| self.score_subtitle_track(track))
+                .cloned();
+            return Ok(best_external);
+        }
+
         if video_language.is_empty() {
             return Ok(None);
         }
@@ -241,6 +257,10 @@ impl SubtitleManager {
 
     fn score_subtitle_track(&self, track: &SubtitleTrackInfo) -> i32 {
         let mut score = 0;
+
+        if track.is_external {
+            score -= 10;
+        }
 
         if track.caption_type == CaptionType::Sdh {
             score += 2;

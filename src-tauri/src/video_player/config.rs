@@ -47,7 +47,7 @@ impl MpvConfig {
             ("vo", "gpu-next"),
             ("scale-antiring", "0.6"),
             // Subtitles
-            ("sub-auto", "no"),
+            // ("sub-auto", "no"),
             ("sub-pos", "95"),
             ("sub-font", "Segoe UI"),
             ("sub-font-size", "28"),
@@ -61,6 +61,8 @@ impl MpvConfig {
             ("sub-italic", "no"),
             ("sub-ass", "no"),
             ("sub-scale", "1.2"),
+            ("sub-auto", "fuzzy"),
+            ("sub-file-paths", "subtitles:subs:Subtitles:Subs"),
             // Cache settings
             ("cache", "auto"),
             ("cache-on-disk", "no"),
