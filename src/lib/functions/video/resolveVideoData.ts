@@ -22,6 +22,18 @@ export const resolveVideoData = async (
 ): Promise<Video.VideoData> => {
     checkCancellation?.()
 
+    if (targeted && existingSources && existingSources.length > 0) {
+        if (existingSources[0].source === 'Local Media' && existingSources[0].filePath) {
+            return {
+                videoUrl: existingSources[0].filePath,
+                filename: existingSources[0].filename,
+                files: [],
+                infohash: null,
+                resolver: 'Local Media',
+            }
+        }
+    }
+
     if (!targeted) {
         const localResults = await fetchLocalMedia(
             imdbId,
