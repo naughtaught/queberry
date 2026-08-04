@@ -270,7 +270,12 @@ export const loadVideo = async (
 
         shouldCancelVideoLoad.set(false)
 
-        if (error instanceof Error && error.message.includes('Transfer Started.')) return
+        if (
+            error instanceof Error &&
+            (error.message.includes('Transfer Started.') ||
+                error.message.includes('No video URL after successful source'))
+        )
+            return
 
         if (error instanceof DOMException && error.name === 'AbortError') return
 
