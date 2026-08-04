@@ -12,6 +12,7 @@ import { updateCarousels } from '$lib/functions/utility/updateCarousels'
 import { setEnabledPlugins } from '$lib/functions/plugins/setEnabledPlugins'
 import { toggleFullscreen } from '$lib/functions/ui/toggleFullscreen'
 import { getLocalMedia } from '$lib/functions/utility/getLocalMedia'
+import { getTransfers } from './getTransfers'
 
 export const loginUser = async (userData: Sql.User, skipVerification = false): Promise<void> => {
     try {
@@ -103,6 +104,8 @@ export const loginUser = async (userData: Sql.User, skipVerification = false): P
 
         const pluginsResp = await setEnabledPlugins()
         if (!pluginsResp.success) throw pluginsResp.error
+
+        getTransfers()
 
         const globalSettingsResp = await invokeFunction('get_global_settings', {})
         if (!globalSettingsResp.success) handleError(globalSettingsResp.error, { display: false })

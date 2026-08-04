@@ -1,13 +1,14 @@
 <script lang="ts">
-    import { createError, handleError } from '$lib/functions/errors/errorHandling'
+    import { handleError } from '$lib/functions/errors/errorHandling'
     import type { Plugins } from '$lib/types/plugins'
     import { onMount } from 'svelte'
     import LoadingSpinner from '$lib/components/ui/LoadingSpinner.svelte'
     import { invokeFunction } from '$lib/functions/api/invokeFunction'
     import { settings } from '$lib/stores/user'
     import { get } from 'svelte/store'
-    import { enabledResolverPlugins, excludedTransferStatuses, transfersInProgress } from '$lib/stores/plugins'
+    import { enabledResolverPlugins, transfersInProgress } from '$lib/stores/plugins'
     import { checkMethodApi } from '$lib/functions/plugins/checkMethodApi'
+    import { fetchTransfers } from '$lib/functions/plugins/fetchTransfers'
 
     let { isTransferListOpen = $bindable() } = $props()
 
@@ -16,37 +17,6 @@
     let transfersToDelete: Plugins.TransferData[] = $state([])
     const defaultResolver = $derived(get(settings).defaultResolver)
     const resolver = $derived(get(enabledResolverPlugins).find((x) => x.id === defaultResolver))
-
-    const fetchTransfers = async (): Promise<void> => {
-        if (!resolver) throw createError('No resolver found', 404, { log: false })
-
-        loading = true
-        transfersToDelete = []
-        transfers = []
-
-        try {
-            checkMethodApi(resolver, 'GetTorrentList')
-
-            const response = await invokeFunction('call_plugin_method', {
-                pluginName: resolver.id,
-                methodName: 'GetTorrentList',
-                args: [resolver.apikey ?? null],
-            })
-
-            if (!response.success) throw response.error
-
-            const listedTransfers = response.data.filter(
-                (x: { status: string }) =>
-                    !$excludedTransferStatuses.some((excluded) => x.status === excluded || x.status.includes(excluded)),
-            )
-
-            transfers = [...listedTransfers]
-        } catch (error) {
-            handleError(error)
-        } finally {
-            loading = false
-        }
-    }
 
     const deleteTransfers = async (): Promise<void> => {
         if (!resolver) {
@@ -101,7 +71,11 @@
     }
 
     onMount(async () => {
-        await fetchTransfers()
+        if (resolver) {
+            const allFiles = await fetchTransfers(resolver)
+            transfers = allFiles.filter((x) => x.status !== 'cached')
+        }
+        loading = false
     })
 </script>
 
@@ -177,19 +151,19 @@
     {/if}
     <div class="mx-auto flex w-fit items-center justify-center gap-x-5 py-5">
         <button
+            onclick={() => {
+                isTransferListOpen = false
+            }}
+            class="px-6 py-3.5 font-medium text-slate-400 transition-colors hover:text-slate-200">
+            Cancel
+        </button>
+        <button
             disabled={transfers.length === 0}
             onclick={deleteTransfers}
             class="{transfers.length === 0
                 ? ' cursor-default! text-slate-500'
                 : 'text-textColor hover:text-primaryColor'} flex-1 rounded-lg bg-slate-800 px-6 py-3.5 font-bold shadow-lg transition-all">
             Delete Selected
-        </button>
-        <button
-            onclick={() => {
-                isTransferListOpen = false
-            }}
-            class="px-6 py-3.5 font-medium text-slate-400 transition-colors hover:text-slate-200">
-            Cancel
         </button>
     </div>
 </div>

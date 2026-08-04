@@ -150,9 +150,12 @@ All responses follow one of two shapes:
     "success": true,
     "data": {
         "id": "2345234",
+        "infohash": "sdf234r234",
         "progress": 88,
         "speed": 512.0,
-        "status": "downloading"
+        "status": "downloading",
+        "cached": true,
+        "filename": "the testing"
     }
 }
 ```

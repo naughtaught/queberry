@@ -2,12 +2,7 @@ import { invokeFunction } from '$lib/functions/api/invokeFunction'
 import { handleError } from '$lib/functions/errors/errorHandling'
 import { loginUser } from '$lib/functions/user/loginUser'
 import { parentalControlsAreEnabled } from '$lib/stores/app'
-import {
-    installedIndexerPlugins,
-    installedResolverPlugins,
-    installedUtilityPlugins,
-    transfersInProgress,
-} from '$lib/stores/plugins'
+import { installedIndexerPlugins, installedResolverPlugins, installedUtilityPlugins } from '$lib/stores/plugins'
 import { user, users } from '$lib/stores/user'
 import type { Plugins } from '$lib/types/plugins'
 import { get } from 'svelte/store'
@@ -22,36 +17,8 @@ const initializePlugins = async (): Promise<void> => {
     installedUtilityPlugins.set(plugins.data.filter((plugin: Plugins.Plugin) => plugin.types.includes('Utility')))
 }
 
-const getTransfers = async (): Promise<void> => {
-    try {
-        const transfers = await invokeFunction('list_transfers', {})
-        if (!transfers.success) throw transfers.error
-
-        const transfersObject: Plugins.TransferProgress = {}
-
-        for (const transfer of transfers.data) {
-            transfersObject[transfer.hash] = {
-                transferId: transfer.transferId,
-                progress: transfer.progress,
-                filename: transfer.filename,
-                hash: transfer.hash,
-                status: 'checking',
-                resolver: transfer.resolver,
-                speed: 0,
-            }
-        }
-
-        transfersInProgress.set(transfersObject)
-    } catch (error) {
-        handleError(error, {
-            display: false,
-        })
-    }
-}
-
 try {
     initializePlugins()
-    getTransfers()
 
     let userId: number | null = null
 
