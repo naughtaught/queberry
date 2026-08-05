@@ -10,6 +10,7 @@ use tokio::sync::{Mutex, RwLock};
 use tokio::task::JoinHandle;
 
 use crate::db::downloads::DownloadManager as DbDownloadManager;
+use crate::db::local_media::LocalMediaManager;
 
 #[repr(u32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -230,6 +231,7 @@ pub struct DownloadManager {
     pub http_client: Arc<Client>,
     pub retry_config: RetryConfig,
     pub db: Option<Arc<DbDownloadManager>>,
+    pub local_media_manager: Option<Arc<LocalMediaManager>>,
 }
 
 impl Default for DownloadManager {
@@ -248,6 +250,7 @@ impl Default for DownloadManager {
             ),
             retry_config: RetryConfig::default(),
             db: None,
+            local_media_manager: None,
         }
     }
 }

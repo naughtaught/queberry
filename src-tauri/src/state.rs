@@ -59,9 +59,11 @@ impl AppState {
         let db_download_manager = database
             .as_ref()
             .map(|db| DbDownloadManager::new(db.clone()));
-        let download_manager = db_download_manager
-            .as_ref()
-            .map(|db| DownloadManager::new().with_db(Arc::new(db.clone())));
+        let download_manager = db_download_manager.as_ref().map(|db| {
+            let mut dm = DownloadManager::new().with_db(Arc::new(db.clone()));
+            dm.local_media_manager = local_media_manager.clone().map(Arc::new);
+            dm
+        });
         let plugin_cache = database
             .as_ref()
             .map(|db| PluginCacheManager::new(db.clone()));

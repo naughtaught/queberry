@@ -763,6 +763,10 @@ impl DownloadManager {
         )
         .await?;
 
+        if let Some(manager) = &self.local_media_manager {
+            let _ = manager.scan_folder(&media_folder.to_string_lossy()).await;
+        }
+
         Ok(format!(
             "Files downloaded successfully to: {}",
             media_folder.display()
