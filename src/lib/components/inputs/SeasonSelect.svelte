@@ -18,10 +18,11 @@
 
     const seasons = $derived.by(() => {
         let allSeasons = media.seasons.seasons
+
         const episodeGroupKey =
             selectedEpisodeGroup && selectedEpisodeGroup !== 'Default' ? `${selectedEpisodeGroup}` : 'default_episodes'
 
-        if (selectedEpisodeGroup !== 'Default') {
+        if (selectedEpisodeGroup && selectedEpisodeGroup !== 'Default') {
             allSeasons = media.seasons.seasons.filter((season: { season_num: number }) => season.season_num !== 0)
         } else {
             allSeasons.sort((a: { season_num: number }, b: { season_num: number }) => a.season_num - b.season_num)
