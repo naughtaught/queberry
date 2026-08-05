@@ -34,41 +34,46 @@
             if (!resp.success) throw resp.error
             if (resp.success) {
                 updateCachedMedia(media)
-                if (media.watched && media.type === 'tv') {
-                    const seasonResp = await fetchSeasonData(media.id)
-                    if (!seasonResp.success) throw seasonResp.error
 
-                    resp.data.seasons = seasonResp.data
-
-                    media = { ...resp.data }
-
+                if (media.type === 'tv') {
                     $loadingStates.isEpisodesLoading = true
 
-                    const allEpisodes = (media.seasons?.seasons ?? []).flatMap(
-                        (season: Api.Season) => season.default_episodes,
-                    )
+                    if (media.watched) {
+                        const seasonResp = await fetchSeasonData(media.id)
+                        if (!seasonResp.success) throw seasonResp.error
 
-                    const response = await setEpisodeWatchedState(allEpisodes, media, true)
-                    if (!response.success) throw response.error
-                    media = { ...response.data.media }
+                        resp.data.seasons = seasonResp.data
+                        media = { ...resp.data }
+
+                        const episodeGroupKey =
+                            media.episode_group_name && media.episode_group_name !== 'Default'
+                                ? `${media.episode_group_name.toLowerCase().replace(' ', '_')}_episodes`
+                                : 'default_episodes'
+
+                        const allEpisodes = (media.seasons?.seasons ?? [])
+                            .filter((season: Api.Season) => {
+                                if (episodeGroupKey === 'default_episodes') {
+                                    return season.season_num !== 0
+                                }
+                                return true
+                            })
+                            .flatMap((season: Api.Season) => season[episodeGroupKey] || season.default_episodes || [])
+
+                        const response = await setEpisodeWatchedState(allEpisodes, media, true)
+                        if (!response.success) throw response.error
+                        media = { ...response.data.media }
+                    }
+
+                    if (!media.watched) {
+                        const allEpisodes = (media.seasons?.seasons ?? []).flatMap(
+                            (season: Api.Season) => season.default_episodes || [],
+                        )
+                        const response = await setEpisodeWatchedState(allEpisodes, media, false)
+                        if (!response.success) throw response.error
+                        media = { ...response.data.media }
+                    }
                 }
 
-                if (!media.watched && media.type === 'tv') {
-                    $loadingStates.isEpisodesLoading = true
-                    const episodeGroupKey =
-                        media.episode_group_name && media.episode_group_name !== 'Default'
-                            ? `${media.episode_group_name.toLowerCase().replace(' ', '_')}_episodes`
-                            : 'default_episodes'
-
-                    const allEpisodes = (media.seasons?.seasons ?? [])
-                        .filter((season: Api.Season) => season.season_num !== 0)
-                        .flatMap((season: Api.Season) => {
-                            return season[episodeGroupKey] || season.default_episodes || []
-                        })
-                    const response = await setEpisodeWatchedState(allEpisodes, media, false)
-                    if (!response.success) throw response.error
-                    media = { ...response.data.media }
-                }
                 updateCachedMedia(media)
 
                 if (media.type === 'tv') await fetchUpNext()
