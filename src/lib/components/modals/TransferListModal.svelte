@@ -3,13 +3,12 @@
     import type { Plugins } from '$lib/types/plugins'
     import { onMount } from 'svelte'
     import LoadingSpinner from '$lib/components/ui/LoadingSpinner.svelte'
-    import { invokeFunction } from '$lib/functions/api/invokeFunction'
     import { settings } from '$lib/stores/user'
     import { get } from 'svelte/store'
     import { enabledResolverPlugins, transfersInProgress } from '$lib/stores/plugins'
-    import { checkMethodApi } from '$lib/functions/plugins/checkMethodApi'
     import { fetchTransfers } from '$lib/functions/plugins/fetchTransfers'
     import Checkbox from '../inputs/Checkbox.svelte'
+    import { deleteTransfer } from '$lib/functions/plugins/deleteTransfer'
 
     let { isTransferListOpen = $bindable() } = $props()
 
@@ -28,36 +27,16 @@
         loading = true
 
         try {
-            for await (const transfer of transfersToDelete) {
-                try {
-                    checkMethodApi(resolver, 'CancelTransfer')
+            for (const transfer of transfersToDelete) {
+                await deleteTransfer(transfer.infohash)
 
-                    const response = await invokeFunction('call_plugin_method', {
-                        pluginName: resolver.id,
-                        methodName: 'CancelTransfer',
-                        args: [resolver.apikey ?? null, transfer.id],
-                    })
-
-                    if (!response.success) {
-                        handleError(response.error || 'Failed to cancel transfer')
-                        continue
-                    }
-
-                    const key = Object.keys($transfersInProgress).find(
-                        (hash) => $transfersInProgress[hash].transferId === +transfer.id,
-                    )
-
-                    if (key) delete $transfersInProgress[key]
-
+                if (!$transfersInProgress[transfer.infohash]) {
                     const index = transfers.findIndex((t) => t.id === transfer.id)
-
                     if (index !== -1) transfers.splice(index, 1)
-                } catch (error) {
-                    handleError(error)
                 }
             }
         } catch (error) {
-            handleError(error)
+            handleError(error, { display: false, log: false })
         } finally {
             loading = false
             isTransferListOpen = false
@@ -136,12 +115,16 @@
             Cancel
         </button>
         <button
-            disabled={transfers.length === 0}
+            disabled={transfersToDelete.length === 0 || loading}
             onclick={deleteTransfers}
-            class="{transfers.length === 0
+            class="{transfersToDelete.length === 0 || loading
                 ? ' cursor-default! text-slate-500'
                 : 'text-textColor hover:text-primaryColor'} flex-1 rounded-lg bg-slate-800 px-6 py-3.5 font-bold shadow-lg transition-all">
-            Delete Selected
+            {#if loading}
+                <LoadingSpinner />
+            {:else}
+                Delete
+            {/if}
         </button>
     </div>
 </div>
