@@ -18,6 +18,7 @@
     import { extractSeasonAndEpisode } from '$lib/functions/utility/extractSeasonAndEpisode'
     import { getImagePath } from '$lib/functions/ui/getImagePath'
     import { unrestrictLink } from '$lib/functions/video/unrestrictLink'
+    import Checkbox from '../inputs/Checkbox.svelte'
 
     const { media, source, seasonNumber, episodeData } = $props()
 
@@ -275,35 +276,14 @@
                 {#each files as file (file)}
                     <div class="inline-flex w-full items-center justify-between">
                         <div class="flex items-center">
-                            <label class="relative flex cursor-pointer items-center" for={file.filename}>
-                                <input
-                                    type="checkbox"
-                                    checked={filesToDownload.some((f) => f.filename === file.filename)}
-                                    onchange={(e) => {
-                                        const target = e.target as HTMLInputElement | null
-                                        toggleFile(file, target?.checked ?? false)
-                                    }}
-                                    class="peer h-4 w-4 cursor-pointer appearance-none rounded border border-gray-300 shadow transition-all checked:border-black checked:bg-primaryColor hover:shadow-md"
-                                    id={file.filename} />
-                                <span
-                                    class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transform text-black opacity-0 peer-checked:opacity-100">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="h-3.5 w-3.5"
-                                        viewBox="0 0 20 20"
-                                        fill="currentColor"
-                                        stroke="currentColor"
-                                        stroke-width="1">
-                                        <path
-                                            fill-rule="evenodd"
-                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                            clip-rule="evenodd"></path>
-                                    </svg>
-                                </span>
-                            </label>
-                            <label class="text-text ml-2 cursor-pointer text-sm" for={file.filename}>
-                                {file.filename}
-                            </label>
+                            <Checkbox
+                                label={file.filename}
+                                id={file.filename}
+                                checked={filesToDownload.some((f) => f.filename === file.filename)}
+                                func={(e: Event) => {
+                                    const target = e.target as HTMLInputElement
+                                    toggleFile(file, target.checked)
+                                }} />
                         </div>
                         <span class="text-text text-sm">
                             {(file.size / (1024 * 1024 * 1024)).toFixed(2)} GB
