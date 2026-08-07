@@ -20,16 +20,18 @@
                             <span class="text-[14px]">{transfer.status}</span>
                         </span>
                         <span class="flex items-center gap-1 text-[10px] tracking-[0.2em] text-textColor uppercase">
-                            {transfer.speed ?? '-'} Mbps
+                            {transfer.speed.toFixed(2) ?? '-'} Mbps
                         </span>
                     </div>
                 </div>
                 <div class="text-right">
-                    <span class="text-2xl font-black tracking-tighter">{transfer.progress}%</span>
+                    <span class="text-2xl font-black tracking-tighter">{transfer.progress.toFixed(0)}%</span>
                 </div>
             </div>
             <div class="h-2 w-full overflow-hidden rounded-full bg-white/5">
-                <div class="h-full bg-primaryColor transition-all duration-1000" style="width: {transfer.progress}%">
+                <div
+                    class="h-full bg-primaryColor transition-all duration-1000"
+                    style="width: {transfer.progress.toFixed(2)}%">
                 </div>
             </div>
         </div>
