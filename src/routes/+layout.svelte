@@ -379,7 +379,7 @@
 
 <ToastNotification />
 
-<main class="min-h-screen {!page.url.pathname.includes('video') ? '' : 'pt-0'} flex" id="main-page">
+<main class="flex h-screen {!page.url.pathname.includes('video') ? '' : 'pt-0'} " id="main-page">
     {#if page.url.pathname !== '/video'}
         <DragBar />
         <NavSideBar />

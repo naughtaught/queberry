@@ -25,7 +25,7 @@
     })
 </script>
 
-<aside class="sidebar-gradient flex h-fit min-h-screen w-40 shrink-0 flex-col border-r border-textColor/5">
+<aside class="sidebar-gradient flex h-screen w-40 shrink-0 flex-col border-r border-textColor/5">
     <div class="flex items-center gap-2 p-4">
         <img class="h-8 w-8" src="/images/logo.png" alt="" />
         <h1 class="text-lg leading-tight font-bold tracking-widest">queberry</h1>

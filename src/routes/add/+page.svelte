@@ -237,7 +237,7 @@
     })
 </script>
 
-<section class="relative h-screen w-full max-w-full flex-col space-y-10 overflow-y-auto p-16">
+<section class="relative h-full w-full max-w-full flex-col space-y-10 overflow-y-auto p-16">
     <header>
         <h2 class="text-5xl font-black tracking-tighter">Add Media</h2>
     </header>

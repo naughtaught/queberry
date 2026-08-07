@@ -19,7 +19,7 @@
     })
 </script>
 
-<section class="relative h-screen w-full max-w-full flex-col space-y-10 overflow-y-auto p-16">
+<section class="relative h-full w-full max-w-full flex-col space-y-10 overflow-y-auto p-16">
     <div class="absolute bottom-0 left-0 -z-10 h-75 w-75 rounded-full bg-blue-900/10 blur-[100px]"></div>
     <header class="mb-12">
         <h2 class="font-headline text-on-surface text-5xl font-black tracking-tighter">Transfers</h2>

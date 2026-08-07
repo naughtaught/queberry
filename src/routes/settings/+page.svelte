@@ -443,8 +443,8 @@
     <ConfirmationModal bind:config={confirmationModalConfig} />
 {/if}
 
-<section class="mx-auto flex h-[calc(100vh-88px)] w-full justify-center overflow-y-auto py-12">
-    <div class="grid grid-cols-12 gap-6">
+<section class="mx-auto flex h-screen w-full justify-center overflow-y-auto">
+    <div class="grid grid-cols-12 gap-6 py-12">
         <!-- Account Settings -->
         <section class="glass-panel sidebar-gradient col-span-8 rounded-lg p-8 shadow-2xl">
             <div class="mb-8 flex items-center justify-between">
