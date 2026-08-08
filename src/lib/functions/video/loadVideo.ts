@@ -270,12 +270,18 @@ export const loadVideo = async (
 
         shouldCancelVideoLoad.set(false)
 
-        if (
-            error instanceof Error &&
-            (error.message.includes('Transfer Started.') ||
-                error.message.includes('No video URL after successful source'))
-        )
+        if (error instanceof Error && error.message.includes('No video URL after successful source')) {
+            if (!targeted) {
+                handleError(error, {
+                    context: 'No playable cached video found.',
+                    log: false,
+                })
+            }
+
             return
+        }
+
+        if (error instanceof Error && error.message.includes('Transfer Started.')) return
 
         if (error instanceof DOMException && error.name === 'AbortError') return
 

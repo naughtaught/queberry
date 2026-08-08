@@ -90,6 +90,7 @@ export const resolveVideoData = async (
             episodeId: episode?.episode_id ?? null,
         },
         existingSources ?? [],
+        targeted,
     )
 
     if (!videoData?.videoUrl) {

@@ -7,6 +7,7 @@ import { createError } from '$lib/functions/errors/errorHandling'
 export const fetchVideoFromSources = async (
     options: Plugins.FetchVideoOptions,
     existingSources?: Plugins.IndexerSource[],
+    targeted = false,
 ): Promise<Plugins.FetchVideoResult> => {
     const { imdbId, title, released, type, seasonNumber, episodeNumber, episodeId, skipErrors = true } = options
 
@@ -30,10 +31,12 @@ export const fetchVideoFromSources = async (
             const errorMessage = response?.error?.message?.toLowerCase() || ''
 
             if (!options.skipErrors && errorMessage === 'no sources found.') {
-                modals.update((states) => ({
-                    ...states,
-                    transfer: true,
-                }))
+                if (targeted) {
+                    modals.update((states) => ({
+                        ...states,
+                        transfer: true,
+                    }))
+                }
                 return {
                     videoUrl: '',
                     filename: null,
@@ -48,10 +51,13 @@ export const fetchVideoFromSources = async (
         }
 
         if (response.success && !response.data) {
-            modals.update((states) => ({
-                ...states,
-                transfer: true,
-            }))
+            if (targeted) {
+                modals.update((states) => ({
+                    ...states,
+                    transfer: true,
+                }))
+            }
+
             return {
                 videoUrl: '',
                 filename: null,
